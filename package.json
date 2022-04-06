@@ -1,0 +1,15 @@
+{
+  "name": "strech-npm",
+  "version": "0.0.2",
+  "description": "strech demo npm test",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^6.2.2",
+    "nats": "^2.6.1"
+  }
+}
