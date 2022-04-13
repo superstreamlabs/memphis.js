@@ -1,7 +1,12 @@
 ![](https://memphis-public-files.s3.eu-central-1.amazonaws.com/Vector_page-0001.jpg)
 
-
-[Memphis](https://memphis.dev) is a powerful, cloud-native, event-processing platform, which allows you to achieve all other message brokers benefits in a fraction of the time. [Memphis](https://memphis.dev) provides an in-line data processing, auto-scaling in any programming language, and deep observability. [Memphis](https://memphis.dev) platform is already native to k8s and can run on any k8s, so you don׳t have to make it yourself. 
+**[Memphis](https://memphis.dev)** is a dev-first, cloud-native, event-processing platform made out of devs' struggles with tools like Kafka, RabbitMQ, NATS, and others, allowing you to achieve all other message brokers' benefits in a fraction of the time.<br><br>
+**[Memphis](https://memphis.dev) delivers:**
+- The most simple to use Message Broker (Such as NATS,  Kafka, RabbitMQ)
+- State-of-the-art UI and CLI
+- No need for Kafka Connect, Kafka Streams, ksql. All the tools you need under the same roof
+- An in-line data processing in any programming language
+- Out-of-the-box deep observability of every component 
 
 
 
@@ -27,3 +32,6 @@
 # Contribution guidelines
 
 - [contributing guide]()
+
+
+
