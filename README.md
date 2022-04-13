@@ -1,25 +1,29 @@
-<div id="top"></div>
+![](https://memphis-public-files.s3.eu-central-1.amazonaws.com/Vector_page-0001.jpg)
 
-<br />
-<div align="center">
-  <a href="https://github.com/Memphis-OS/memphis.js">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
-  <h3 align="center">Memphis Node.js SDK</h3>
-</div>
+[Memphis](https://memphis.dev) is a powerful, cloud-native, event-processing platform, which allows you to achieve all other message brokers benefits in a fraction of the time. [Memphis](https://memphis.dev) provides an in-line data processing, auto-scaling in any programming language, and deep observability. [Memphis](https://memphis.dev) platform is already native to k8s and can run on any k8s, so you don׳t have to make it yourself. 
 
-## About The Project
 
-This is Memphis Node.js SDK. It will allow you to connect to memphis server, create factories and stations, produce and consume messages.
-<br/>
-And it will be <b>EASY</b>. We promise.
 
-## Installation
-```sh
-  npm install memphis --save
-```
+![](https://img.shields.io/github/stars/pandao/editor.md.svg) ![](https://img.shields.io/github/forks/pandao/editor.md.svg) ![](https://img.shields.io/github/forks/pandao/editor.md.svg) ![](https://img.shields.io/github/tag/pandao/editor.md.svg) ![](https://img.shields.io/github/release/pandao/editor.md.svg) ![](https://img.shields.io/github/issues/pandao/editor.md.svg)
 
-## License
 
-Distributed under the Apache License 2.0 License. See `LICENSE.txt` for more information.
+# Installation
+
+
+# documentation
+
+- [Official documentation](https://docs.memphis.dev)
+
+
+# Contact 
+
+- [Twitter](https://https://twitter.com/MemphisPlatform): Follow us on Twitter!
+- [Discord](https://discord.gg/WZpysvAeTf): Join our Discord Server!
+- [Medium](https://medium.com/memphis-dev): Follow our Medium page!
+- [Youtube](https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg): Subscribe our youtube channel!
+
+
+# Contribution guidelines
+
+- [contributing guide]()
