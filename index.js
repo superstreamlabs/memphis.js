@@ -21,7 +21,7 @@ class Memphis {
         this.connectionId = null;
         this.accessToken = null;
         this.host = null;
-        this.port = 9000;
+        this.port = 6666;
         this.username = null;
         this.brokerHost = null;
         this.brokerPort = 7766
@@ -48,7 +48,7 @@ class Memphis {
     /**
         * Creates connection with Memphis. 
         * @param {String} host - control plane host.
-        * @param {Number} port - control plane port, default is 9000.
+        * @param {Number} port - control plane port, default is 6666.
         * @param {String} brokerHost - broker host.
         * @param {Number} brokerPort - broker port, default is 7766 .
         * @param {String} username - application type username.
@@ -58,14 +58,14 @@ class Memphis {
         * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
         * @param {Number} timeoutMs - connection timeout in miliseconds.
     */
-    connect({ host, port = 9000, username, brokerHost, brokerPort = 7766, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
+    connect({ host, port = 6666, username, brokerHost, brokerPort = 7766, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 if (!reconnect || this.reconnectAttempts === maxReconnect || !this.isConnectionActive)
                     reject(new Error("Connection timeout has reached"));
             }, timeoutMs);
 
-            this.host = this._normalizeHost(host) + "/tcp";
+            this.host = this._normalizeHost(host);
             this.brokerHost = this._normalizeHost(brokerHost);
             this.port = port;
             this.brokerPort = brokerPort;
