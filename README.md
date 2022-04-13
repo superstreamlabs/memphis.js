@@ -29,7 +29,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/STRECH-LTD/strech.js">
+  <a href="https://github.com/Memphis-OS/memphis.js">
     <img src="./images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
