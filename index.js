@@ -76,7 +76,7 @@ class Memphis {
             this.reconnectIntervalMs = reconnectIntervalMs;
             this.timeoutMs = timeoutMs;
 
-            this.client.connect(port, this.host, () => {
+            this.client.connect(this.port, this.host, () => {
                 this.client.write(JSON.stringify({
                     username: username,
                     broker_creds: connectionToken,
@@ -478,6 +478,6 @@ class Station {
     }
 }
 
-module.exports = () => new Memphis()
+module.exports = new Memphis();
 module.exports.retentionTypes = retentionTypes;
 module.exports.storageTypes = storageTypes;
