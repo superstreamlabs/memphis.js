@@ -4,7 +4,7 @@ const memphis = require("memphisos");
     try {
         await memphis.connect({
             host: "<host-name>",
-            port: 9000,
+            port: 6666,
             brokerHost: "<broker-host>",
             brokerPort: 7766,
             username: "<username (type application)>",
