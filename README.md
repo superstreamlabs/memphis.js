@@ -36,6 +36,24 @@ For Memphis node.js SDK
 
 - [Current SDKs](#current-sdks)
 - [Installation](#installation)
+- [Importing](#importing)
+  - [Connecting to Memphis](#connecting-to-memphis)
+  - [Disconnecting from Memphis](#disconnecting-from-memphis)
+  - [Creating a Factory](#creating-a-factory)
+  - [Destroying a Factory](#destroying-a-factory)
+  - [Creating a Station](#creating-a-station)
+  - [Retention types](#retention-types)
+  - [Storage types](#storage-types)
+  - [Destroying a Station](#destroying-a-station)
+  - [Produce and Consume messages](#produce-and-consume-messages)
+  - [Creating a Producer](#creating-a-producer)
+  - [Producing a message](#producing-a-message)
+  - [Destroying a Producer](#destroying-a-producer)
+  - [Creating a Consumer](#creating-a-consumer)
+  - [Processing messages](#processing-messages)
+  - [Acknowledge a message](#acknowledge-a-message)
+  - [Catching async errors](#catching-async-errors)
+  - [Destroying a Consumer](#destroying-a-consumer)
 - [Memphis Contributors](#memphis-contributors)
 - [Contribution guidelines](#contribution-guidelines)
 - [Documentation](#documentation)
@@ -77,7 +95,7 @@ await memphis.connect({
       });
 ```
 
-Once connected, the entire functionalities offered by Memphis is available.
+Once connected, the entire functionalities offered by Memphis are available.
 
 ### Disconnecting from Memphis
 
