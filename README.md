@@ -1,25 +1,66 @@
 ![](https://memphis-public-files.s3.eu-central-1.amazonaws.com/Vector_page-0001.jpg)
+<br><br>
+![Github tag](https://img.shields.io/github/v/release/memphis-os/memphis.js) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Memphis-OS/memphis-control-plane/commit-activity) [![GoReportCard example](https://goreportcard.com/badge/github.com/nanomsg/mangos)](https://goreportcard.com/report/github.com/nanomsg/mangos)
 
-**[Memphis](https://memphis.dev)** is a dev-first, cloud-native, event-processing platform made out of devs' struggles with tools like Kafka, RabbitMQ, NATS, and others, allowing you to achieve all other message brokers' benefits in a fraction of the time.<br><br>
+Too many data sources and too many schemas? Looking for a messaging queue to scale your data-driven architecture? Require greater performance for your data streams? Your architecture is based on post-processing data, and you want to switch to real-time in minutes instead of months? Struggle to install, configure and update Kafka/RabbitMQ/and other MQs?
+
+**Meet Memphis**
+
+**[Memphis](https://memphis.dev)** is a dev-first, cloud-native, event processing platform made out of devs' struggles with tools like Kafka, RabbitMQ, NATS, and others, allowing you to achieve all other message brokers' benefits in a fraction of the time.<br><br>
 **[Memphis](https://memphis.dev) delivers:**
-- The most simple to use Message Broker (Such as NATS,  Kafka, RabbitMQ)
+- The most simple to use Message Broker (With the same behaivour as NATS and Kafka)
 - State-of-the-art UI and CLI
-- No need for Kafka Connect, Kafka Streams, ksql. All the tools you need under the same roof
+- No need for Kafka Connect, Kafka Streams, ksql. All the tools you need are under the same roof
 - An in-line data processing in any programming language
-- Out-of-the-box deep observability of every component 
+- Out-of-the-box deep observability of every component
 
-# Install Memphis on K8S
+RabbitMQ has Queues, Kafka as Topics, **Memphis has Stations.**
+#### TL;DR
+**On Day 1 (For the DevOps heros out there) -**<br>
+Memphis platform provides the same old and loved behavior (Produce-Consume) of other data lakes and MQs, but removes completly the complexity barriers, messy documentation, ops, manual scale, orchestration and more.
 
-# Install Memphis on your laptop with Docker Compose
+**On Day 2 (For the Developers) -**
+Developer lives with developing real-time, event-driven apps that are too complex.
+Consumers and Producers are filled with logic, data orchestration is needed between the different services, no GUI to understand metrics and flows, lack of monitoring, hard to implement SDKs, etc.
 
+No More.
 
-# documentation
+In the coming versions, Memphis will answer the challenges above,<br>and recude 90% of dev work arround building a real-time / event-driven / data-driven apps.
 
-- [Official documentation](https://docs.memphis.dev)
+---
 
-# Currently available SDKs 
+**Purpose of this repo**<br>
+For Memphis node.js SDK
 
-- [Node.js](https://github.com/Memphis-OS/memphis.js)
+**Table of Contents**
+
+- [Current SDKs](#current-sdks)
+- [Installation](#installation)
+- [Importing](#importing)
+  - [Connecting to Memphis](#connecting-to-memphis)
+  - [Disconnecting from Memphis](#disconnecting-from-memphis)
+  - [Creating a Factory](#creating-a-factory)
+  - [Destroying a Factory](#destroying-a-factory)
+  - [Creating a Station](#creating-a-station)
+  - [Retention types](#retention-types)
+  - [Storage types](#storage-types)
+  - [Destroying a Station](#destroying-a-station)
+  - [Produce and Consume messages](#produce-and-consume-messages)
+  - [Creating a Producer](#creating-a-producer)
+  - [Producing a message](#producing-a-message)
+  - [Destroying a Producer](#destroying-a-producer)
+  - [Creating a Consumer](#creating-a-consumer)
+  - [Processing messages](#processing-messages)
+  - [Acknowledge a message](#acknowledge-a-message)
+  - [Catching async errors](#catching-async-errors)
+  - [Destroying a Consumer](#destroying-a-consumer)
+- [Memphis Contributors](#memphis-contributors)
+- [Contribution guidelines](#contribution-guidelines)
+- [Documentation](#documentation)
+- [Contact](#contact)
+
+## Current SDKs
+- [memphis-js](https://github.com/Memphis-OS/memphis.js "Node.js")
 
 ## Installation
 
@@ -54,9 +95,9 @@ await memphis.connect({
       });
 ```
 
-Once connected, the entire functionalities offered by Memphis is available.
+Once connected, the entire functionalities offered by Memphis are available.
 
-### Discoonnecting from Memphis
+### Disconnecting from Memphis
 
 To disconnect from Memphis, call `close()` on the memphis object.
 
@@ -217,17 +258,21 @@ consumer.on("error", error => {
 await consumer.destroy();
 ```
 
-# Contact 
-- [Slack](https://bit.ly/37eXzGo): Join our Slack Channel!
-- [Discord](https://discord.gg/WZpysvAeTf): Join our Discord Server!
-- [Twitter](https://https://twitter.com/MemphisPlatform): Follow us on Twitter!
-- [Medium](https://medium.com/memphis-dev): Follow our Medium page!
-- [Youtube](https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg): Subscribe our youtube channel!
 
+## Memphis Contributors
+<img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Itay+Katz.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
 
-# Contribution guidelines
+## Contribution guidelines
 
-- [contributing guide]()
+soon
 
+## Documentation
 
+- [Official documentation](https://docs.memphis.dev)
 
+## Contact 
+- [Slack](https://bit.ly/37uwCPd): Q&A, Help, Feature requests, and more
+- [Twitter](https://bit.ly/3xzkxTx): Follow us on Twitter!
+- [Discord](https://bit.ly/3OfnuhX): Join our Discord Server!
+- [Medium](https://bit.ly/3ryFDgS): Follow our Medium page!
+- [Youtube](https://bit.ly/38Y8rcq): Subscribe our youtube channel!
