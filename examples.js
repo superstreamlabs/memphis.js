@@ -36,6 +36,11 @@ const memphis = require("memphisos");
             producerName: "<producer-name>"
         });
 
+        await producer.produce({
+            message: "<bytes array>",
+            ackWaitSec: 15
+        });
+
         const consumer = await memphis.consumer({
             stationName: "<station-name>",
             consumerName: "<consumer-name>",
