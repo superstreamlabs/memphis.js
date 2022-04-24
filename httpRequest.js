@@ -28,6 +28,9 @@ const httpRequest = async ({ method, url, headers = {}, bodyParams = {}, queryPa
         const results = response.data;
         return results;
     } catch (ex) {
+        if (ex?.response?.data)
+            throw ex.response.data.message;
+
         throw ex;
     }
 };

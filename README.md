@@ -67,13 +67,13 @@ For Memphis node.js SDK
 First install [Memphis](https://memphis.dev) Then:
 
 ```sh
-$ npm install memphisos
+$ npm install memphis-dev
 ```
 
 ## Importing
 
 ```js
-const memphis = require("memphisos");
+const memphis = require("memphis-dev");
 ```
 
 ### Connecting to Memphis
