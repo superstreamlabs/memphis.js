@@ -60,11 +60,6 @@ class Memphis {
     */
     connect({ host, port = 6666, username, brokerHost, brokerPort = 7766, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
         return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (!reconnect || this.reconnectAttempts === maxReconnect || !this.isConnectionActive)
-                    reject(new Error("Connection timeout has reached"));
-            }, timeoutMs);
-
             this.host = this._normalizeHost(host);
             this.brokerHost = this._normalizeHost(brokerHost);
             this.port = port;
@@ -84,7 +79,11 @@ class Memphis {
                 }));
 
                 this.client.on('data', async data => {
-                    data = JSON.parse(data.toString())
+                    try {
+                        data = JSON.parse(data.toString())
+                    } catch (ex) {
+                        return reject(data.toString());
+                    }
                     this.connectionId = data.connection_id;
                     this.accessToken = data.access_token;
                     this._keepAcessTokenFresh(data.access_token_exp);
@@ -108,6 +107,11 @@ class Memphis {
                     }
                 });
             });
+
+            setTimeout(() => {
+                if (!reconnect || this.reconnectAttempts === maxReconnect || !this.isConnectionActive)
+                    reject(new Error("Connection timeout has reached"));
+            }, timeoutMs);
         });
     }
 
@@ -141,7 +145,7 @@ class Memphis {
 
             const response = await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.port}/api/factories/createFactory`,
+                url: `http://${this.host}/api/factories/createFactory`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -172,7 +176,7 @@ class Memphis {
 
             const response = await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.port}/api/stations/createStation`,
+                url: `http://${this.host}/api/stations/createStation`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -206,7 +210,7 @@ class Memphis {
 
             await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.port}/api/producers/createProducer`,
+                url: `http://${this.host}/api/producers/createProducer`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -240,7 +244,7 @@ class Memphis {
 
             await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.port}/api/consumers/createConsumer`,
+                url: `http://${this.host}/api/consumers/createConsumer`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -314,7 +318,7 @@ class Memphis {
 
 class Producer {
     constructor(connection, producerName, stationName) {
-        this.connection = connection;
+        this.connection = connection.brokerConnection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
     }
@@ -356,7 +360,7 @@ class Producer {
 
 class Consumer {
     constructor(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs) {
-        this.connection = connection;
+        this.connection = connection.brokerConnection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
         this.consumerGroup = consumerGroup.toLowerCase();
@@ -371,7 +375,7 @@ class Consumer {
             mack: true,
             config: {
                 durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                ack_wait: nanos(4000),
+                ack_wait: 4000,
             },
         }).then(async psub => {
             psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
