@@ -1,4 +1,4 @@
-const memphis = require("memphisos");
+const memphis = require("memphis-dev");
 
 (async function () {
     try {
