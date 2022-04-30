@@ -131,7 +131,7 @@ const station = await memphis.station({
             retentionValue: 604800, // defaults to 604800
             storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
             replicas: 1, // defaults to 1
-            dedupEnabled: false, // defaults to  false
+            dedupEnabled: false, // defaults to false
             dedupWindowMs: 0 // defaults to 0
       });
 ```
@@ -234,6 +234,7 @@ const consumer = await memphis.consumer({
 ```js
 consumer.on("message", message => {
         // processing
+        console.log(message.getData())
         message.ack();
 });
 ```
