@@ -27,13 +27,15 @@ class Memphis {
         this.brokerPort = 7766
         this.connectionToken = null;
         this.accessTokenTimeout = null;
+        this.pingTimeout = null;
         this.client = new net.Socket();
         this.reconnectAttempts = 0;
         this.reconnect = true;
         this.maxReconnect = 3;
         this.reconnectIntervalMs = 200;
         this.timeoutMs = 15000;
-        this.brokerConnection
+        this.brokerConnection = null;
+        this.brokerManager = null;
 
         this.client.on('error', error => {
             console.error(error);
@@ -77,6 +79,7 @@ class Memphis {
                     broker_creds: connectionToken,
                     connection_id: this.connectionId
                 }));
+                let connected = false;
 
                 this.client.on('data', async data => {
                     try {
@@ -86,24 +89,32 @@ class Memphis {
                     }
                     this.connectionId = data.connection_id;
                     this.accessToken = data.access_token;
-                    this._keepAcessTokenFresh(data.access_token_exp);
                     this.isConnectionActive = true;
                     this.reconnectAttempts = 0;
 
-                    try {
-                        const nc = await broker.connect({
-                            servers: `${this.brokerHost}:${this.brokerPort}`,
-                            reconnect: this.reconnect,
-                            maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
-                            reconnectTimeWait: this.reconnectIntervalMs,
-                            timeout: this.timeoutMs,
-                            token: this.connectionToken
-                        });
+                    if (data.access_token)
+                        this._keepAcessTokenFresh(data.access_token_exp);
 
-                        this.brokerConnection = nc.jetstream();
-                        return resolve();
-                    } catch (ex) {
-                        return reject(ex);
+                    if (data.ping_interval)
+                        this._pingServer(data.ping_interval);
+
+                    if (!connected) {
+                        try {
+                            this.brokerManager = await broker.connect({
+                                servers: `${this.brokerHost}:${this.brokerPort}`,
+                                reconnect: this.reconnect,
+                                maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
+                                reconnectTimeWait: this.reconnectIntervalMs,
+                                timeout: this.timeoutMs,
+                                token: this.connectionToken
+                            });
+
+                            this.brokerConnection = this.brokerManager.jetstream();
+                            connected = true;
+                            return resolve();
+                        } catch (ex) {
+                            return reject(ex);
+                        }
                     }
                 });
             });
@@ -133,6 +144,15 @@ class Memphis {
         }, expiresIn)
     }
 
+    _pingServer(interval) {
+        this.pingTimeout = setTimeout(() => {
+            if (this.isConnectionActive)
+                this.client.write(JSON.stringify({
+                    ping: true
+                }));
+        }, interval);
+    }
+
     /**
         * Creates a factory. 
         * @param {String} name - factory name.
@@ -154,6 +174,9 @@ class Memphis {
 
             return new Factory(this, response.name);
         } catch (ex) {
+            if (typeof (ex) == "string") {
+                return new Factory(this, name.toLowerCase());
+            }
             throw ex;
         }
     }
@@ -194,6 +217,9 @@ class Memphis {
 
             return new Station(this, response.name);
         } catch (ex) {
+            if (typeof (ex) == "string") {
+                return new Station(this, name.toLowerCase());
+            }
             throw ex;
         }
     }
@@ -291,11 +317,14 @@ class Memphis {
             this.client.removeAllListeners("close");
             this.client.destroy();
             clearTimeout(this.accessTokenTimeout);
+            clearTimeout(this.pingTimeout);
             this.accessToken = null;
             this.connectionId = null;
             this.isConnectionActive = false;
             this.accessTokenTimeout = null;
+            this.pingTimeout = null;
             this.reconnectAttempts = 0;
+            this.brokerManager.close();
         }
     }
 
@@ -308,17 +337,20 @@ class Memphis {
         this.client.removeAllListeners("close");
         this.client.destroy();
         clearTimeout(this.accessTokenTimeout);
+        clearTimeout(this.pingTimeout);
         this.accessToken = null;
         this.connectionId = null;
         this.isConnectionActive = false;
         this.accessTokenTimeout = null;
+        this.pingTimeout = null;
         this.reconnectAttempts = 0;
+        this.brokerManager.close();
     }
 }
 
 class Producer {
     constructor(connection, producerName, stationName) {
-        this.connection = connection.brokerConnection;
+        this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
     }
@@ -330,7 +362,7 @@ class Producer {
     */
     async produce({ message, ackWaitSec = 15 }) {
         try {
-            await this.connection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), ackWait: ackWaitSec * 1000 * 1000 });
+            await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), ackWait: ackWaitSec * 1000 * 1000 });
         } catch (ex) {
             throw ex;
         }
@@ -342,7 +374,7 @@ class Producer {
     async destroy() {
         try {
             await httpRequest({
-                method: "POST",
+                method: "DELETE",
                 url: `http://${this.connection.host}/api/producers/destroyProducer`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken
@@ -360,7 +392,7 @@ class Producer {
 
 class Consumer {
     constructor(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs) {
-        this.connection = connection.brokerConnection;
+        this.connection = connection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
         this.consumerGroup = consumerGroup.toLowerCase();
@@ -368,26 +400,33 @@ class Consumer {
         this.batchSize = batchSize;
         this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
         this.eventEmitter = new events.EventEmitter();
-        this.on = new events.EventEmitter().on;
         this.pullInterval = null;
 
-        this.connection.pullSubscribe(`${this.stationName}.final`, {
+        this.connection.brokerConnection.pullSubscribe(`${this.stationName}.final`, {
             mack: true,
             config: {
                 durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                ack_wait: 4000,
+                ack_wait: 10000,
             },
         }).then(async psub => {
             psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-            this.pullInterval = setInterval(() => {
+            this.pullInvterval = setInterval(() => {
                 psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
             }, this.pullIntervalMs);
 
             for await (const m of psub) {
                 this.eventEmitter.emit("message", new Message(m));
             }
-
         }).catch(error => this.eventEmitter.emit("error", error));
+    }
+
+    /**
+        * Creates an event listener. 
+        * @param {String} event - the event to listen to.
+        * @param {Function} cb - a callback function.
+    */
+    on(event, cb) {
+        this.eventEmitter.on(event, cb);
     }
 
     /**
@@ -399,7 +438,7 @@ class Consumer {
         clearInterval(this.pullInterval);
         try {
             await httpRequest({
-                method: "POST",
+                method: "DELETE",
                 url: `http://${this.connection.host}/api/consumers/destroyConsumer`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken
@@ -426,6 +465,10 @@ class Message {
     ack() {
         this.message.ack();
     }
+
+    getData() {
+        return this.message.data;
+    }
 }
 
 class Factory {
@@ -440,7 +483,7 @@ class Factory {
     async destroy() {
         try {
             await httpRequest({
-                method: "POST",
+                method: "DELETE",
                 url: `http://${this.connection.host}/api/factories/removeFactory`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken
@@ -467,7 +510,7 @@ class Station {
     async destroy() {
         try {
             await httpRequest({
-                method: "POST",
+                method: "DELETE",
                 url: `http://${this.connection.host}/api/stations/removeStation`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken

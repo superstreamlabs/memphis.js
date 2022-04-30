@@ -9,26 +9,26 @@ const memphis = require("memphis-dev");
             brokerPort: 7766,
             username: "<username (type application)>",
             connectionToken: "<broker-token>",
-            reconnect: true, // optional
-            maxReconnect: 10, // optional
-            reconnectIntervalMs: 1500, // optional
-            timeoutMs: 1500 // optional
+            reconnect: true, // defaults to true
+            maxReconnect: 10, // defaults to 10
+            reconnectIntervalMs: 1500, // defaults to 200
+            timeoutMs: 1500 // defaults to 1500
         });
 
         const factory = await memphis.factory({
             name: "<factory-name>",
-            description: "" // optional
+            description: "" // defaults to ""
         });
 
         const station = await memphis.station({
             name: "<station-name>",
             factoryName: "<factory-name>",
-            retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // optional
-            retentionValue: 604800, // optional
-            storageType: memphis.storageTypes.FILE, // optional
-            replicas: 1, // optional
-            dedupEnabled: false, // optional
-            dedupWindowMs: 0 // optional
+            retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to MAX_MESSAGE_AGE_SECONDS
+            retentionValue: 604800, // defaults to 604800
+            storageType: memphis.storageTypes.FILE, // defaults to FILE
+            replicas: 1, // defaults to 1
+            dedupEnabled: false, // defaults to false
+            dedupWindowMs: 0 // defaults to 0
         });
 
         const producer = await memphis.producer({
@@ -36,22 +36,17 @@ const memphis = require("memphis-dev");
             producerName: "<producer-name>"
         });
 
-        await producer.produce({
-            message: "<bytes array>",
-            ackWaitSec: 15
-        });
-
         const consumer = await memphis.consumer({
             stationName: "<station-name>",
             consumerName: "<consumer-name>",
-            consumerGroup: "<group-name>", // optional
-            pullIntervalMs: 1000, // optional
-            batchSize: 10, // optional
-            batchMaxTimeToWaitMs: 5000 // optional
+            consumerGroup: "<group-name>", // defaults to ""
+            pullIntervalMs: 1000, // defaults to 1000
+            batchSize: 10, // defaults to 10
+            batchMaxTimeToWaitMs: 5000 // defaults to 5000
         });
 
         consumer.on("message", message => {
-            console.log(message);
+            console.log(message.getData().toString());
             message.ack();
         });
 
@@ -59,13 +54,11 @@ const memphis = require("memphis-dev");
             console.log(error);
         });
 
-        await station.destroy();
-        await factory.destroy();
-        await producer.destroy();
-        await consumer.destroy();
-        memphis.close();
+        await producer.produce({
+            message: Buffer.from("Hello world_1"),
+            ackWaitSec: 15 // defaults to 15
+        });
     } catch (ex) {
-        console.log(ex)
         memphis.close()
     }
 }());
