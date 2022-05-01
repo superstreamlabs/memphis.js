@@ -95,8 +95,8 @@ class Memphis {
                     if (data.access_token)
                         this._keepAcessTokenFresh(data.access_token_exp);
 
-                    if (data.ping_interval)
-                        this._pingServer(data.ping_interval);
+                    if (data.ping_interval_ms)
+                        this._pingServer(data.ping_interval_ms);
 
                     if (!connected) {
                         try {
@@ -165,7 +165,7 @@ class Memphis {
 
             const response = await httpRequest({
                 method: "POST",
-                url: `http://${this.host}/api/factories/createFactory`,
+                url: `http://${this.host}:9000/api/factories/createFactory`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -199,7 +199,7 @@ class Memphis {
 
             const response = await httpRequest({
                 method: "POST",
-                url: `http://${this.host}/api/stations/createStation`,
+                url: `http://${this.host}:9000/api/stations/createStation`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -236,7 +236,7 @@ class Memphis {
 
             await httpRequest({
                 method: "POST",
-                url: `http://${this.host}/api/producers/createProducer`,
+                url: `http://${this.host}:9000/api/producers/createProducer`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -270,7 +270,7 @@ class Memphis {
 
             await httpRequest({
                 method: "POST",
-                url: `http://${this.host}/api/consumers/createConsumer`,
+                url: `http://${this.host}:9000/api/consumers/createConsumer`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -375,7 +375,7 @@ class Producer {
         try {
             await httpRequest({
                 method: "DELETE",
-                url: `http://${this.connection.host}/api/producers/destroyProducer`,
+                url: `http://${this.connection.host}:9000/api/producers/destroyProducer`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken
                 },
@@ -439,7 +439,7 @@ class Consumer {
         try {
             await httpRequest({
                 method: "DELETE",
-                url: `http://${this.connection.host}/api/consumers/destroyConsumer`,
+                url: `http://${this.connection.host}:9000/api/consumers/destroyConsumer`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken
                 },
@@ -484,7 +484,7 @@ class Factory {
         try {
             await httpRequest({
                 method: "DELETE",
-                url: `http://${this.connection.host}/api/factories/removeFactory`,
+                url: `http://${this.connection.host}:9000/api/factories/removeFactory`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken
                 },
@@ -511,7 +511,7 @@ class Station {
         try {
             await httpRequest({
                 method: "DELETE",
-                url: `http://${this.connection.host}/api/stations/removeStation`,
+                url: `http://${this.connection.host}:9000/api/stations/removeStation`,
                 headers: {
                     Authorization: "Bearer " + this.connection.accessToken
                 },
