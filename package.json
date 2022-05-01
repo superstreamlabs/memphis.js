@@ -1,6 +1,6 @@
 {
   "name": "memphis-dev",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A dev-first event processing platform",
   "main": "index.js",
   "scripts": {
@@ -8,6 +8,7 @@
   },
   "author": "",
   "license": "ISC",
+  "homepage": "https://github.com/Memphis-OS/memphis.js.git",
   "dependencies": {
     "axios": "^0.26.1",
     "nats": "^2.6.1",
