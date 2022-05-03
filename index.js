@@ -36,7 +36,6 @@ class Memphis {
         this.host = null;
         this.port = 6666;
         this.username = null;
-        this.brokerHost = null;
         this.brokerPort = 7766
         this.connectionToken = null;
         this.accessTokenTimeout = null;
@@ -64,7 +63,6 @@ class Memphis {
         * Creates connection with Memphis. 
         * @param {String} host - control plane host.
         * @param {Number} port - control plane port, default is 6666.
-        * @param {String} brokerHost - broker host.
         * @param {Number} brokerPort - broker port, default is 7766 .
         * @param {String} username - application type username.
         * @param {String} connectionToken - broker token.
@@ -73,10 +71,9 @@ class Memphis {
         * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
         * @param {Number} timeoutMs - connection timeout in miliseconds.
     */
-    connect({ host, port = 6666, username, brokerHost, brokerPort = 7766, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
+    connect({ host, port = 6666, username, brokerPort = 7766, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
         return new Promise((resolve, reject) => {
             this.host = this._normalizeHost(host);
-            this.brokerHost = this._normalizeHost(brokerHost);
             this.port = port;
             this.brokerPort = brokerPort;
             this.username = username;
@@ -114,7 +111,7 @@ class Memphis {
                     if (!connected) {
                         try {
                             this.brokerManager = await broker.connect({
-                                servers: `${this.brokerHost}:${this.brokerPort}`,
+                                servers: `${this.host}:${this.brokerPort}`,
                                 reconnect: this.reconnect,
                                 maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
                                 reconnectTimeWait: this.reconnectIntervalMs,
@@ -310,6 +307,7 @@ class Memphis {
                     await this.connect({
                         host: this.host,
                         port: this.port,
+                        brokerPort: this.brokerPort,
                         username: this.username,
                         connectionToken: this.connectionToken,
                         reconnect: this.reconnect,

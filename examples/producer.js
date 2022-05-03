@@ -3,8 +3,7 @@ const memphis = require("memphis-dev");
 (async function () {
     try {
         await memphis.connect({
-            host: "<control-plane>",
-            brokerHost: "<broker>",
+            host: "<memphis-host>",
             username: "<application type username>",
             connectionToken: "<broker-token>"
         });
