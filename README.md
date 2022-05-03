@@ -82,9 +82,8 @@ First, we need to connect with Memphis by using `memphis.connect`.
 
 ```js
 await memphis.connect({
-            host: "<control-plane-host>",
-            port: <control-plane-port>, // defaults to 6666
-            brokerHost: "<broker-host>",
+            host: "<memphis-host>",
+            port: <port>, // defaults to 6666
             brokerPort: <broker-port>, // defaults to 7766
             username: "<username>", // (application type user)
             connectionToken: "<broker-token>", // you will get it on application type user creation
