@@ -34,9 +34,10 @@ class Memphis {
         this.connectionId = null;
         this.accessToken = null;
         this.host = null;
-        this.port = 6666;
+        this.managementPort = 5555;
+        this.tcpPort = 6666;
+        this.dataPort = 7766
         this.username = null;
-        this.brokerPort = 7766
         this.connectionToken = null;
         this.accessTokenTimeout = null;
         this.pingTimeout = null;
@@ -61,9 +62,10 @@ class Memphis {
 
     /**
         * Creates connection with Memphis. 
-        * @param {String} host - control plane host.
-        * @param {Number} port - control plane port, default is 6666.
-        * @param {Number} brokerPort - broker port, default is 7766 .
+        * @param {String} host - memphis host.
+        * @param {Number} managementPort - management port, default is 5555.
+        * @param {Number} tcpPort - tcp port, default is 6666.
+        * @param {Number} dataPort - data port, default is 7766 .
         * @param {String} username - application type username.
         * @param {String} connectionToken - broker token.
         * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
@@ -71,11 +73,12 @@ class Memphis {
         * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
         * @param {Number} timeoutMs - connection timeout in miliseconds.
     */
-    connect({ host, port = 6666, username, brokerPort = 7766, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
+    connect({ host, managementPort = 5555, tcpPort = 6666, dataPort = 7766, username, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
         return new Promise((resolve, reject) => {
             this.host = this._normalizeHost(host);
-            this.port = port;
-            this.brokerPort = brokerPort;
+            this.managementPort = managementPort;
+            this.tcpPort = tcpPort;
+            this.dataPort = dataPort;
             this.username = username;
             this.connectionToken = connectionToken;
             this.reconnect = reconnect;
@@ -83,7 +86,7 @@ class Memphis {
             this.reconnectIntervalMs = reconnectIntervalMs;
             this.timeoutMs = timeoutMs;
 
-            this.client.connect(this.port, this.host, () => {
+            this.client.connect(this.tcpPort, this.host, () => {
                 this.client.write(JSON.stringify({
                     username: username,
                     broker_creds: connectionToken,
@@ -111,7 +114,7 @@ class Memphis {
                     if (!connected) {
                         try {
                             this.brokerManager = await broker.connect({
-                                servers: `${this.host}:${this.brokerPort}`,
+                                servers: `${this.host}:${this.dataPort}`,
                                 reconnect: this.reconnect,
                                 maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
                                 reconnectTimeWait: this.reconnectIntervalMs,
@@ -306,8 +309,9 @@ class Memphis {
                 try {
                     await this.connect({
                         host: this.host,
-                        port: this.port,
-                        brokerPort: this.brokerPort,
+                        managementPort: this.managementPort,
+                        tcpPort: this.tcpPort,
+                        dataPort: this.dataPort,
                         username: this.username,
                         connectionToken: this.connectionToken,
                         reconnect: this.reconnect,
@@ -315,9 +319,9 @@ class Memphis {
                         reconnectIntervalMs: this.reconnectIntervalMs,
                         timeoutMs: this.timeoutMs
                     });
-                    console.log("Reconnect to memphis control plane has been succeeded");
+                    console.log("Reconnect to memphis has been succeeded");
                 } catch (ex) {
-                    console.error("Failed reconnect to memphis control plane");
+                    console.error("Failed reconnect to memphis");
                     return;
                 }
             }, this.reconnectIntervalMs);
