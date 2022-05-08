@@ -178,7 +178,7 @@ class Memphis {
 
             const response = await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.connection.managementPort}/api/factories/createFactory`,
+                url: `http://${this.host}:${this.managementPort}/api/factories/createFactory`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -212,7 +212,7 @@ class Memphis {
 
             const response = await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.connection.managementPort}/api/stations/createStation`,
+                url: `http://${this.host}:${this.managementPort}/api/stations/createStation`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -249,7 +249,7 @@ class Memphis {
 
             await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.connection.managementPort}/api/producers/createProducer`,
+                url: `http://${this.host}:${this.managementPort}/api/producers/createProducer`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -283,7 +283,7 @@ class Memphis {
 
             await httpRequest({
                 method: "POST",
-                url: `http://${this.host}:${this.connection.managementPort}/api/consumers/createConsumer`,
+                url: `http://${this.host}:${this.managementPort}/api/consumers/createConsumer`,
                 headers: {
                     Authorization: "Bearer " + this.accessToken
                 },
@@ -326,7 +326,7 @@ class Memphis {
                 }
             }, this.reconnectIntervalMs);
         }
-        else {
+        else if (this.isConnectionActive) {
             this.client.removeAllListeners("data");
             this.client.removeAllListeners("error");
             this.client.removeAllListeners("close");
@@ -347,19 +347,21 @@ class Memphis {
         * Close Memphis connection. 
     */
     close() {
-        this.client.removeAllListeners("data");
-        this.client.removeAllListeners("error");
-        this.client.removeAllListeners("close");
-        this.client.destroy();
-        clearTimeout(this.accessTokenTimeout);
-        clearTimeout(this.pingTimeout);
-        this.accessToken = null;
-        this.connectionId = null;
-        this.isConnectionActive = false;
-        this.accessTokenTimeout = null;
-        this.pingTimeout = null;
-        this.reconnectAttempts = 0;
-        this.brokerManager.close();
+        if (this.isConnectionActive) {
+            this.client.removeAllListeners("data");
+            this.client.removeAllListeners("error");
+            this.client.removeAllListeners("close");
+            this.client.destroy();
+            clearTimeout(this.accessTokenTimeout);
+            clearTimeout(this.pingTimeout);
+            this.accessToken = null;
+            this.connectionId = null;
+            this.isConnectionActive = false;
+            this.accessTokenTimeout = null;
+            this.pingTimeout = null;
+            this.reconnectAttempts = 0;
+            this.brokerManager.close();
+        }
     }
 }
 
