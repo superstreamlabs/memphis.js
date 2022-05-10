@@ -66,7 +66,7 @@ class Memphis {
         * @param {Number} managementPort - management port, default is 5555.
         * @param {Number} tcpPort - tcp port, default is 6666.
         * @param {Number} dataPort - data port, default is 7766 .
-        * @param {String} username - application type username.
+        * @param {String} username - user of type application.
         * @param {String} connectionToken - broker token.
         * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
         * @param {Number} maxReconnect - The reconnect attempts.
@@ -275,8 +275,9 @@ class Memphis {
         * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
         * @param {Number} batchSize - pull batch size.
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
+        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it
     */
-    async consumer({ stationName, consumerName, consumerGroup = "", pullIntervalMs = 1000, batchSize = 10, batchMaxTimeToWaitMs = 5000 }) {
+    async consumer({ stationName, consumerName, consumerGroup = "", pullIntervalMs = 1000, batchSize = 10, batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000 }) {
         try {
             if (!this.isConnectionActive)
                 throw new Error("Connection is dead");
@@ -292,11 +293,12 @@ class Memphis {
                     station_name: stationName,
                     connection_id: this.connectionId,
                     consumer_type: "application",
-                    consumers_group: consumerGroup
+                    consumers_group: consumerGroup,
+                    max_ack_time_ms: maxAckTimeMs
                 },
             });
 
-            return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs);
+            return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs);
         } catch (ex) {
             throw ex;
         }
@@ -408,7 +410,7 @@ class Producer {
 }
 
 class Consumer {
-    constructor(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs) {
+    constructor(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
@@ -416,6 +418,7 @@ class Consumer {
         this.pullIntervalMs = pullIntervalMs;
         this.batchSize = batchSize;
         this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
+        this.maxAckTimeMs = maxAckTimeMs;
         this.eventEmitter = new events.EventEmitter();
         this.pullInterval = null;
 
@@ -423,7 +426,7 @@ class Consumer {
             mack: true,
             config: {
                 durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                ack_wait: 10000,
+                ack_wait: this.maxAckTimeMs,
             },
         }).then(async psub => {
             psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
