@@ -341,7 +341,7 @@ class Memphis {
             this.accessTokenTimeout = null;
             this.pingTimeout = null;
             this.reconnectAttempts = 0;
-            this.brokerManager.close();
+            this.brokerManager && this.brokerManager.close();
         }
     }
 
@@ -362,7 +362,7 @@ class Memphis {
             this.accessTokenTimeout = null;
             this.pingTimeout = null;
             this.reconnectAttempts = 0;
-            this.brokerManager.close();
+            this.brokerManager && this.brokerManager.close();
         }
     }
 }
