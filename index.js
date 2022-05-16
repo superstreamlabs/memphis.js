@@ -101,12 +101,13 @@ class Memphis {
                         return reject(data.toString());
                     }
                     this.connectionId = data.connection_id;
-                    this.accessToken = data.access_token;
                     this.isConnectionActive = true;
                     this.reconnectAttempts = 0;
 
-                    if (data.access_token)
+                    if (data.access_token) {
+                        this.accessToken = data.access_token;
                         this._keepAcessTokenFresh(data.access_token_exp);
+                    }
 
                     if (data.ping_interval_ms)
                         this._pingServer(data.ping_interval_ms);
@@ -341,7 +342,9 @@ class Memphis {
             this.accessTokenTimeout = null;
             this.pingTimeout = null;
             this.reconnectAttempts = 0;
-            this.brokerManager && this.brokerManager.close();
+            setTimeout(() => {
+                this.brokerManager && this.brokerManager.close();
+            }, 500);
         }
     }
 
@@ -362,7 +365,9 @@ class Memphis {
             this.accessTokenTimeout = null;
             this.pingTimeout = null;
             this.reconnectAttempts = 0;
-            this.brokerManager && this.brokerManager.close();
+            setTimeout(() => {
+                this.brokerManager && this.brokerManager.close();
+            }, 500);
         }
     }
 }
@@ -431,7 +436,10 @@ class Consumer {
         }).then(async psub => {
             psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
             this.pullInvterval = setInterval(() => {
-                psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                if (!this.connection.brokerManager.isClosed())
+                    psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                else
+                    clearInterval(this.pullInvterval)
             }, this.pullIntervalMs);
 
             for await (const m of psub) {
