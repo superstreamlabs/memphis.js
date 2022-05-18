@@ -404,7 +404,7 @@ class Producer {
                     Authorization: "Bearer " + this.connection.accessToken
                 },
                 bodyParams: {
-                    name: this.consumerName,
+                    name: this.producerName,
                     station_name: this.stationName
                 },
             });
