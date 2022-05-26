@@ -386,7 +386,7 @@ class Producer {
     */
     async produce({ message, ackWaitSec = 15 }) {
         try {
-            await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), ackWait: ackWaitSec * 1000 * 1000 });
+            await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex) {
             throw ex;
         }
