@@ -49,6 +49,7 @@ class Memphis {
         this.timeoutMs = 15000;
         this.brokerConnection = null;
         this.brokerManager = null;
+        this.brokerStats = null;
 
         this.client.on('error', error => {
             console.error(error);
@@ -124,6 +125,7 @@ class Memphis {
                             });
 
                             this.brokerConnection = this.brokerManager.jetstream();
+                            this.brokerStats = await this.brokerManager.jetstreamManager();
                             connected = true;
                             return resolve();
                         } catch (ex) {
@@ -388,6 +390,9 @@ class Producer {
         try {
             await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex) {
+            if (ex.code === '503') {
+                throw new Error("Produce operation has failed, please check wheether Station/Producer are still exist");
+            }
             throw ex;
         }
     }
@@ -409,7 +414,7 @@ class Producer {
                 },
             });
         } catch (ex) {
-            throw ex;
+            return; // ignoring unsuccessful destroy calls
         }
     }
 }
@@ -426,6 +431,8 @@ class Consumer {
         this.maxAckTimeMs = maxAckTimeMs;
         this.eventEmitter = new events.EventEmitter();
         this.pullInterval = null;
+        this.pingConsumerInvtervalMs = 30000;
+        this.pingConsumerInvterval = null;
 
         this.connection.brokerConnection.pullSubscribe(`${this.stationName}.final`, {
             mack: true,
@@ -435,12 +442,20 @@ class Consumer {
             },
         }).then(async psub => {
             psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-            this.pullInvterval = setInterval(() => {
+            this.pullInterval = setInterval(() => {
                 if (!this.connection.brokerManager.isClosed())
                     psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
                 else
-                    clearInterval(this.pullInvterval)
+                    clearInterval(this.pullInterval)
             }, this.pullIntervalMs);
+
+            this.pingConsumerInvterval = setInterval(async () => {
+                if (!this.connection.brokerManager.isClosed()) {
+                    this._pingConsumer()
+                }
+                else
+                    clearInterval(this.pingConsumerInvterval)
+            }, this.pingConsumerInvtervalMs);
 
             for await (const m of psub) {
                 this.eventEmitter.emit("message", new Message(m));
@@ -457,6 +472,15 @@ class Consumer {
         this.eventEmitter.on(event, cb);
     }
 
+    async _pingConsumer() {
+        try {
+            const durableName = this.consumerGroup || this.consumerName;
+            await this.connection.brokerStats.consumers.info(this.stationName, durableName)
+        } catch (ex) {
+            this.eventEmitter.emit("error", "station/consumer were not found");
+        }
+    }
+
     /**
         * Destroy the consumer. 
     */
@@ -464,6 +488,7 @@ class Consumer {
         this.eventEmitter.removeAllListeners("message");
         this.eventEmitter.removeAllListeners("error");
         clearInterval(this.pullInterval);
+        clearInterval(this.pingConsumerInvterval);
         try {
             await httpRequest({
                 method: "DELETE",
@@ -477,7 +502,7 @@ class Consumer {
                 },
             });
         } catch (ex) {
-            throw ex;
+            return; // ignoring unsuccessful destroy calls
         }
     }
 }
