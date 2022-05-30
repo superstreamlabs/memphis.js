@@ -67,7 +67,7 @@ class Memphis {
         * @param {Number} managementPort - management port, default is 5555.
         * @param {Number} tcpPort - tcp port, default is 6666.
         * @param {Number} dataPort - data port, default is 7766 .
-        * @param {String} username - user of type application.
+        * @param {String} username - user of type root/application.
         * @param {String} connectionToken - broker token.
         * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
         * @param {Number} maxReconnect - The reconnect attempts.
