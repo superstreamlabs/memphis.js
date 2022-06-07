@@ -1,6 +1,6 @@
 {
   "name": "memphis-dev",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "description": "A dev-first event processing platform",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   "homepage": "https://memphis.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Memphis-OS/memphis.js.git"
+    "url": "https://github.com/memphisdev/memphis.js.git"
   },
   "dependencies": {
     "axios": "^0.26.1",
