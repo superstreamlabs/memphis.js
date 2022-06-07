@@ -1,6 +1,6 @@
 {
   "name": "memphis-dev",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A dev-first event processing platform",
   "main": "index.js",
   "scripts": {
