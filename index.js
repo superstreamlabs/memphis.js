@@ -14,6 +14,7 @@
 const net = require('net');
 const events = require('events');
 const broker = require('nats');
+const { headers } = require("nats");
 const { v4: uuidv4 } = require('uuid');
 const httpRequest = require('./httpRequest');
 
@@ -388,7 +389,9 @@ class Producer {
     */
     async produce({ message, ackWaitSec = 15 }) {
         try {
-            await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), ackWait: ackWaitSec * 1000 * 1000000 });
+            const h = headers();
+            h.append("producedBy", this.producerName);
+            await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex) {
             if (ex.code === '503') {
                 throw new Error("Produce operation has failed, please check wheether Station/Producer are still exist");
