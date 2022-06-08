@@ -60,7 +60,8 @@ For Memphis node.js SDK
 - [Contact](#contact)
 
 ## Current SDKs
-- [memphis-js](https://github.com/Memphisdev/memphis.js "Node.js")
+-   [memphis-js](https://github.com/Memphisdev/memphis.js 'Node.js')
+-   [memphis-py](https://github.com/Memphisdev/memphis.py 'Python')
 
 ## Installation
 
