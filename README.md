@@ -1,6 +1,6 @@
 ![](https://memphis-public-files.s3.eu-central-1.amazonaws.com/Vector_page-0001.jpg)
 <br><br>
-![Github tag](https://img.shields.io/github/v/release/memphis-os/memphis.js) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Memphis-OS/memphis-control-plane/commit-activity) [![GoReportCard example](https://goreportcard.com/badge/github.com/nanomsg/mangos)](https://goreportcard.com/report/github.com/nanomsg/mangos)
+![Github tag](https://img.shields.io/github/v/release/memphisdev/memphis.js) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Memphisdev/memphis-broker/commit-activity) [![GoReportCard example](https://goreportcard.com/badge/github.com/nanomsg/mangos)](https://goreportcard.com/report/github.com/nanomsg/mangos)
 
 Too many data sources and too many schemas? Looking for a messaging queue to scale your data-driven architecture? Require greater performance for your data streams? Your architecture is based on post-processing data, and you want to switch to real-time in minutes instead of months? Struggle to install, configure and update Kafka/RabbitMQ/and other MQs?
 
@@ -60,7 +60,7 @@ For Memphis node.js SDK
 - [Contact](#contact)
 
 ## Current SDKs
-- [memphis-js](https://github.com/Memphis-OS/memphis.js "Node.js")
+- [memphis-js](https://github.com/Memphisdev/memphis.js "Node.js")
 
 ## Installation
 

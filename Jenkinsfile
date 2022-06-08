@@ -1,4 +1,4 @@
-def gitURL = "git@github.com:Memphis-OS/memphis.js.git"
+def gitURL = "git@github.com:memphisdev/memphis.js.git"
 def gitBranch = "master"
 unique_Id = UUID.randomUUID().toString()
 
