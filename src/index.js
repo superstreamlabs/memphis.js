@@ -11,20 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import net from 'net';
-import events from 'events';
-import broker from 'nats';
-import { headers } from "nats";
-import { v4 as uuidv4 } from 'uuid';
-import { httpRequest } from './httpRequest';
+const net = require('net');
+const events = require('events');
+const broker = require('nats');
+const { headers } = require("nats");
+const { v4: uuidv4 } = require('uuid');
+const httpRequest = require('./httpRequest');
 
-interface IRetentionTypes {
-    MAX_MESSAGE_AGE_SECONDS: string;
-    MESSAGES: string;
-    BYTES: string;
-}
-
-const retentionTypes: IRetentionTypes = {
+const retentionTypes = {
     MAX_MESSAGE_AGE_SECONDS: "message_age_sec",
     MESSAGES: "messages",
     BYTES: "bytes"
@@ -35,47 +29,28 @@ const storageTypes = {
     MEMORY: "memory"
 };
 
-interface IConnectionData {
-    connection_id: string;
-    access_token: string;
-    access_token_exp: number;
-    ping_interval_ms: number
-}
-
 class Memphis {
-    private isConnectionActive: boolean;
-    private connectionId: string;
-    public accessToken: string;
-    public host: string;
-    public managementPort: number;
-    private tcpPort: number;
-    private dataPort: number;
-    private username: string;
-    private connectionToken: string;
-    private accessTokenTimeout: NodeJS.Timeout;
-    private pingTimeout: NodeJS.Timeout;
-    private client: net.Socket;
-    private reconnectAttempts: number;
-    private reconnect: boolean;
-    private maxReconnect: number;
-    private reconnectIntervalMs: number;
-    private timeoutMs: number;
-    public brokerConnection: broker.JetStreamClient;
-    public brokerManager: broker.NatsConnection;
-    public brokerStats: broker.JetStreamManager;
-
     constructor() {
         this.isConnectionActive = false;
+        this.connectionId = null;
+        this.accessToken = null;
+        this.host = null;
         this.managementPort = 5555;
         this.tcpPort = 6666;
         this.dataPort = 7766
-        this.username = "";
+        this.username = null;
+        this.connectionToken = null;
+        this.accessTokenTimeout = null;
+        this.pingTimeout = null;
         this.client = new net.Socket();
         this.reconnectAttempts = 0;
         this.reconnect = true;
         this.maxReconnect = 3;
         this.reconnectIntervalMs = 200;
         this.timeoutMs = 15000;
+        this.brokerConnection = null;
+        this.brokerManager = null;
+        this.brokerStats = null;
 
         this.client.on('error', error => {
             console.error(error);
@@ -100,11 +75,7 @@ class Memphis {
         * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
         * @param {Number} timeoutMs - connection timeout in miliseconds.
     */
-    connect({ host, managementPort = 5555, tcpPort = 6666, dataPort = 7766, username, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }:
-        {
-            host: string, managementPort: number, tcpPort: number, dataPort: number, username: string, connectionToken: string, reconnect: boolean, maxReconnect: number,
-            reconnectIntervalMs: number, timeoutMs: number
-        }): Promise<void> {
+    connect({ host, managementPort = 5555, tcpPort = 6666, dataPort = 7766, username, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }) {
         return new Promise((resolve, reject) => {
             this.host = this._normalizeHost(host);
             this.managementPort = managementPort;
@@ -126,23 +97,22 @@ class Memphis {
                 let connected = false;
 
                 this.client.on('data', async data => {
-                    let newData: IConnectionData;
                     try {
-                        newData = JSON.parse(data.toString())
+                        data = JSON.parse(data.toString())
                     } catch (ex) {
                         return reject(data.toString());
                     }
-                    this.connectionId = newData.connection_id;
+                    this.connectionId = data.connection_id;
                     this.isConnectionActive = true;
                     this.reconnectAttempts = 0;
 
-                    if (newData.access_token) {
-                        this.accessToken = newData.access_token;
-                        this._keepAcessTokenFresh(newData.access_token_exp);
+                    if (data.access_token) {
+                        this.accessToken = data.access_token;
+                        this._keepAcessTokenFresh(data.access_token_exp);
                     }
 
-                    if (newData.ping_interval_ms)
-                        this._pingServer(newData.ping_interval_ms);
+                    if (data.ping_interval_ms)
+                        this._pingServer(data.ping_interval_ms);
 
                     if (!connected) {
                         try {
@@ -173,7 +143,7 @@ class Memphis {
         });
     }
 
-    private _normalizeHost(host: string): string {
+    _normalizeHost(host) {
         if (host.startsWith("http://"))
             return host.split("http://")[1];
         else if (host.startsWith("https://"))
@@ -182,7 +152,7 @@ class Memphis {
             return host;
     }
 
-    private _keepAcessTokenFresh(expiresIn: number) {
+    _keepAcessTokenFresh(expiresIn) {
         this.accessTokenTimeout = setTimeout(() => {
             if (this.isConnectionActive)
                 this.client.write(JSON.stringify({
@@ -191,7 +161,7 @@ class Memphis {
         }, expiresIn)
     }
 
-    private _pingServer(interval: number) {
+    _pingServer(interval) {
         this.pingTimeout = setTimeout(() => {
             if (this.isConnectionActive)
                 this.client.write(JSON.stringify({
@@ -205,7 +175,7 @@ class Memphis {
         * @param {String} name - factory name.
         * @param {String} description - factory description (optional).
     */
-    async factory({ name, description = "" }: { name: string, description: string }): Promise<Factory> {
+    async factory({ name, description = "" }) {
         try {
             if (!this.isConnectionActive)
                 throw new Error("Connection is dead");
@@ -239,15 +209,11 @@ class Memphis {
         * @param {Boolean} dedupEnabled - whether to allow dedup mecanism, dedup happens based on message ID, default is false.
         * @param {Number} dedupWindowMs - time frame in which dedup track messages, default is 0.
     */
-    async station({ name, factoryName, retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS, retentionValue = 604800,
-        storageType = storageTypes.FILE, replicas = 1, dedupEnabled = false, dedupWindowMs = 0 }:
-        {
-            name: string, factoryName: string, retentionType: string, retentionValue: number, storageType: string,
-            replicas: number, dedupEnabled: boolean, dedupWindowMs: number
-        }): Promise<Station> {
+    async station({ name, factoryName, retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS, retentionValue = 604800, storageType = storageTypes.FILE, replicas = 1, dedupEnabled = false, dedupWindowMs = 0 }) {
         try {
             if (!this.isConnectionActive)
                 throw new Error("Connection is dead");
+
             const response = await httpRequest({
                 method: "POST",
                 url: `http://${this.host}:${this.managementPort}/api/stations/createStation`,
@@ -263,7 +229,7 @@ class Memphis {
                     replicas: replicas,
                     dedup_enabled: dedupEnabled,
                     dedup_window_in_ms: dedupWindowMs
-                }
+                },
             });
 
             return new Station(this, response.name);
@@ -278,9 +244,9 @@ class Memphis {
     /**
         * Creates a producer. 
         * @param {String} stationName - station name to produce messages into.
-        * @param {String} producerName - name for the producer.
+        * @param {Number} producerName - name for the producer.
     */
-    async producer({ stationName, producerName }: { stationName: string, producerName: string }): Promise<Producer> {
+    async producer({ stationName, producerName }) {
         try {
             if (!this.isConnectionActive)
                 throw new Error("Connection is dead");
@@ -315,12 +281,7 @@ class Memphis {
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
         * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it
     */
-    async consumer({ stationName, consumerName, consumerGroup = "", pullIntervalMs = 1000, batchSize = 10,
-        batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000 }:
-        {
-            stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
-            batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number
-        }): Promise<Consumer> {
+    async consumer({ stationName, consumerName, consumerGroup = "", pullIntervalMs = 1000, batchSize = 10, batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000 }) {
         try {
             if (!this.isConnectionActive)
                 throw new Error("Connection is dead");
@@ -347,7 +308,7 @@ class Memphis {
         }
     }
 
-    private _close() {
+    _close() {
         if (this.reconnect && this.reconnectAttempts < this.maxReconnect) {
             this.reconnectAttempts++;
             setTimeout(async () => {
@@ -378,6 +339,11 @@ class Memphis {
             this.client.destroy();
             clearTimeout(this.accessTokenTimeout);
             clearTimeout(this.pingTimeout);
+            this.accessToken = null;
+            this.connectionId = null;
+            this.isConnectionActive = false;
+            this.accessTokenTimeout = null;
+            this.pingTimeout = null;
             this.reconnectAttempts = 0;
             setTimeout(() => {
                 this.brokerManager && this.brokerManager.close();
@@ -396,6 +362,11 @@ class Memphis {
             this.client.destroy();
             clearTimeout(this.accessTokenTimeout);
             clearTimeout(this.pingTimeout);
+            this.accessToken = null;
+            this.connectionId = null;
+            this.isConnectionActive = false;
+            this.accessTokenTimeout = null;
+            this.pingTimeout = null;
             this.reconnectAttempts = 0;
             setTimeout(() => {
                 this.brokerManager && this.brokerManager.close();
@@ -405,11 +376,7 @@ class Memphis {
 }
 
 class Producer {
-    private connection: Memphis;
-    private producerName: string;
-    private stationName: string;
-
-    constructor(connection: Memphis, producerName: string, stationName: string) {
+    constructor(connection, producerName, stationName) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
@@ -420,12 +387,12 @@ class Producer {
         * @param {Uint8Array} message - message to send into the station.
         * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
     */
-    async produce({ message, ackWaitSec = 15 }: { message: Uint8Array, ackWaitSec: number }): Promise<void> {
+    async produce({ message, ackWaitSec = 15 }) {
         try {
             const h = headers();
             h.append("producedBy", this.producerName);
             await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
-        } catch (ex: any) {
+        } catch (ex) {
             if (ex.code === '503') {
                 throw new Error("Produce operation has failed, please check wheether Station/Producer are still exist");
             }
@@ -436,7 +403,7 @@ class Producer {
     /**
         * Destroy the producer. 
     */
-    async destroy(): Promise<void> {
+    async destroy() {
         try {
             await httpRequest({
                 method: "DELETE",
@@ -449,26 +416,14 @@ class Producer {
                     station_name: this.stationName
                 },
             });
-        } catch (_) { }
+        } catch (ex) {
+            return; // ignoring unsuccessful destroy calls
+        }
     }
 }
 
 class Consumer {
-    private connection: Memphis;
-    private stationName: string;
-    private consumerName: string;
-    private consumerGroup: string;
-    private pullIntervalMs: number;
-    private batchSize: number;
-    private batchMaxTimeToWaitMs: number;
-    private maxAckTimeMs: number;
-    private eventEmitter: events.EventEmitter;
-    private pullInterval: NodeJS.Timeout;
-    private pingConsumerInvtervalMs: number;
-    private pingConsumerInvterval: NodeJS.Timeout;
-
-    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
-        batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number) {
+    constructor(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
@@ -478,7 +433,9 @@ class Consumer {
         this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
         this.eventEmitter = new events.EventEmitter();
+        this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;
+        this.pingConsumerInvterval = null;
 
         this.connection.brokerConnection.pullSubscribe(`${this.stationName}.final`, {
             mack: true,
@@ -514,11 +471,11 @@ class Consumer {
         * @param {String} event - the event to listen to.
         * @param {Function} cb - a callback function.
     */
-    on(event: String, cb: (...args: any[]) => void) {
-        this.eventEmitter.on(<string>event, cb);
+    on(event, cb) {
+        this.eventEmitter.on(event, cb);
     }
 
-    private async _pingConsumer() {
+    async _pingConsumer() {
         try {
             const durableName = this.consumerGroup || this.consumerName;
             await this.connection.brokerStats.consumers.info(this.stationName, durableName)
@@ -530,7 +487,7 @@ class Consumer {
     /**
         * Destroy the consumer. 
     */
-    async destroy(): Promise<void> {
+    async destroy() {
         this.eventEmitter.removeAllListeners("message");
         this.eventEmitter.removeAllListeners("error");
         clearInterval(this.pullInterval);
@@ -547,14 +504,14 @@ class Consumer {
                     station_name: this.stationName
                 },
             });
-        } catch (_) { }
+        } catch (ex) {
+            return; // ignoring unsuccessful destroy calls
+        }
     }
 }
 
 class Message {
-    private message: broker.JsMsg;
-
-    constructor(message: broker.JsMsg) {
+    constructor(message) {
         this.message = message;
     }
 
@@ -571,10 +528,7 @@ class Message {
 }
 
 class Factory {
-    private connection: Memphis;
-    private name: string;
-
-    constructor(connection: Memphis, name: string) {
+    constructor(connection, name) {
         this.connection = connection;
         this.name = name.toLowerCase();
     }
@@ -582,7 +536,7 @@ class Factory {
     /**
         * Destroy the factory. 
     */
-    async destroy(): Promise<void> {
+    async destroy() {
         try {
             await httpRequest({
                 method: "DELETE",
@@ -601,10 +555,7 @@ class Factory {
 }
 
 class Station {
-    private connection: Memphis;
-    private name: string;
-
-    constructor(connection: Memphis, name: string) {
+    constructor(connection, name) {
         this.connection = connection;
         this.name = name.toLowerCase();
     }
@@ -612,7 +563,7 @@ class Station {
     /**
        * Destroy the station. 
    */
-    async destroy(): Promise<void> {
+    async destroy() {
         try {
             await httpRequest({
                 method: "DELETE",

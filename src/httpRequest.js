@@ -11,15 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import axios from 'axios';
+const axios = require('axios');
 
-export async function httpRequest({ method, url, headers = {}, bodyParams = {}, queryParams = {}, timeout = 0 } :
-    {method: string, url: string, headers?: any, bodyParams?: any, queryParams?: any, timeout?: number }): Promise<any> {
+const httpRequest = async ({ method, url, headers = {}, bodyParams = {}, queryParams = {}, file = null, timeout = 0 }) => {
     if (method !== 'GET' && method !== 'POST' && method !== 'PUT' && method !== 'DELETE')
         throw {
             status: 400,
-            message: `Invalid HTTP method`
+            message: `Invalid HTTP method`,
+            data: { method, url, data }
         };
+
+    if (file) {
+        bodyParams.file = file;
+    }
 
     headers['content-type'] = 'application/json';
 
@@ -36,10 +40,12 @@ export async function httpRequest({ method, url, headers = {}, bodyParams = {}, 
         });
         const results = response.data;
         return results;
-    } catch (ex: any) {
+    } catch (ex) {
         if (ex?.response?.data)
             throw ex.response.data.message;
 
         throw ex;
     }
 };
+
+module.exports = httpRequest;
