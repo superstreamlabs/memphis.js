@@ -129,47 +129,6 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Itay+Katz.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
 
 ---
-**Table of Contents**
-
-- [⭐️ Why](#️-why)
-- [✨ Features](#-features)
-- [🚀 Getting Started](#-getting-started)
-- [High-Level Architecture](#high-level-architecture)
-- [Local access](#local-access)
-  - [Via Kubernetes](#via-kubernetes)
-  - [Via Docker](#via-docker)
-- [Beta](#beta)
-- [Support](#support)
-  - [Ask a question about Memphis{dev} or related](#ask-a-question-about-memphisdev-or-related)
-  - [Create a bug report](#create-a-bug-report)
-  - [Submit a feature request](#submit-a-feature-request)
-- [Contributing](#contributing)
-- [Contributors ✨](#contributors-)
-- [Current SDKs](#current-sdks)
-- [Installation](#installation)
-- [Importing](#importing)
-  - [Connecting to Memphis](#connecting-to-memphis)
-  - [Disconnecting from Memphis](#disconnecting-from-memphis)
-  - [Creating a Factory](#creating-a-factory)
-  - [Destroying a Factory](#destroying-a-factory)
-  - [Creating a Station](#creating-a-station)
-  - [Retention types](#retention-types)
-  - [Storage types](#storage-types)
-  - [Destroying a Station](#destroying-a-station)
-  - [Produce and Consume messages](#produce-and-consume-messages)
-  - [Creating a Producer](#creating-a-producer)
-  - [Producing a message](#producing-a-message)
-  - [Destroying a Producer](#destroying-a-producer)
-  - [Creating a Consumer](#creating-a-consumer)
-  - [Processing messages](#processing-messages)
-  - [Acknowledge a message](#acknowledge-a-message)
-  - [Catching async errors](#catching-async-errors)
-  - [Destroying a Consumer](#destroying-a-consumer)
-
-## Current SDKs
--   [memphis-js](https://github.com/Memphisdev/memphis.js 'Node.js')
--   [memphis-py](https://github.com/Memphisdev/memphis.py 'Python')
-
 ## Installation
 
 First install [Memphis](https://memphis.dev) Then:
