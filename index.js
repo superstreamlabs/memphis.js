@@ -379,16 +379,17 @@ var Memphis = /** @class */ (function () {
         * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
         * @param {Number} batchSize - pull batch size.
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
-        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it
+        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+        * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
     Memphis.prototype.consumer = function (_a) {
-        var stationName = _a.stationName, consumerName = _a.consumerName, _b = _a.consumerGroup, consumerGroup = _b === void 0 ? "" : _b, _c = _a.pullIntervalMs, pullIntervalMs = _c === void 0 ? 1000 : _c, _d = _a.batchSize, batchSize = _d === void 0 ? 10 : _d, _e = _a.batchMaxTimeToWaitMs, batchMaxTimeToWaitMs = _e === void 0 ? 5000 : _e, _f = _a.maxAckTimeMs, maxAckTimeMs = _f === void 0 ? 30000 : _f;
+        var stationName = _a.stationName, consumerName = _a.consumerName, _b = _a.consumerGroup, consumerGroup = _b === void 0 ? "" : _b, _c = _a.pullIntervalMs, pullIntervalMs = _c === void 0 ? 1000 : _c, _d = _a.batchSize, batchSize = _d === void 0 ? 10 : _d, _e = _a.batchMaxTimeToWaitMs, batchMaxTimeToWaitMs = _e === void 0 ? 5000 : _e, _f = _a.maxAckTimeMs, maxAckTimeMs = _f === void 0 ? 30000 : _f, _g = _a.maxMsgDeliveries, maxMsgDeliveries = _g === void 0 ? 10 : _g;
         return __awaiter(this, void 0, void 0, function () {
             var ex_5;
-            return __generator(this, function (_g) {
-                switch (_g.label) {
+            return __generator(this, function (_h) {
+                switch (_h.label) {
                     case 0:
-                        _g.trys.push([0, 2, , 3]);
+                        _h.trys.push([0, 2, , 3]);
                         if (!this.isConnectionActive)
                             throw new Error("Connection is dead");
                         return [4 /*yield*/, (0, httpRequest_1.httpRequest)({
@@ -403,14 +404,15 @@ var Memphis = /** @class */ (function () {
                                     connection_id: this.connectionId,
                                     consumer_type: "application",
                                     consumers_group: consumerGroup,
-                                    max_ack_time_ms: maxAckTimeMs
+                                    max_ack_time_ms: maxAckTimeMs,
+                                    max_msg_deliveries: maxMsgDeliveries
                                 },
                             })];
                     case 1:
-                        _g.sent();
-                        return [2 /*return*/, new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs)];
+                        _h.sent();
+                        return [2 /*return*/, new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries)];
                     case 2:
-                        ex_5 = _g.sent();
+                        ex_5 = _h.sent();
                         throw ex_5;
                     case 3: return [2 /*return*/];
                 }
@@ -556,7 +558,7 @@ var Producer = /** @class */ (function () {
     return Producer;
 }());
 var Consumer = /** @class */ (function () {
-    function Consumer(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs) {
+    function Consumer(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries) {
         var _this = this;
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -566,6 +568,7 @@ var Consumer = /** @class */ (function () {
         this.batchSize = batchSize;
         this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
+        this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events_1.default.EventEmitter();
         this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;

@@ -293,7 +293,8 @@ const consumer = await memphis.consumer({
             pullIntervalMs: 1000, // defaults to 1000
             batchSize: 10, // defaults to 10
             batchMaxTimeToWaitMs: 5000, // defaults to 5000
-            maxAckTimeMs: 30000 // defaults to 30000
+            maxAckTimeMs: 30000, // defaults to 30000
+            maxMsgDeliveries: 10 // defaults to 10
       });
 ```
 

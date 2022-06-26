@@ -327,13 +327,14 @@ class Memphis {
         * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
         * @param {Number} batchSize - pull batch size.
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
-        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it
+        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+        * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
     async consumer({ stationName, consumerName, consumerGroup = "", pullIntervalMs = 1000, batchSize = 10,
-        batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000 }:
+        batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000, maxMsgDeliveries = 10 }:
         {
             stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
-            batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number
+            batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number
         }): Promise<Consumer> {
         try {
             if (!this.isConnectionActive)
@@ -351,11 +352,12 @@ class Memphis {
                     connection_id: this.connectionId,
                     consumer_type: "application",
                     consumers_group: consumerGroup,
-                    max_ack_time_ms: maxAckTimeMs
+                    max_ack_time_ms: maxAckTimeMs,
+                    max_msg_deliveries: maxMsgDeliveries
                 },
             });
 
-            return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs);
+            return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries);
         } catch (ex) {
             throw ex;
         }
@@ -476,13 +478,14 @@ class Consumer {
     private batchSize: number;
     private batchMaxTimeToWaitMs: number;
     private maxAckTimeMs: number;
+    private maxMsgDeliveries: number;
     private eventEmitter: events.EventEmitter;
     private pullInterval: any;
     private pingConsumerInvtervalMs: number;
     private pingConsumerInvterval: any;
 
     constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
-        batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number) {
+        batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
@@ -491,6 +494,7 @@ class Consumer {
         this.batchSize = batchSize;
         this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
+        this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events.EventEmitter();
         this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;
