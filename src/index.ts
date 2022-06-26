@@ -42,7 +42,6 @@ const storageTypes: IStorageTypes = {
 
 interface IMessage {
     connection_id: string;
-    client_address: string;
     access_token: string;
     access_token_exp: number;
     ping_interval_ms: number
@@ -51,7 +50,6 @@ interface IMessage {
 class Memphis {
     private isConnectionActive: boolean;
     private connectionId: string;
-    public clientAddress: string;
     public accessToken: string;
     public host: string;
     public managementPort: number;
@@ -73,7 +71,6 @@ class Memphis {
 
     constructor() {
         this.isConnectionActive = false;
-        this.clientAddress = "";
         this.connectionId = "";
         this.accessToken = "";
         this.host = "";
@@ -152,10 +149,6 @@ class Memphis {
                     this.connectionId = message.connection_id;
                     this.isConnectionActive = true;
                     this.reconnectAttempts = 0;
-
-                    if (message.client_address) {
-                        this.clientAddress = message.client_address;
-                    }
 
                     if (message.access_token) {
                         this.accessToken = message.access_token;
@@ -444,7 +437,7 @@ class Producer {
     async produce({ message, ackWaitSec = 15 }: { message: Uint8Array, ackWaitSec: number }): Promise<void> {
         try {
             const h = headers();
-            h.append("producedBy", `${this.producerName} (${this.connection.clientAddress})`);
+            h.append("producedBy", this.producerName);
             await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {

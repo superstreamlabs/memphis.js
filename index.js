@@ -100,7 +100,6 @@ var Memphis = /** @class */ (function () {
     function Memphis() {
         var _this = this;
         this.isConnectionActive = false;
-        this.clientAddress = "";
         this.connectionId = "";
         this.accessToken = "";
         this.host = "";
@@ -176,9 +175,6 @@ var Memphis = /** @class */ (function () {
                                 this.connectionId = message.connection_id;
                                 this.isConnectionActive = true;
                                 this.reconnectAttempts = 0;
-                                if (message.client_address) {
-                                    this.clientAddress = message.client_address;
-                                }
                                 if (message.access_token) {
                                     this.accessToken = message.access_token;
                                     this._keepAcessTokenFresh(message.access_token_exp);
@@ -509,7 +505,7 @@ var Producer = /** @class */ (function () {
                     case 0:
                         _c.trys.push([0, 2, , 3]);
                         h = (0, nats_1.headers)();
-                        h.append("producedBy", "".concat(this.producerName, " (").concat(this.connection.clientAddress, ")"));
+                        h.append("producedBy", this.producerName);
                         return [4 /*yield*/, this.connection.brokerConnection.publish("".concat(this.stationName, ".final"), message, { msgID: (0, uuid_1.v4)(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 })];
                     case 1:
                         _c.sent();
