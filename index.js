@@ -507,6 +507,7 @@ var Producer = /** @class */ (function () {
                     case 0:
                         _c.trys.push([0, 2, , 3]);
                         h = (0, nats_1.headers)();
+                        h.append("connectionId", this.connection.connectionId);
                         h.append("producedBy", this.producerName);
                         return [4 /*yield*/, this.connection.brokerConnection.publish("".concat(this.stationName, ".final"), message, { msgID: (0, uuid_1.v4)(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 })];
                     case 1:
