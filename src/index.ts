@@ -444,7 +444,7 @@ class Producer {
             await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {
-                throw new Error("Produce operation has failed, please check wheether Station/Producer are still exist");
+                throw new Error("Produce operation has failed, please check whether Station/Producer are still exist");
             }
             throw ex;
         }
