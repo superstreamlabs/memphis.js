@@ -516,7 +516,7 @@ var Producer = /** @class */ (function () {
                     case 2:
                         ex_7 = _c.sent();
                         if (ex_7.code === '503') {
-                            throw new Error("Produce operation has failed, please check wheether Station/Producer are still exist");
+                            throw new Error("Produce operation has failed, please check whether Station/Producer are still exist");
                         }
                         throw ex_7;
                     case 3: return [2 /*return*/];
@@ -560,7 +560,6 @@ var Producer = /** @class */ (function () {
 }());
 var Consumer = /** @class */ (function () {
     function Consumer(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries) {
-        var _this = this;
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
@@ -574,69 +573,6 @@ var Consumer = /** @class */ (function () {
         this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;
         this.pingConsumerInvterval = null;
-        this.connection.brokerConnection.pullSubscribe("".concat(this.stationName, ".final"), {
-            mack: true,
-            config: {
-                durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                ack_wait: this.maxAckTimeMs,
-            },
-        }).then(function (psub) { var psub_1, psub_1_1; return __awaiter(_this, void 0, void 0, function () {
-            var m, e_1_1;
-            var _this = this;
-            var e_1, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-                        this.pullInterval = setInterval(function () {
-                            if (!_this.connection.brokerManager.isClosed())
-                                psub.pull({ batch: _this.batchSize, expires: _this.batchMaxTimeToWaitMs });
-                            else
-                                clearInterval(_this.pullInterval);
-                        }, this.pullIntervalMs);
-                        this.pingConsumerInvterval = setInterval(function () { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                if (!this.connection.brokerManager.isClosed()) {
-                                    this._pingConsumer();
-                                }
-                                else
-                                    clearInterval(this.pingConsumerInvterval);
-                                return [2 /*return*/];
-                            });
-                        }); }, this.pingConsumerInvtervalMs);
-                        _b.label = 1;
-                    case 1:
-                        _b.trys.push([1, 6, 7, 12]);
-                        psub_1 = __asyncValues(psub);
-                        _b.label = 2;
-                    case 2: return [4 /*yield*/, psub_1.next()];
-                    case 3:
-                        if (!(psub_1_1 = _b.sent(), !psub_1_1.done)) return [3 /*break*/, 5];
-                        m = psub_1_1.value;
-                        this.eventEmitter.emit("message", new Message(m));
-                        _b.label = 4;
-                    case 4: return [3 /*break*/, 2];
-                    case 5: return [3 /*break*/, 12];
-                    case 6:
-                        e_1_1 = _b.sent();
-                        e_1 = { error: e_1_1 };
-                        return [3 /*break*/, 12];
-                    case 7:
-                        _b.trys.push([7, , 10, 11]);
-                        if (!(psub_1_1 && !psub_1_1.done && (_a = psub_1.return))) return [3 /*break*/, 9];
-                        return [4 /*yield*/, _a.call(psub_1)];
-                    case 8:
-                        _b.sent();
-                        _b.label = 9;
-                    case 9: return [3 /*break*/, 11];
-                    case 10:
-                        if (e_1) throw e_1.error;
-                        return [7 /*endfinally*/];
-                    case 11: return [7 /*endfinally*/];
-                    case 12: return [2 /*return*/];
-                }
-            });
-        }); }).catch(function (error) { return _this.eventEmitter.emit("error", error); });
     }
     /**
         * Creates an event listener.
@@ -644,6 +580,72 @@ var Consumer = /** @class */ (function () {
         * @param {Function} cb - a callback function.
     */
     Consumer.prototype.on = function (event, cb) {
+        var _this = this;
+        if (event === "message") {
+            this.connection.brokerConnection.pullSubscribe("".concat(this.stationName, ".final"), {
+                mack: true,
+                config: {
+                    durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
+                    ack_wait: this.maxAckTimeMs,
+                },
+            }).then(function (psub) { var psub_1, psub_1_1; return __awaiter(_this, void 0, void 0, function () {
+                var m, e_1_1;
+                var _this = this;
+                var e_1, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                            this.pullInterval = setInterval(function () {
+                                if (!_this.connection.brokerManager.isClosed())
+                                    psub.pull({ batch: _this.batchSize, expires: _this.batchMaxTimeToWaitMs });
+                                else
+                                    clearInterval(_this.pullInterval);
+                            }, this.pullIntervalMs);
+                            this.pingConsumerInvterval = setInterval(function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    if (!this.connection.brokerManager.isClosed()) {
+                                        this._pingConsumer();
+                                    }
+                                    else
+                                        clearInterval(this.pingConsumerInvterval);
+                                    return [2 /*return*/];
+                                });
+                            }); }, this.pingConsumerInvtervalMs);
+                            _b.label = 1;
+                        case 1:
+                            _b.trys.push([1, 6, 7, 12]);
+                            psub_1 = __asyncValues(psub);
+                            _b.label = 2;
+                        case 2: return [4 /*yield*/, psub_1.next()];
+                        case 3:
+                            if (!(psub_1_1 = _b.sent(), !psub_1_1.done)) return [3 /*break*/, 5];
+                            m = psub_1_1.value;
+                            this.eventEmitter.emit("message", new Message(m));
+                            _b.label = 4;
+                        case 4: return [3 /*break*/, 2];
+                        case 5: return [3 /*break*/, 12];
+                        case 6:
+                            e_1_1 = _b.sent();
+                            e_1 = { error: e_1_1 };
+                            return [3 /*break*/, 12];
+                        case 7:
+                            _b.trys.push([7, , 10, 11]);
+                            if (!(psub_1_1 && !psub_1_1.done && (_a = psub_1.return))) return [3 /*break*/, 9];
+                            return [4 /*yield*/, _a.call(psub_1)];
+                        case 8:
+                            _b.sent();
+                            _b.label = 9;
+                        case 9: return [3 /*break*/, 11];
+                        case 10:
+                            if (e_1) throw e_1.error;
+                            return [7 /*endfinally*/];
+                        case 11: return [7 /*endfinally*/];
+                        case 12: return [2 /*return*/];
+                    }
+                });
+            }); }).catch(function (error) { return _this.eventEmitter.emit("error", error); });
+        }
         this.eventEmitter.on(event, cb);
     };
     Consumer.prototype._pingConsumer = function () {

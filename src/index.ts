@@ -500,34 +500,6 @@ class Consumer {
         this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;
         this.pingConsumerInvterval = null;
-
-        this.connection.brokerConnection.pullSubscribe(`${this.stationName}.final`, {
-            mack: true,
-            config: {
-                durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                ack_wait: this.maxAckTimeMs,
-            },
-        }).then(async (psub: any) => {
-            psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-            this.pullInterval = setInterval(() => {
-                if (!this.connection.brokerManager.isClosed())
-                    psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-                else
-                    clearInterval(this.pullInterval)
-            }, this.pullIntervalMs);
-
-            this.pingConsumerInvterval = setInterval(async () => {
-                if (!this.connection.brokerManager.isClosed()) {
-                    this._pingConsumer()
-                }
-                else
-                    clearInterval(this.pingConsumerInvterval)
-            }, this.pingConsumerInvtervalMs);
-
-            for await (const m of psub) {
-                this.eventEmitter.emit("message", new Message(m));
-            }
-        }).catch((error: any) => this.eventEmitter.emit("error", error));
     }
 
     /**
@@ -536,6 +508,36 @@ class Consumer {
         * @param {Function} cb - a callback function.
     */
     on(event: String, cb: (...args: any[]) => void) {
+        if (event === "message") {
+            this.connection.brokerConnection.pullSubscribe(`${this.stationName}.final`, {
+                mack: true,
+                config: {
+                    durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
+                    ack_wait: this.maxAckTimeMs,
+                },
+            }).then(async (psub: any) => {
+                psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                this.pullInterval = setInterval(() => {
+                    if (!this.connection.brokerManager.isClosed())
+                        psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                    else
+                        clearInterval(this.pullInterval)
+                }, this.pullIntervalMs);
+
+                this.pingConsumerInvterval = setInterval(async () => {
+                    if (!this.connection.brokerManager.isClosed()) {
+                        this._pingConsumer()
+                    }
+                    else
+                        clearInterval(this.pingConsumerInvterval)
+                }, this.pingConsumerInvtervalMs);
+
+                for await (const m of psub) {
+                    this.eventEmitter.emit("message", new Message(m));
+                }
+            }).catch((error: any) => this.eventEmitter.emit("error", error));
+        }
+
         this.eventEmitter.on(<string>event, cb);
     }
 
