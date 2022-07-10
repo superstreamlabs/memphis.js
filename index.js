@@ -375,7 +375,7 @@ var Memphis = /** @class */ (function () {
         * Creates a consumer.
         * @param {String} stationName - station name to consume messages from.
         * @param {String} consumerName - name for the consumer.
-        * @param {String} consumerGroup - consumer group name, default is "".
+        * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
         * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
         * @param {Number} batchSize - pull batch size.
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
@@ -383,7 +383,7 @@ var Memphis = /** @class */ (function () {
         * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
     Memphis.prototype.consumer = function (_a) {
-        var stationName = _a.stationName, consumerName = _a.consumerName, _b = _a.consumerGroup, consumerGroup = _b === void 0 ? "" : _b, _c = _a.pullIntervalMs, pullIntervalMs = _c === void 0 ? 1000 : _c, _d = _a.batchSize, batchSize = _d === void 0 ? 10 : _d, _e = _a.batchMaxTimeToWaitMs, batchMaxTimeToWaitMs = _e === void 0 ? 5000 : _e, _f = _a.maxAckTimeMs, maxAckTimeMs = _f === void 0 ? 30000 : _f, _g = _a.maxMsgDeliveries, maxMsgDeliveries = _g === void 0 ? 10 : _g;
+        var stationName = _a.stationName, consumerName = _a.consumerName, _b = _a.consumerGroup, consumerGroup = _b === void 0 ? consumerName : _b, _c = _a.pullIntervalMs, pullIntervalMs = _c === void 0 ? 1000 : _c, _d = _a.batchSize, batchSize = _d === void 0 ? 10 : _d, _e = _a.batchMaxTimeToWaitMs, batchMaxTimeToWaitMs = _e === void 0 ? 5000 : _e, _f = _a.maxAckTimeMs, maxAckTimeMs = _f === void 0 ? 30000 : _f, _g = _a.maxMsgDeliveries, maxMsgDeliveries = _g === void 0 ? 10 : _g;
         return __awaiter(this, void 0, void 0, function () {
             var ex_5;
             return __generator(this, function (_h) {

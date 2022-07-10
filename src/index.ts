@@ -323,14 +323,14 @@ class Memphis {
         * Creates a consumer. 
         * @param {String} stationName - station name to consume messages from.
         * @param {String} consumerName - name for the consumer.
-        * @param {String} consumerGroup - consumer group name, default is "".
+        * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
         * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
         * @param {Number} batchSize - pull batch size.
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
         * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
         * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
-    async consumer({ stationName, consumerName, consumerGroup = "", pullIntervalMs = 1000, batchSize = 10,
+    async consumer({ stationName, consumerName, consumerGroup = consumerName, pullIntervalMs = 1000, batchSize = 10,
         batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000, maxMsgDeliveries = 10 }:
         {
             stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
