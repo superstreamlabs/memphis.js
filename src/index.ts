@@ -49,7 +49,7 @@ interface IMessage {
 
 class Memphis {
     private isConnectionActive: boolean;
-    private connectionId: string;
+    public connectionId: string;
     public accessToken: string;
     public host: string;
     public managementPort: number;
@@ -323,17 +323,18 @@ class Memphis {
         * Creates a consumer. 
         * @param {String} stationName - station name to consume messages from.
         * @param {String} consumerName - name for the consumer.
-        * @param {String} consumerGroup - consumer group name, default is "".
+        * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
         * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
         * @param {Number} batchSize - pull batch size.
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
-        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it
+        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+        * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
-    async consumer({ stationName, consumerName, consumerGroup = "", pullIntervalMs = 1000, batchSize = 10,
-        batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000 }:
+    async consumer({ stationName, consumerName, consumerGroup = consumerName, pullIntervalMs = 1000, batchSize = 10,
+        batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000, maxMsgDeliveries = 10 }:
         {
             stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
-            batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number
+            batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number
         }): Promise<Consumer> {
         try {
             if (!this.isConnectionActive)
@@ -351,11 +352,12 @@ class Memphis {
                     connection_id: this.connectionId,
                     consumer_type: "application",
                     consumers_group: consumerGroup,
-                    max_ack_time_ms: maxAckTimeMs
+                    max_ack_time_ms: maxAckTimeMs,
+                    max_msg_deliveries: maxMsgDeliveries
                 },
             });
 
-            return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs);
+            return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries);
         } catch (ex) {
             throw ex;
         }
@@ -437,11 +439,12 @@ class Producer {
     async produce({ message, ackWaitSec = 15 }: { message: Uint8Array, ackWaitSec: number }): Promise<void> {
         try {
             const h = headers();
+            h.append("connectionId", this.connection.connectionId);
             h.append("producedBy", this.producerName);
             await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {
-                throw new Error("Produce operation has failed, please check wheether Station/Producer are still exist");
+                throw new Error("Produce operation has failed, please check whether Station/Producer are still exist");
             }
             throw ex;
         }
@@ -476,13 +479,14 @@ class Consumer {
     private batchSize: number;
     private batchMaxTimeToWaitMs: number;
     private maxAckTimeMs: number;
+    private maxMsgDeliveries: number;
     private eventEmitter: events.EventEmitter;
     private pullInterval: any;
     private pingConsumerInvtervalMs: number;
     private pingConsumerInvterval: any;
 
     constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
-        batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number) {
+        batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
@@ -491,38 +495,11 @@ class Consumer {
         this.batchSize = batchSize;
         this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
+        this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events.EventEmitter();
         this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;
         this.pingConsumerInvterval = null;
-
-        this.connection.brokerConnection.pullSubscribe(`${this.stationName}.final`, {
-            mack: true,
-            config: {
-                durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                ack_wait: this.maxAckTimeMs,
-            },
-        }).then(async (psub: any) => {
-            psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-            this.pullInterval = setInterval(() => {
-                if (!this.connection.brokerManager.isClosed())
-                    psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-                else
-                    clearInterval(this.pullInterval)
-            }, this.pullIntervalMs);
-
-            this.pingConsumerInvterval = setInterval(async () => {
-                if (!this.connection.brokerManager.isClosed()) {
-                    this._pingConsumer()
-                }
-                else
-                    clearInterval(this.pingConsumerInvterval)
-            }, this.pingConsumerInvtervalMs);
-
-            for await (const m of psub) {
-                this.eventEmitter.emit("message", new Message(m));
-            }
-        }).catch((error: any) => this.eventEmitter.emit("error", error));
     }
 
     /**
@@ -531,6 +508,36 @@ class Consumer {
         * @param {Function} cb - a callback function.
     */
     on(event: String, cb: (...args: any[]) => void) {
+        if (event === "message") {
+            this.connection.brokerConnection.pullSubscribe(`${this.stationName}.final`, {
+                mack: true,
+                config: {
+                    durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
+                    ack_wait: this.maxAckTimeMs,
+                },
+            }).then(async (psub: any) => {
+                psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                this.pullInterval = setInterval(() => {
+                    if (!this.connection.brokerManager.isClosed())
+                        psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                    else
+                        clearInterval(this.pullInterval)
+                }, this.pullIntervalMs);
+
+                this.pingConsumerInvterval = setInterval(async () => {
+                    if (!this.connection.brokerManager.isClosed()) {
+                        this._pingConsumer()
+                    }
+                    else
+                        clearInterval(this.pingConsumerInvterval)
+                }, this.pingConsumerInvtervalMs);
+
+                for await (const m of psub) {
+                    this.eventEmitter.emit("message", new Message(m));
+                }
+            }).catch((error: any) => this.eventEmitter.emit("error", error));
+        }
+
         this.eventEmitter.on(<string>event, cb);
     }
 

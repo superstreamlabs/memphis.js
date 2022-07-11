@@ -375,20 +375,21 @@ var Memphis = /** @class */ (function () {
         * Creates a consumer.
         * @param {String} stationName - station name to consume messages from.
         * @param {String} consumerName - name for the consumer.
-        * @param {String} consumerGroup - consumer group name, default is "".
+        * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
         * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
         * @param {Number} batchSize - pull batch size.
         * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
-        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it
+        * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+        * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
     Memphis.prototype.consumer = function (_a) {
-        var stationName = _a.stationName, consumerName = _a.consumerName, _b = _a.consumerGroup, consumerGroup = _b === void 0 ? "" : _b, _c = _a.pullIntervalMs, pullIntervalMs = _c === void 0 ? 1000 : _c, _d = _a.batchSize, batchSize = _d === void 0 ? 10 : _d, _e = _a.batchMaxTimeToWaitMs, batchMaxTimeToWaitMs = _e === void 0 ? 5000 : _e, _f = _a.maxAckTimeMs, maxAckTimeMs = _f === void 0 ? 30000 : _f;
+        var stationName = _a.stationName, consumerName = _a.consumerName, _b = _a.consumerGroup, consumerGroup = _b === void 0 ? consumerName : _b, _c = _a.pullIntervalMs, pullIntervalMs = _c === void 0 ? 1000 : _c, _d = _a.batchSize, batchSize = _d === void 0 ? 10 : _d, _e = _a.batchMaxTimeToWaitMs, batchMaxTimeToWaitMs = _e === void 0 ? 5000 : _e, _f = _a.maxAckTimeMs, maxAckTimeMs = _f === void 0 ? 30000 : _f, _g = _a.maxMsgDeliveries, maxMsgDeliveries = _g === void 0 ? 10 : _g;
         return __awaiter(this, void 0, void 0, function () {
             var ex_5;
-            return __generator(this, function (_g) {
-                switch (_g.label) {
+            return __generator(this, function (_h) {
+                switch (_h.label) {
                     case 0:
-                        _g.trys.push([0, 2, , 3]);
+                        _h.trys.push([0, 2, , 3]);
                         if (!this.isConnectionActive)
                             throw new Error("Connection is dead");
                         return [4 /*yield*/, (0, httpRequest_1.httpRequest)({
@@ -403,14 +404,15 @@ var Memphis = /** @class */ (function () {
                                     connection_id: this.connectionId,
                                     consumer_type: "application",
                                     consumers_group: consumerGroup,
-                                    max_ack_time_ms: maxAckTimeMs
+                                    max_ack_time_ms: maxAckTimeMs,
+                                    max_msg_deliveries: maxMsgDeliveries
                                 },
                             })];
                     case 1:
-                        _g.sent();
-                        return [2 /*return*/, new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs)];
+                        _h.sent();
+                        return [2 /*return*/, new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries)];
                     case 2:
-                        ex_5 = _g.sent();
+                        ex_5 = _h.sent();
                         throw ex_5;
                     case 3: return [2 /*return*/];
                 }
@@ -505,6 +507,7 @@ var Producer = /** @class */ (function () {
                     case 0:
                         _c.trys.push([0, 2, , 3]);
                         h = (0, nats_1.headers)();
+                        h.append("connectionId", this.connection.connectionId);
                         h.append("producedBy", this.producerName);
                         return [4 /*yield*/, this.connection.brokerConnection.publish("".concat(this.stationName, ".final"), message, { msgID: (0, uuid_1.v4)(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 })];
                     case 1:
@@ -513,7 +516,7 @@ var Producer = /** @class */ (function () {
                     case 2:
                         ex_7 = _c.sent();
                         if (ex_7.code === '503') {
-                            throw new Error("Produce operation has failed, please check wheether Station/Producer are still exist");
+                            throw new Error("Produce operation has failed, please check whether Station/Producer are still exist");
                         }
                         throw ex_7;
                     case 3: return [2 /*return*/];
@@ -556,8 +559,7 @@ var Producer = /** @class */ (function () {
     return Producer;
 }());
 var Consumer = /** @class */ (function () {
-    function Consumer(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs) {
-        var _this = this;
+    function Consumer(connection, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
         this.consumerName = consumerName.toLowerCase();
@@ -566,73 +568,11 @@ var Consumer = /** @class */ (function () {
         this.batchSize = batchSize;
         this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
+        this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events_1.default.EventEmitter();
         this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;
         this.pingConsumerInvterval = null;
-        this.connection.brokerConnection.pullSubscribe("".concat(this.stationName, ".final"), {
-            mack: true,
-            config: {
-                durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                ack_wait: this.maxAckTimeMs,
-            },
-        }).then(function (psub) { var psub_1, psub_1_1; return __awaiter(_this, void 0, void 0, function () {
-            var m, e_1_1;
-            var _this = this;
-            var e_1, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
-                        this.pullInterval = setInterval(function () {
-                            if (!_this.connection.brokerManager.isClosed())
-                                psub.pull({ batch: _this.batchSize, expires: _this.batchMaxTimeToWaitMs });
-                            else
-                                clearInterval(_this.pullInterval);
-                        }, this.pullIntervalMs);
-                        this.pingConsumerInvterval = setInterval(function () { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                if (!this.connection.brokerManager.isClosed()) {
-                                    this._pingConsumer();
-                                }
-                                else
-                                    clearInterval(this.pingConsumerInvterval);
-                                return [2 /*return*/];
-                            });
-                        }); }, this.pingConsumerInvtervalMs);
-                        _b.label = 1;
-                    case 1:
-                        _b.trys.push([1, 6, 7, 12]);
-                        psub_1 = __asyncValues(psub);
-                        _b.label = 2;
-                    case 2: return [4 /*yield*/, psub_1.next()];
-                    case 3:
-                        if (!(psub_1_1 = _b.sent(), !psub_1_1.done)) return [3 /*break*/, 5];
-                        m = psub_1_1.value;
-                        this.eventEmitter.emit("message", new Message(m));
-                        _b.label = 4;
-                    case 4: return [3 /*break*/, 2];
-                    case 5: return [3 /*break*/, 12];
-                    case 6:
-                        e_1_1 = _b.sent();
-                        e_1 = { error: e_1_1 };
-                        return [3 /*break*/, 12];
-                    case 7:
-                        _b.trys.push([7, , 10, 11]);
-                        if (!(psub_1_1 && !psub_1_1.done && (_a = psub_1.return))) return [3 /*break*/, 9];
-                        return [4 /*yield*/, _a.call(psub_1)];
-                    case 8:
-                        _b.sent();
-                        _b.label = 9;
-                    case 9: return [3 /*break*/, 11];
-                    case 10:
-                        if (e_1) throw e_1.error;
-                        return [7 /*endfinally*/];
-                    case 11: return [7 /*endfinally*/];
-                    case 12: return [2 /*return*/];
-                }
-            });
-        }); }).catch(function (error) { return _this.eventEmitter.emit("error", error); });
     }
     /**
         * Creates an event listener.
@@ -640,6 +580,72 @@ var Consumer = /** @class */ (function () {
         * @param {Function} cb - a callback function.
     */
     Consumer.prototype.on = function (event, cb) {
+        var _this = this;
+        if (event === "message") {
+            this.connection.brokerConnection.pullSubscribe("".concat(this.stationName, ".final"), {
+                mack: true,
+                config: {
+                    durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
+                    ack_wait: this.maxAckTimeMs,
+                },
+            }).then(function (psub) { var psub_1, psub_1_1; return __awaiter(_this, void 0, void 0, function () {
+                var m, e_1_1;
+                var _this = this;
+                var e_1, _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            psub.pull({ batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+                            this.pullInterval = setInterval(function () {
+                                if (!_this.connection.brokerManager.isClosed())
+                                    psub.pull({ batch: _this.batchSize, expires: _this.batchMaxTimeToWaitMs });
+                                else
+                                    clearInterval(_this.pullInterval);
+                            }, this.pullIntervalMs);
+                            this.pingConsumerInvterval = setInterval(function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    if (!this.connection.brokerManager.isClosed()) {
+                                        this._pingConsumer();
+                                    }
+                                    else
+                                        clearInterval(this.pingConsumerInvterval);
+                                    return [2 /*return*/];
+                                });
+                            }); }, this.pingConsumerInvtervalMs);
+                            _b.label = 1;
+                        case 1:
+                            _b.trys.push([1, 6, 7, 12]);
+                            psub_1 = __asyncValues(psub);
+                            _b.label = 2;
+                        case 2: return [4 /*yield*/, psub_1.next()];
+                        case 3:
+                            if (!(psub_1_1 = _b.sent(), !psub_1_1.done)) return [3 /*break*/, 5];
+                            m = psub_1_1.value;
+                            this.eventEmitter.emit("message", new Message(m));
+                            _b.label = 4;
+                        case 4: return [3 /*break*/, 2];
+                        case 5: return [3 /*break*/, 12];
+                        case 6:
+                            e_1_1 = _b.sent();
+                            e_1 = { error: e_1_1 };
+                            return [3 /*break*/, 12];
+                        case 7:
+                            _b.trys.push([7, , 10, 11]);
+                            if (!(psub_1_1 && !psub_1_1.done && (_a = psub_1.return))) return [3 /*break*/, 9];
+                            return [4 /*yield*/, _a.call(psub_1)];
+                        case 8:
+                            _b.sent();
+                            _b.label = 9;
+                        case 9: return [3 /*break*/, 11];
+                        case 10:
+                            if (e_1) throw e_1.error;
+                            return [7 /*endfinally*/];
+                        case 11: return [7 /*endfinally*/];
+                        case 12: return [2 /*return*/];
+                    }
+                });
+            }); }).catch(function (error) { return _this.eventEmitter.emit("error", error); });
+        }
         this.eventEmitter.on(event, cb);
     };
     Consumer.prototype._pingConsumer = function () {
