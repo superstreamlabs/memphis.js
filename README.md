@@ -145,3 +145,200 @@ Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Co
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):<br><br>
 <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Itay+Katz.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
+
+## Installation
+
+```sh
+$ npm install memphis-dev
+```
+
+## Importing
+
+```js
+const memphis = require("memphis-dev");
+```
+
+### Connecting to Memphis
+
+First, we need to connect with Memphis by using `memphis.connect`.
+
+```js
+await memphis.connect({
+            host: "<memphis-host>",
+            managementPort: <management-port>, // defaults to 5555
+            tcpPort: <tcp-port>, // defaults to 6666
+            dataPort: <data-port>, // defaults to 7766
+            username: "<username>", // (root/application type user)
+            connectionToken: "<broker-token>", // you will get it on application type user creation
+            reconnect: true, // defaults to false
+            maxReconnect: 10, // defaults to 10
+            reconnectIntervalMs: 1500, // defaults to 1500
+            timeoutMs: 1500 // defaults to 1500
+      });
+```
+
+Once connected, the entire functionalities offered by Memphis are available.
+
+### Disconnecting from Memphis
+
+To disconnect from Memphis, call `close()` on the memphis object.
+
+```js
+memphis.close();
+```
+
+### Creating a Factory
+
+```js
+const factory = await memphis.factory({
+            name: "<factory-name>",
+            description: ""
+      });
+```
+
+### Destroying a Factory
+Destroying a factory will remove all its resources (stations/producers/consumers)
+
+```js
+await station.destroy();
+```
+
+### Creating a Station
+
+```js
+const station = await memphis.station({
+            name: "<station-name>",
+            factoryName: "<factory-name>",
+            retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+            retentionValue: 604800, // defaults to 604800
+            storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
+            replicas: 1, // defaults to 1
+            dedupEnabled: false, // defaults to false
+            dedupWindowMs: 0 // defaults to 0
+      });
+```
+
+### Retention types
+
+Memphis currently supports the following types of retention:
+
+```js
+memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+```
+Means that every message persists for the value set in retention value field (in seconds)
+
+```js
+memphis.retentionTypes.MESSAGES
+```
+Means that after max amount of saved messages (set in retention value), the oldest messages will be deleted
+
+```js
+memphis.retentionTypes.BYTES
+```
+Means that after max amount of saved bytes (set in retention value), the oldest messages will be deleted
+
+### Storage types
+
+Memphis currently supports the following types of messages storage:
+
+```js
+memphis.storageTypes.FILE
+```
+Means that messages persist on the file system
+
+```js
+memphis.storageTypes.MEMORY
+```
+Means that messages persist on the main memory
+
+
+
+
+### Destroying a Station
+Destroying a station will remove all its resources (producers/consumers)
+
+```js
+await station.destroy();
+```
+
+### Produce and Consume messages
+
+The most common client operations are `produce` to send messages and `consume` to
+receive messages.
+
+Messages are published to a station and consumed from it by creating a consumer.
+Consumers are pull based and consume all the messages in a station unless you are using a consumers group, in this case messages are spread across all members in this group.
+
+Memphis messages are payload agnostic. Payloads are `Uint8Arrays`.
+
+In order to stop getting messages, you have to call `consumer.destroy()`. Destroy will terminate regardless
+of whether there are messages in flight for the client.
+
+### Creating a Producer
+
+```js
+const producer = await memphis.producer({
+            stationName: "<station-name>",
+            producerName: "<producer-name>"
+      });
+```
+
+### Producing a message
+
+```js
+await producer.produce({
+            message: "<bytes array>", // Uint8Arrays
+            ackWaitSec: 15 // defaults to 15
+});
+```
+
+### Destroying a Producer
+
+```js
+await producer.destroy();
+```
+
+### Creating a Consumer
+
+```js
+const consumer = await memphis.consumer({
+            stationName: "<station-name>",
+            consumerName: "<consumer-name>",
+            consumerGroup: "<group-name>", // defaults to the consumer name.
+            pullIntervalMs: 1000, // defaults to 1000
+            batchSize: 10, // defaults to 10
+            batchMaxTimeToWaitMs: 5000, // defaults to 5000
+            maxAckTimeMs: 30000 // defaults to 30000
+            maxMsgDeliveries: 10 // defaults to 10
+      });
+```
+
+### Processing messages
+
+```js
+consumer.on("message", message => {
+        // processing
+        console.log(message.getData())
+        message.ack();
+});
+```
+
+### Acknowledge a message
+Acknowledge a message indicates the Memphis server to not re-send the same message again to the same consumer / consumers group
+```js
+    message.ack();
+```
+
+### Catching async errors
+
+```js
+consumer.on("error", error => {
+        // error handling
+});
+```
+
+### Destroying a Consumer
+
+```js
+await consumer.destroy();
+```
