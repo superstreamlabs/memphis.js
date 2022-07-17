@@ -65,6 +65,7 @@ class Memphis {
     private maxReconnect: number;
     private reconnectIntervalMs: number;
     private timeoutMs: number;
+    private natsConnection: boolean;
     public brokerConnection: any;
     public brokerManager: any;
     public brokerStats: any;
@@ -90,8 +91,9 @@ class Memphis {
         this.brokerConnection = null;
         this.brokerManager = null;
         this.brokerStats = null;
+        this.natsConnection = false;
 
-        this.client.on('error', error => {
+        this.client.on('error', (error: any) => {
             console.error(error);
         });
 
@@ -137,7 +139,6 @@ class Memphis {
                     broker_creds: connectionToken,
                     connection_id: this.connectionId
                 }));
-                let connected = false;
 
                 this.client.on('data', async data => {
                     let message: IMessage;
@@ -158,7 +159,7 @@ class Memphis {
                     if (message.ping_interval_ms)
                         this._pingServer(message.ping_interval_ms);
 
-                    if (!connected) {
+                    if (!this.natsConnection) {
                         try {
                             this.brokerManager = await broker.connect({
                                 servers: `${this.host}:${this.dataPort}`,
@@ -171,7 +172,7 @@ class Memphis {
 
                             this.brokerConnection = this.brokerManager.jetstream();
                             this.brokerStats = await this.brokerManager.jetstreamManager();
-                            connected = true;
+                            this.natsConnection = true;
                             return resolve();
                         } catch (ex) {
                             return reject(ex);
