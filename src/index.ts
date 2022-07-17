@@ -330,7 +330,7 @@ class Memphis {
         * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
         * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
-    async consumer({ stationName, consumerName, consumerGroup = consumerName, pullIntervalMs = 1000, batchSize = 10,
+    async consumer({ stationName, consumerName, consumerGroup, pullIntervalMs = 1000, batchSize = 10,
         batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000, maxMsgDeliveries = 10 }:
         {
             stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
@@ -339,6 +339,8 @@ class Memphis {
         try {
             if (!this.isConnectionActive)
                 throw new Error("Connection is dead");
+
+            consumerGroup = consumerGroup || consumerName;
 
             await httpRequest({
                 method: "POST",
@@ -532,13 +534,19 @@ class Consumer {
                         clearInterval(this.pingConsumerInvterval)
                 }, this.pingConsumerInvtervalMs);
 
-                for await (const m of psub) {
-                    this.eventEmitter.emit("message", new Message(m));
-                }
+                const sub = this.connection.brokerManager.subscribe(`$memphis_dlq_${this.stationName}_${this.consumerGroup}`, { queue: `$memphis_${this.stationName}_${this.consumerGroup}` });
+                this._handleAsyncIterableSubscriber(psub)
+                this._handleAsyncIterableSubscriber(sub)
             }).catch((error: any) => this.eventEmitter.emit("error", error));
         }
 
         this.eventEmitter.on(<string>event, cb);
+    }
+
+    private async _handleAsyncIterableSubscriber(iter: any) {
+        for await (const m of iter) {
+            this.eventEmitter.emit("message", new Message(m));
+        }
     }
 
     private async _pingConsumer() {
@@ -585,7 +593,8 @@ class Message {
         * Ack a message is done processing. 
     */
     ack() {
-        this.message.ack();
+        if (this.message.ack) // for dlq events which are unackable (core NATS messages)
+            this.message.ack();
     }
 
     getData() {
