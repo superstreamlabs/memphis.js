@@ -119,6 +119,7 @@ var Memphis = /** @class */ (function () {
         this.brokerConnection = null;
         this.brokerManager = null;
         this.brokerStats = null;
+        this.natsConnection = false;
         this.client.on('error', function (error) {
             console.error(error);
         });
@@ -160,7 +161,6 @@ var Memphis = /** @class */ (function () {
                     broker_creds: connectionToken,
                     connection_id: _this.connectionId
                 }));
-                var connected = false;
                 _this.client.on('data', function (data) { return __awaiter(_this, void 0, void 0, function () {
                     var message, _a, _b, ex_1;
                     return __generator(this, function (_c) {
@@ -181,7 +181,7 @@ var Memphis = /** @class */ (function () {
                                 }
                                 if (message.ping_interval_ms)
                                     this._pingServer(message.ping_interval_ms);
-                                if (!!connected) return [3 /*break*/, 5];
+                                if (!!this.natsConnection) return [3 /*break*/, 5];
                                 _c.label = 1;
                             case 1:
                                 _c.trys.push([1, 4, , 5]);
@@ -201,7 +201,7 @@ var Memphis = /** @class */ (function () {
                                 return [4 /*yield*/, this.brokerManager.jetstreamManager()];
                             case 3:
                                 _b.brokerStats = _c.sent();
-                                connected = true;
+                                this.natsConnection = true;
                                 return [2 /*return*/, resolve()];
                             case 4:
                                 ex_1 = _c.sent();
