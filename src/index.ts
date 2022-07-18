@@ -390,11 +390,11 @@ class Memphis {
                 }
             }, this.reconnectIntervalMs);
         }
-        else if (this.isConnectionActive) {
-            this.client.removeAllListeners("data");
-            this.client.removeAllListeners("error");
-            this.client.removeAllListeners("close");
-            this.client.destroy();
+        else {
+            this.client?.removeAllListeners("data");
+            this.client?.removeAllListeners("error");
+            this.client?.removeAllListeners("close");
+            this.client?.destroy();
             clearTimeout(this.accessTokenTimeout);
             clearTimeout(this.pingTimeout);
             this.reconnectAttempts = 0;
@@ -408,18 +408,16 @@ class Memphis {
         * Close Memphis connection. 
     */
     close() {
-        if (this.isConnectionActive) {
-            this.client.removeAllListeners("data");
-            this.client.removeAllListeners("error");
-            this.client.removeAllListeners("close");
-            this.client.destroy();
-            clearTimeout(this.accessTokenTimeout);
-            clearTimeout(this.pingTimeout);
-            this.reconnectAttempts = 0;
-            setTimeout(() => {
-                this.brokerManager && this.brokerManager.close();
-            }, 500);
-        }
+        this.client?.removeAllListeners("data");
+        this.client?.removeAllListeners("error");
+        this.client?.removeAllListeners("close");
+        this.client?.destroy();
+        clearTimeout(this.accessTokenTimeout);
+        clearTimeout(this.pingTimeout);
+        this.reconnectAttempts = 0;
+        setTimeout(() => {
+            this.brokerManager && this.brokerManager.close();
+        }, 500);
     }
 }
 

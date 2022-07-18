@@ -422,6 +422,7 @@ var Memphis = /** @class */ (function () {
     };
     Memphis.prototype._close = function () {
         var _this = this;
+        var _a, _b, _c, _d;
         if (this.reconnect && this.reconnectAttempts < this.maxReconnect) {
             this.reconnectAttempts++;
             setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
@@ -455,11 +456,11 @@ var Memphis = /** @class */ (function () {
                 });
             }); }, this.reconnectIntervalMs);
         }
-        else if (this.isConnectionActive) {
-            this.client.removeAllListeners("data");
-            this.client.removeAllListeners("error");
-            this.client.removeAllListeners("close");
-            this.client.destroy();
+        else {
+            (_a = this.client) === null || _a === void 0 ? void 0 : _a.removeAllListeners("data");
+            (_b = this.client) === null || _b === void 0 ? void 0 : _b.removeAllListeners("error");
+            (_c = this.client) === null || _c === void 0 ? void 0 : _c.removeAllListeners("close");
+            (_d = this.client) === null || _d === void 0 ? void 0 : _d.destroy();
             clearTimeout(this.accessTokenTimeout);
             clearTimeout(this.pingTimeout);
             this.reconnectAttempts = 0;
@@ -473,18 +474,17 @@ var Memphis = /** @class */ (function () {
     */
     Memphis.prototype.close = function () {
         var _this = this;
-        if (this.isConnectionActive) {
-            this.client.removeAllListeners("data");
-            this.client.removeAllListeners("error");
-            this.client.removeAllListeners("close");
-            this.client.destroy();
-            clearTimeout(this.accessTokenTimeout);
-            clearTimeout(this.pingTimeout);
-            this.reconnectAttempts = 0;
-            setTimeout(function () {
-                _this.brokerManager && _this.brokerManager.close();
-            }, 500);
-        }
+        var _a, _b, _c, _d;
+        (_a = this.client) === null || _a === void 0 ? void 0 : _a.removeAllListeners("data");
+        (_b = this.client) === null || _b === void 0 ? void 0 : _b.removeAllListeners("error");
+        (_c = this.client) === null || _c === void 0 ? void 0 : _c.removeAllListeners("close");
+        (_d = this.client) === null || _d === void 0 ? void 0 : _d.destroy();
+        clearTimeout(this.accessTokenTimeout);
+        clearTimeout(this.pingTimeout);
+        this.reconnectAttempts = 0;
+        setTimeout(function () {
+            _this.brokerManager && _this.brokerManager.close();
+        }, 500);
     };
     return Memphis;
 }());
