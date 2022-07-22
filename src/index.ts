@@ -13,8 +13,7 @@
 
 import net from 'net';
 import events from 'events';
-import * as broker from 'nats';
-import { headers } from "nats";
+import broker, { headers } from 'nats';
 import { v4 as uuidv4 } from 'uuid';
 import { httpRequest } from './httpRequest';
 
@@ -118,8 +117,8 @@ class Memphis {
     */
     connect({ host, managementPort = 5555, tcpPort = 6666, dataPort = 7766, username, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }:
         {
-            host: string, managementPort: number, tcpPort: number, dataPort: number, username: string, connectionToken: string, reconnect: boolean, maxReconnect: number,
-            reconnectIntervalMs: number, timeoutMs: number
+            host: string, managementPort?: number, tcpPort?: number, dataPort?: number, username: string, connectionToken: string, reconnect?: boolean, maxReconnect?: number,
+            reconnectIntervalMs?: number, timeoutMs?: number
         }): Promise<void> {
         return new Promise((resolve, reject) => {
             this.host = this._normalizeHost(host);
@@ -334,8 +333,8 @@ class Memphis {
     async consumer({ stationName, consumerName, consumerGroup, pullIntervalMs = 1000, batchSize = 10,
         batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000, maxMsgDeliveries = 10 }:
         {
-            stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number,
-            batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number
+            stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs?: number,
+            batchSize?: number, batchMaxTimeToWaitMs?: number, maxAckTimeMs?: number, maxMsgDeliveries?: number
         }): Promise<Consumer> {
         try {
             if (!this.isConnectionActive)
