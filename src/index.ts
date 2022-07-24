@@ -444,7 +444,7 @@ class Producer {
         * @param {Uint8Array} message - message to send into the station.
         * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
     */
-    async produce({ message, ackWaitSec = 15 }: { message: Uint8Array, ackWaitSec: number }): Promise<void> {
+    async produce({ message, ackWaitSec = 15 }: { message: Uint8Array, ackWaitSec?: number }): Promise<void> {
         try {
             const h = headers();
             h.append("connectionId", this.connection.connectionId);

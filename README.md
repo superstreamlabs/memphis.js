@@ -153,9 +153,14 @@ $ npm install memphis-dev
 ```
 
 ## Importing
+for javascript, you can choose to use the import or required keyword
 
 ```js
 const memphis = require("memphis-dev");
+
+/*------for Typescript use the import keyword for typechecking assistance----------*/
+
+import memphis from "memphis-dev" 
 ```
 
 ### Connecting to Memphis
@@ -341,22 +346,4 @@ consumer.on("error", error => {
 
 ```js
 await consumer.destroy();
-```
-## Typescript support
-
- The default field here are not optional and not required while the none default fields are required
-
-```js
-await memphis.connect({
-            host: "<memphis-host>", 
-            managementPort: <management-port>, // defaults to 5555
-            tcpPort: <tcp-port>, // defaults to 6666
-            dataPort: <data-port>, // defaults to 7766
-            username: "<username>", // (root/application type user)
-            connectionToken: "<broker-token>", // you will get it on application type user creation
-            reconnect: true, // defaults to false
-            maxReconnect: 10, // defaults to 10
-            reconnectIntervalMs: 1500, // defaults to 1500
-            timeoutMs: 1500 // defaults to 1500
-});
 ```
