@@ -17,11 +17,13 @@ import memphis from "memphis-dev"
             await producer.produce({
                 message: Buffer.from(`Message #${index}: Hello world`)
             });
+            console.log("Message sent");
         }
 
-
+        console.log("All messages sent");
         memphis.close();
     } catch (ex) {
+        console.log(ex);
         memphis.close();
     }
 })();

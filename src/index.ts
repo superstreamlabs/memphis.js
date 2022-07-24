@@ -13,7 +13,8 @@
 
 import net from 'net';
 import events from 'events';
-import broker, { headers } from 'nats';
+import broker from 'nats';
+import { headers } from 'nats';
 import { v4 as uuidv4 } from 'uuid';
 import { httpRequest } from './httpRequest';
 

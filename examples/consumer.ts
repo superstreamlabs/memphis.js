@@ -1,6 +1,5 @@
 import memphis from "memphis-dev"
 
-
 (async function () {
     try {
         await memphis.connect({
@@ -16,13 +15,15 @@ import memphis from "memphis-dev"
         });
 
         consumer.on("message", message => {
+            console.log(message.getData().toString());
             message.ack();
         });
 
         consumer.on("error", error => {
-
+            console.log(error);
         });
     } catch (ex) {
+        console.log(ex);
         memphis.close();
     }
 }());
