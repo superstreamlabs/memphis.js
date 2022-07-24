@@ -21,6 +21,7 @@ const memphis = require("memphis-dev");
 
     consumer.on("error", (error) => {});
   } catch (ex) {
+    console.log(ex);
     memphis.close();
   }
 })();
