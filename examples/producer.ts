@@ -1,4 +1,4 @@
-const memphis = require("memphis-dev");
+import memphis from "memphis-dev"
 
 (async function () {
     try {
