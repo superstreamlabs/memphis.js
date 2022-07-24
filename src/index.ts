@@ -68,6 +68,9 @@ class Memphis {
     public brokerConnection: any;
     public brokerManager: any;
     public brokerStats: any;
+    public retentionTypes!: IRetentionTypes;
+    public storageTypes!: IStorageTypes;
+
 
     constructor() {
         this.isConnectionActive = false;
@@ -115,6 +118,7 @@ class Memphis {
         * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
         * @param {Number} timeoutMs - connection timeout in miliseconds.
     */
+
     connect({ host, managementPort = 5555, tcpPort = 6666, dataPort = 7766, username, connectionToken, reconnect = true, maxReconnect = 3, reconnectIntervalMs = 200, timeoutMs = 15000 }:
         {
             host: string, managementPort?: number, tcpPort?: number, dataPort?: number, username: string, connectionToken: string, reconnect?: boolean, maxReconnect?: number,
@@ -219,7 +223,7 @@ class Memphis {
         * @param {String} name - factory name.
         * @param {String} description - factory description (optional).
     */
-    async factory({ name, description = "" }: { name: string, description: string }): Promise<Factory> {
+    async factory({ name, description = "" }: { name: string, description?: string }): Promise<Factory> {
         try {
             if (!this.isConnectionActive)
                 throw new Error("Connection is dead");
@@ -253,11 +257,13 @@ class Memphis {
         * @param {Boolean} dedupEnabled - whether to allow dedup mecanism, dedup happens based on message ID, default is false.
         * @param {Number} dedupWindowMs - time frame in which dedup track messages, default is 0.
     */
-    async station({ name, factoryName, retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS, retentionValue = 604800,
-        storageType = storageTypes.FILE, replicas = 1, dedupEnabled = false, dedupWindowMs = 0 }:
+    async station({
+        name, factoryName, retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS, retentionValue = 604800,
+        storageType = storageTypes.FILE, replicas = 1, dedupEnabled = false, dedupWindowMs = 0
+    }:
         {
-            name: string, factoryName: string, retentionType: string, retentionValue: number, storageType: string,
-            replicas: number, dedupEnabled: boolean, dedupWindowMs: number
+            name: string, factoryName: string, retentionType?: string, retentionValue?: number, storageType?: string,
+            replicas?: number, dedupEnabled?: boolean, dedupWindowMs?: number
         }): Promise<Station> {
         try {
             if (!this.isConnectionActive)
@@ -330,8 +336,10 @@ class Memphis {
         * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
         * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
     */
-    async consumer({ stationName, consumerName, consumerGroup, pullIntervalMs = 1000, batchSize = 10,
-        batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000, maxMsgDeliveries = 10 }:
+    async consumer({
+        stationName, consumerName, consumerGroup, pullIntervalMs = 1000, batchSize = 10,
+        batchMaxTimeToWaitMs = 5000, maxAckTimeMs = 30000, maxMsgDeliveries = 10
+    }:
         {
             stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs?: number,
             batchSize?: number, batchMaxTimeToWaitMs?: number, maxAckTimeMs?: number, maxMsgDeliveries?: number
@@ -660,6 +668,10 @@ class Station {
     }
 }
 
-module.exports = new Memphis();
-module.exports.retentionTypes = retentionTypes;
-module.exports.storageTypes = storageTypes;
+const MemphisInstance = new Memphis();
+MemphisInstance.retentionTypes = retentionTypes;
+MemphisInstance.storageTypes = storageTypes;
+
+
+
+export default MemphisInstance

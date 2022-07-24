@@ -1,4 +1,5 @@
 const memphis = require("memphis-dev");
+console.log(memphis)
 
 (async function () {
     try {
