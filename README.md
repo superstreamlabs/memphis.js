@@ -153,9 +153,14 @@ $ npm install memphis-dev
 ```
 
 ## Importing
+for javascript, you can choose to use the import or required keyword
 
 ```js
 const memphis = require("memphis-dev");
+
+/*------for Typescript, use the import keyword to aid typechecking assistance----------*/
+
+import memphis from "memphis-dev" 
 ```
 
 ### Connecting to Memphis
