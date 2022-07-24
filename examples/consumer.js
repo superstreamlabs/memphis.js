@@ -1,6 +1,5 @@
 const memphis = require("memphis-dev");
 
-
 (async function () {
   try {
     await memphis.connect({

@@ -673,4 +673,4 @@ const MemphisInstance = new Memphis();
 MemphisInstance.retentionTypes = retentionTypes;
 MemphisInstance.storageTypes = storageTypes;
 
-export default MemphisInstance
+export = MemphisInstance;
