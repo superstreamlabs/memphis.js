@@ -124,7 +124,7 @@ class Memphis {
         {
             host: string, managementPort?: number, tcpPort?: number, dataPort?: number, username: string, connectionToken: string, reconnect?: boolean, maxReconnect?: number,
             reconnectIntervalMs?: number, timeoutMs?: number
-        }): Promise<void> {
+        }): Promise<Memphis> {
         return new Promise((resolve, reject) => {
             this.host = this._normalizeHost(host);
             this.managementPort = managementPort;
@@ -177,7 +177,7 @@ class Memphis {
                             this.brokerConnection = this.brokerManager.jetstream();
                             this.brokerStats = await this.brokerManager.jetstreamManager();
                             this.natsConnection = true;
-                            return resolve();
+                            return resolve(this);
                         } catch (ex) {
                             return reject(ex);
                         }

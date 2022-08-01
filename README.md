@@ -49,7 +49,7 @@ import memphis from "memphis-dev"
 First, we need to connect with Memphis by using `memphis.connect`.
 
 ```js
-await memphis.connect({
+const memphisConnection = await memphis.connect({
             host: "<memphis-host>",
             managementPort: <management-port>, // defaults to 5555
             tcpPort: <tcp-port>, // defaults to 6666
@@ -70,13 +70,13 @@ Once connected, the entire functionalities offered by Memphis are available.
 To disconnect from Memphis, call `close()` on the memphis object.
 
 ```js
-memphis.close();
+memphisConnection.close();
 ```
 
 ### Creating a Factory
 
 ```js
-const factory = await memphis.factory({
+const factory = await memphisConnection.factory({
             name: "<factory-name>",
             description: ""
       });
@@ -86,13 +86,13 @@ const factory = await memphis.factory({
 Destroying a factory will remove all its resources (stations/producers/consumers)
 
 ```js
-await station.destroy();
+await factory.destroy();
 ```
 
 ### Creating a Station
 
 ```js
-const station = await memphis.station({
+const station = await memphisConnection.station({
             name: "<station-name>",
             factoryName: "<factory-name>",
             retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
@@ -163,7 +163,7 @@ of whether there are messages in flight for the client.
 ### Creating a Producer
 
 ```js
-const producer = await memphis.producer({
+const producer = await memphisConnection.producer({
             stationName: "<station-name>",
             producerName: "<producer-name>"
       });
@@ -187,7 +187,7 @@ await producer.destroy();
 ### Creating a Consumer
 
 ```js
-const consumer = await memphis.consumer({
+const consumer = await memphisConnection.consumer({
             stationName: "<station-name>",
             consumerName: "<consumer-name>",
             consumerGroup: "<group-name>", // defaults to the consumer name.
