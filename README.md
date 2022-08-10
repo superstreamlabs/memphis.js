@@ -101,13 +101,13 @@ Once connected, the entire functionalities offered by Memphis are available.
 To disconnect from Memphis, call `close()` on the memphis object.
 
 ```js
-memphis.close();
+memphisConnection.close();
 ```
 
 ### Creating a Factory
 
 ```js
-const factory = await memphis.factory({
+const factory = await memphisConnection.factory({
             name: "<factory-name>",
             description: ""
       });
@@ -135,7 +135,7 @@ class factoryModule {
 Destroying a factory will remove all its resources (stations/producers/consumers)
 
 ```js
-await station.destroy();
+await factory.destroy();
 ```
 
 ### Creating a Station
@@ -240,7 +240,7 @@ of whether there are messages in flight for the client.
 ### Creating a Producer
 
 ```js
-const producer = await memphis.producer({
+const producer = await memphisConnection.producer({
             stationName: "<station-name>",
             producerName: "<producer-name>"
       });
@@ -283,7 +283,7 @@ await producer.destroy();
 ### Creating a Consumer
 
 ```js
-const consumer = await memphis.consumer({
+const consumer = await memphisConnection.consumer({
             stationName: "<station-name>",
             consumerName: "<consumer-name>",
             consumerGroup: "<group-name>", // defaults to the consumer name.
