@@ -24,7 +24,7 @@
 </p>
 
 **[Memphis{dev}](https://memphis.dev)** is a Go-based message broker for developers made out of devs' struggles develop around message brokers.<br>Enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
-Focusing on automatic optimization, schema management, inline processing,  and troubleshooting abilities. All under the same hood.
+Focusing on automatic optimization, schema management, inline processing, and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
 
 ## Installation
@@ -34,14 +34,19 @@ $ npm install memphis-dev
 ```
 
 ## Importing
+
 for javascript, you can choose to use the import or required keyword
 
 ```js
 const memphis = require("memphis-dev");
 
-/*------for Typescript, use the import keyword to aid typechecking assistance----------*/
+/*------for Typescript, use the import keyword to aid for typechecking assistance----------*/
 
-import memphis from "memphis-dev" 
+import memphis from "memphis-dev";
+
+/* To leverage Nestjs dependency injection feature */
+import { Module } from "@nestjs/common";
+import { MemphisModule, MemphisService } from "memphis-dev/nest";
 ```
 
 ### Connecting to Memphis
@@ -49,6 +54,7 @@ import memphis from "memphis-dev"
 First, we need to connect with Memphis by using `memphis.connect`.
 
 ```js
+/* Javascript and typescript project */
 await memphis.connect({
             host: "<memphis-host>",
             managementPort: <management-port>, // defaults to 5555
@@ -61,6 +67,31 @@ await memphis.connect({
             reconnectIntervalMs: 1500, // defaults to 1500
             timeoutMs: 1500 // defaults to 1500
       });
+
+/* Nest injection */
+
+@Module({
+    imports: [MemphisModule.register()],
+})
+
+class ConsumerModule {
+    constructor(private memphis: MemphisService) {}
+
+    startConnection() {
+        (async function () {
+            try {
+                await this.memphis.connect({
+                    host: "<memphis-host>",
+                    username: "<application type username>",
+                    connectionToken: "<broker-token>",
+                });
+            } catch (ex) {
+                console.log(ex);
+                this.memphis.close();
+            }
+        })();
+    }
+}
 ```
 
 Once connected, the entire functionalities offered by Memphis are available.
@@ -80,9 +111,27 @@ const factory = await memphis.factory({
             name: "<factory-name>",
             description: ""
       });
+
+@Module({
+    imports: [MemphisModule.register()],
+})
+
+class factoryModule {
+    constructor(private memphis: MemphisService) { }
+
+    createFactory() {
+        (async function () {
+                  await this.memphis.factory({
+                              name: "<factory-name>",
+                              description: ""
+                  });
+        })();
+    }
+}
 ```
 
 ### Destroying a Factory
+
 Destroying a factory will remove all its resources (stations/producers/consumers)
 
 ```js
@@ -93,15 +142,40 @@ await station.destroy();
 
 ```js
 const station = await memphis.station({
-            name: "<station-name>",
-            factoryName: "<factory-name>",
-            retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
-            retentionValue: 604800, // defaults to 604800
-            storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
-            replicas: 1, // defaults to 1
-            dedupEnabled: false, // defaults to false
-            dedupWindowMs: 0 // defaults to 0
-      });
+  name: "<station-name>",
+  factoryName: "<factory-name>",
+  retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+  retentionValue: 604800, // defaults to 604800
+  storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
+  replicas: 1, // defaults to 1
+  dedupEnabled: false, // defaults to false
+  dedupWindowMs: 0, // defaults to 0
+});
+
+/* Creating a station with Nestjs dependency injection */
+
+@Module({
+    imports: [MemphisModule.register()],
+})
+
+class stationModule {
+    constructor(private memphis: MemphisService) { }
+
+    createStation() {
+        (async function () {
+                  const station = await this.memphis.station({
+                        name: "<station-name>",
+                        factoryName: "<factory-name>",
+                        retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, //                  defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+                        retentionValue: 604800, // defaults to 604800
+                        storageType: memphis.storageTypes.FILE, // defaults to memphis.              storageTypes.FILE
+                        replicas: 1, // defaults to 1
+                        dedupEnabled: false, // defaults to false
+                        dedupWindowMs: 0, // defaults to 0
+                  });
+        })();
+    }
+}
 ```
 
 ### Retention types
@@ -109,18 +183,21 @@ const station = await memphis.station({
 Memphis currently supports the following types of retention:
 
 ```js
-memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS;
 ```
+
 Means that every message persists for the value set in retention value field (in seconds)
 
 ```js
-memphis.retentionTypes.MESSAGES
+memphis.retentionTypes.MESSAGES;
 ```
+
 Means that after max amount of saved messages (set in retention value), the oldest messages will be deleted
 
 ```js
-memphis.retentionTypes.BYTES
+memphis.retentionTypes.BYTES;
 ```
+
 Means that after max amount of saved bytes (set in retention value), the oldest messages will be deleted
 
 ### Storage types
@@ -128,19 +205,19 @@ Means that after max amount of saved bytes (set in retention value), the oldest 
 Memphis currently supports the following types of messages storage:
 
 ```js
-memphis.storageTypes.FILE
+memphis.storageTypes.FILE;
 ```
+
 Means that messages persist on the file system
 
 ```js
-memphis.storageTypes.MEMORY
+memphis.storageTypes.MEMORY;
 ```
+
 Means that messages persist on the main memory
 
-
-
-
 ### Destroying a Station
+
 Destroying a station will remove all its resources (producers/consumers)
 
 ```js
@@ -167,14 +244,33 @@ const producer = await memphis.producer({
             stationName: "<station-name>",
             producerName: "<producer-name>"
       });
+
+/* Creating producers with nestjs dependecy injection */
+
+@Module({
+    imports: [MemphisModule.register()],
+})
+
+class ProducerModule {
+    constructor(private memphis: MemphisService) { }
+
+    createProducer() {
+        (async function () {
+                const producer = await this.memphis.producer({
+                    stationName: "<station-name>",
+                    producerName: "<producer-name>"
+                });
+        })();
+    }
+}
 ```
 
 ### Producing a message
 
 ```js
 await producer.produce({
-            message: "<bytes array>", // Uint8Arrays
-            ackWaitSec: 15 // defaults to 15
+  message: "<bytes array>", // Uint8Arrays
+  ackWaitSec: 15, // defaults to 15
 });
 ```
 
@@ -197,29 +293,50 @@ const consumer = await memphis.consumer({
             maxAckTimeMs: 30000 // defaults to 30000
             maxMsgDeliveries: 10 // defaults to 10
       });
+
+/* Creating consumers with nestjs dependecy injection */
+
+@Module({
+    imports: [MemphisModule.register()],
+})
+class ConsumerModule {
+    constructor(private memphis: MemphisService) {}
+
+    createConsumer() {
+        (async function () {
+                const consumer = await this.memphis.consumer({
+                    stationName: "<station-name>",
+                    consumerName: "<consumer-name>",
+                    consumerGroup: "",
+                });
+        })();
+    }
+}
 ```
 
 ### Processing messages
 
 ```js
-consumer.on("message", message => {
-        // processing
-        console.log(message.getData())
-        message.ack();
+consumer.on("message", (message) => {
+  // processing
+  console.log(message.getData());
+  message.ack();
 });
 ```
 
 ### Acknowledge a message
+
 Acknowledge a message indicates the Memphis server to not re-send the same message again to the same consumer / consumers group
+
 ```js
-    message.ack();
+message.ack();
 ```
 
 ### Catching async errors
 
 ```js
-consumer.on("error", error => {
-        // error handling
+consumer.on("error", (error) => {
+  // error handling
 });
 ```
 
