@@ -1,6 +1,6 @@
 {
   "name": "memphis-dev",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "A dev-first event processing platform",
   "exports": {
     ".": "./lib/index.js",
