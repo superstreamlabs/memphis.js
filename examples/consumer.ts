@@ -1,14 +1,15 @@
 import memphis from "memphis-dev"
 
 (async function () {
+    let memphisConnection
     try {
-        await memphis.connect({
+        memphisConnection = await memphis.connect({
             host: "<memphis-host>",
             username: "<application type username>",
             connectionToken: "<broker-token>"
         });
 
-        const consumer = await memphis.consumer({
+        const consumer = await memphisConnection.consumer({
             stationName: "<station-name>",
             consumerName: "<consumer-name>",
             consumerGroup: ""
@@ -24,6 +25,6 @@ import memphis from "memphis-dev"
         });
     } catch (ex) {
         console.log(ex);
-        memphis.close();
+        memphisConnection.close();
     }
 }());
