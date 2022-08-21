@@ -92,43 +92,41 @@ import { MemphisModule, MemphisService } from "memphis-dev/nest";
 First, we need to connect with Memphis by using `memphis.connect`.
 
 ```js
-/* Javascript and typescript project */
+/* Javascript and Typescript projects */
 await memphis.connect({
-            host: "<memphis-host>",
-            managementPort: <management-port>, // defaults to 5555
-            tcpPort: <tcp-port>, // defaults to 6666
-            dataPort: <data-port>, // defaults to 7766
-            username: "<username>", // (root/application type user)
-            connectionToken: "<broker-token>", // you will get it on application type user creation
-            reconnect: true, // defaults to false
-            maxReconnect: 10, // defaults to 10
-            reconnectIntervalMs: 1500, // defaults to 1500
-            timeoutMs: 1500 // defaults to 1500
-      });
+  host: "<memphis-host>",
+  managementPort: <management-port>, // defaults to 5555
+  tcpPort: <tcp-port>, // defaults to 6666
+  dataPort: <data-port>, // defaults to 7766
+  username: "<username>", // (root/application type user)
+  connectionToken: "<broker-token>", // you will get it on application type user creation
+  reconnect: true, // defaults to false
+  maxReconnect: 10, // defaults to 10
+  reconnectIntervalMs: 1500, // defaults to 1500
+  timeoutMs: 1500 // defaults to 1500
+});
 
-/* Nest injection */
+
+/* Nest Injection */
 
 @Module({
-    imports: [MemphisModule.register()],
+  imports: [MemphisModule.register()],
 })
+class ConsumerModule implements OnModuleInit {
+  constructor(private memphis: MemphisService) {}
 
-class ConsumerModule {
-    constructor(private memphis: MemphisService) {}
-
-    startConnection() {
-        (async function () {
-            try {
-                await this.memphis.connect({
-                    host: "<memphis-host>",
-                    username: "<application type username>",
-                    connectionToken: "<broker-token>",
-                });
-            } catch (ex) {
-                console.log(ex);
-                this.memphis.close();
-            }
-        })();
+  async OnModuleInit(): Promise<void> {
+    try {
+      await this.memphis.connect({
+        host: "<memphis-host>",
+        username: "<application type username>",
+        connectionToken: "<broker-token>",
+      });
+    } catch (ex) {
+      console.log(ex);
+      this.memphis.close();
     }
+  }
 }
 ```
 
@@ -146,25 +144,24 @@ memphisConnection.close();
 
 ```js
 const factory = await memphisConnection.factory({
-            name: "<factory-name>",
-            description: ""
-      });
+  name: "<factory-name>",
+  description: ""
+});
 
 @Module({
-    imports: [MemphisModule.register()],
+  imports: [MemphisModule.register()],
 })
-
 class factoryModule {
-    constructor(private memphis: MemphisService) { }
+  constructor(private memphis: MemphisService) { }
 
-    createFactory() {
-        (async function () {
-                  await this.memphis.factory({
-                              name: "<factory-name>",
-                              description: ""
-                  });
-        })();
-    }
+  createFactory() {
+    (async function () {
+      await this.memphis.factory({
+        name: "<factory-name>",
+        description: ""
+      });
+    })();
+  }
 }
 ```
 
@@ -193,26 +190,26 @@ const station = await memphis.station({
 /* Creating a station with Nestjs dependency injection */
 
 @Module({
-    imports: [MemphisModule.register()],
+  imports: [MemphisModule.register()],
 })
 
 class stationModule {
-    constructor(private memphis: MemphisService) { }
+  constructor(private memphis: MemphisService) { }
 
-    createStation() {
-        (async function () {
-                  const station = await this.memphis.station({
-                        name: "<station-name>",
-                        factoryName: "<factory-name>",
-                        retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, //                  defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
-                        retentionValue: 604800, // defaults to 604800
-                        storageType: memphis.storageTypes.FILE, // defaults to memphis.              storageTypes.FILE
-                        replicas: 1, // defaults to 1
-                        dedupEnabled: false, // defaults to false
-                        dedupWindowMs: 0, // defaults to 0
-                  });
-        })();
-    }
+  createStation() {
+    (async function () {
+      const station = await this.memphis.station({
+        name: "<station-name>",
+        factoryName: "<factory-name>",
+        retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+        retentionValue: 604800, // defaults to 604800
+        storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
+        replicas: 1, // defaults to 1
+        dedupEnabled: false, // defaults to false
+        dedupWindowMs: 0, // defaults to 0
+      });
+    })();
+  }
 }
 ```
 
@@ -279,27 +276,26 @@ of whether there are messages in flight for the client.
 
 ```js
 const producer = await memphisConnection.producer({
-            stationName: "<station-name>",
-            producerName: "<producer-name>"
-      });
+  stationName: "<station-name>",
+  producerName: "<producer-name>"
+});
 
 /* Creating producers with nestjs dependecy injection */
 
 @Module({
-    imports: [MemphisModule.register()],
+  imports: [MemphisModule.register()],
 })
-
 class ProducerModule {
-    constructor(private memphis: MemphisService) { }
+  constructor(private memphis: MemphisService) { }
 
-    createProducer() {
-        (async function () {
-                const producer = await this.memphis.producer({
-                    stationName: "<station-name>",
-                    producerName: "<producer-name>"
-                });
-        })();
-    }
+  createProducer() {
+    (async function () {
+      const producer = await this.memphis.producer({
+        stationName: "<station-name>",
+        producerName: "<producer-name>"
+      });
+    })();
+  }
 }
 ```
 
@@ -322,33 +318,33 @@ await producer.destroy();
 
 ```js
 const consumer = await memphisConnection.consumer({
-            stationName: "<station-name>",
-            consumerName: "<consumer-name>",
-            consumerGroup: "<group-name>", // defaults to the consumer name.
-            pullIntervalMs: 1000, // defaults to 1000
-            batchSize: 10, // defaults to 10
-            batchMaxTimeToWaitMs: 5000, // defaults to 5000
-            maxAckTimeMs: 30000 // defaults to 30000
-            maxMsgDeliveries: 10 // defaults to 10
-      });
+  stationName: "<station-name>",
+  consumerName: "<consumer-name>",
+  consumerGroup: "<group-name>", // defaults to the consumer name.
+  pullIntervalMs: 1000, // defaults to 1000
+  batchSize: 10, // defaults to 10
+  batchMaxTimeToWaitMs: 5000, // defaults to 5000
+  maxAckTimeMs: 30000 // defaults to 30000
+  maxMsgDeliveries: 10 // defaults to 10
+});
 
 /* Creating consumers with nestjs dependecy injection */
 
 @Module({
-    imports: [MemphisModule.register()],
+  imports: [MemphisModule.register()],
 })
 class ConsumerModule {
-    constructor(private memphis: MemphisService) {}
+  constructor(private memphis: MemphisService) {}
 
-    createConsumer() {
-        (async function () {
-                const consumer = await this.memphis.consumer({
-                    stationName: "<station-name>",
-                    consumerName: "<consumer-name>",
-                    consumerGroup: "",
-                });
-        })();
-    }
+  createConsumer() {
+    (async function () {
+      const consumer = await this.memphis.consumer({
+        stationName: "<station-name>",
+        consumerName: "<consumer-name>",
+        consumerGroup: "",
+      });
+    })();
+  }
 }
 ```
 
