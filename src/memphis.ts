@@ -16,7 +16,7 @@ import * as events from "events";
 import * as broker from "nats";
 import { headers } from "nats";
 import { v4 as uuidv4 } from "uuid";
-import { httpRequest } from "./httpRequest";
+import ObjectID from "bson-objectid"
 
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
@@ -42,22 +42,28 @@ const storageTypes: IStorageTypes = {
 
 interface IMessage {
   connection_id: string;
-  access_token: string;
-  access_token_exp: number;
   ping_interval_ms: number;
+  server_id: string;
+  server_name: string;
+  version: string;
+  proto: number;
+  go: string;
+  host: string;
+  port: number;
+  headers: boolean;
+  max_payload: number;
+  jetstream: boolean;
+  client_id: number;
+  client_ip: string;
 }
 
 export class Memphis {
   private isConnectionActive: boolean;
   public connectionId: string;
-  public accessToken: string;
   public host: string;
-  public managementPort: number;
-  private tcpPort: number;
-  private dataPort: number;
-  private username: string;
+  public port: number;
+  public username: string;
   private connectionToken: string;
-  private accessTokenTimeout: any;
   private pingTimeout: any;
   private client: net.Socket;
   private reconnectAttempts: number;
@@ -71,18 +77,15 @@ export class Memphis {
   public brokerStats: any;
   public retentionTypes!: IRetentionTypes;
   public storageTypes!: IStorageTypes;
+  public JSONC : any;
 
   constructor() {
     this.isConnectionActive = false;
-    this.connectionId = "";
-    this.accessToken = "";
+    this.connectionId = ObjectID().toHexString().toString();
     this.host = "";
-    this.managementPort = 5555;
-    this.tcpPort = 6666;
-    this.dataPort = 7766;
+    this.port = 6666;
     this.username = "";
     this.connectionToken = "";
-    this.accessTokenTimeout = null;
     this.pingTimeout = null;
     this.client = new net.Socket();
     this.reconnectAttempts = 0;
@@ -110,9 +113,7 @@ export class Memphis {
   /**
    * Creates connection with Memphis.
    * @param {String} host - memphis host.
-   * @param {Number} managementPort - management port, default is 5555.
-   * @param {Number} tcpPort - tcp port, default is 6666.
-   * @param {Number} dataPort - data port, default is 7766 .
+   * @param {Number} port - broker port, default is 6666.
    * @param {String} username - user of type root/application.
    * @param {String} connectionToken - broker token.
    * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
@@ -123,9 +124,7 @@ export class Memphis {
 
   connect({
     host,
-    managementPort = 5555,
-    tcpPort = 6666,
-    dataPort = 7766,
+    port = 6666,
     username,
     connectionToken,
     reconnect = true,
@@ -134,76 +133,64 @@ export class Memphis {
     timeoutMs = 15000,
   }: {
     host: string;
-    managementPort?: number;
-    tcpPort?: number;
-    dataPort?: number;
+    port?: number;
     username: string;
     connectionToken: string;
     reconnect?: boolean;
     maxReconnect?: number;
     reconnectIntervalMs?: number;
     timeoutMs?: number;
-  }): Promise<void> {
+  }): Promise<Memphis> {
     return new Promise((resolve, reject) => {
       this.host = this._normalizeHost(host);
-      this.managementPort = managementPort;
-      this.tcpPort = tcpPort;
-      this.dataPort = dataPort;
+      this.port = port;
       this.username = username;
       this.connectionToken = connectionToken;
       this.reconnect = reconnect;
       this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
       this.reconnectIntervalMs = reconnectIntervalMs;
       this.timeoutMs = timeoutMs;
+      
+      this.client.connect(this.port, this.host, async () => {
+        this.host = this._normalizeHost(host);
+        this.port = port;
+        this.username = username;
+        this.connectionToken = connectionToken;
+        this.reconnect = reconnect;
+        this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
+        this.reconnectIntervalMs = reconnectIntervalMs;
+        this.timeoutMs = timeoutMs;
 
-      this.client.connect(this.tcpPort, this.host, () => {
-        this.client.write(
-          JSON.stringify({
-            username: username,
-            broker_creds: connectionToken,
-            connection_id: this.connectionId,
-          })
-        );
+        let conId_username = this.connectionId + "::" + username
 
-        this.client.on("data", async (data) => {
-          let message: IMessage;
+        let connected = false;
+        if (!connected) {
           try {
-            message = JSON.parse(data.toString());
-          } catch (ex) {
-            return reject(data.toString());
-          }
-          this.connectionId = message.connection_id;
-          this.isConnectionActive = true;
-          this.reconnectAttempts = 0;
-
-          if (message.access_token) {
-            this.accessToken = message.access_token;
-            this._keepAcessTokenFresh(message.access_token_exp);
-          }
-
-          if (message.ping_interval_ms)
-            this._pingServer(message.ping_interval_ms);
-
-          if (!this.natsConnection) {
-            try {
-              this.brokerManager = await broker.connect({
-                servers: `${this.host}:${this.dataPort}`,
+            this.brokerManager = await broker.connect({
+                servers: `${this.host}:${this.port}`,
                 reconnect: this.reconnect,
                 maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
                 reconnectTimeWait: this.reconnectIntervalMs,
                 timeout: this.timeoutMs,
                 token: this.connectionToken,
-              });
+                name: conId_username
+            });
 
-              this.brokerConnection = this.brokerManager.jetstream();
-              this.brokerStats = await this.brokerManager.jetstreamManager();
-              this.natsConnection = true;
-              return resolve();
-            } catch (ex) {
-              return reject(ex);
-            }
+            this.brokerConnection = this.brokerManager.jetstream();
+            this.brokerStats = await this.brokerManager.jetstreamManager();
+            this.JSONC = broker.JSONCodec();
+            connected = true;
+            this.isConnectionActive = true;
+            return resolve(this);
+          } catch (ex) {
+            return reject(ex);
           }
-        });
+        }
+
+        setTimeout(() => {
+          if (!reconnect || this.reconnectAttempts === maxReconnect || !this.isConnectionActive)
+            reject(new Error("Connection timeout has reached"));
+        }, timeoutMs);
       });
 
       setTimeout(() => {
@@ -221,17 +208,6 @@ export class Memphis {
     if (host.startsWith("http://")) return host.split("http://")[1];
     else if (host.startsWith("https://")) return host.split("https://")[1];
     else return host;
-  }
-
-  private _keepAcessTokenFresh(expiresIn: number) {
-    this.accessTokenTimeout = setTimeout(() => {
-      if (this.isConnectionActive)
-        this.client.write(
-          JSON.stringify({
-            resend_access_token: true,
-          })
-        );
-    }, expiresIn);
   }
 
   private _pingServer(interval: number) {
@@ -259,17 +235,19 @@ export class Memphis {
   }): Promise<Factory> {
     try {
       if (!this.isConnectionActive) throw new Error("Connection is dead");
-
-      const response = await httpRequest({
-        method: "POST",
-        url: `http://${this.host}:${this.managementPort}/api/factories/createFactory`,
-        headers: {
-          Authorization: "Bearer " + this.accessToken,
-        },
-        bodyParams: { name, description },
-      });
-
-      return new Factory(this, response.name);
+      
+      let createFactoryReq = {
+        username : this.username,
+        factory_name: name,
+        factory_description: description
+      }
+      let data = this.JSONC.encode(createFactoryReq);
+      let errMsg = await this.brokerManager.request("$memphis_factory_creations", data);
+      errMsg = errMsg.data.toString();
+      if (errMsg != ""){
+        throw new Error(errMsg);
+     }
+      return new Factory(this, name);
     } catch (ex) {
       if (typeof ex == "string") {
         return new Factory(this, name.toLowerCase());
@@ -310,25 +288,19 @@ export class Memphis {
   }): Promise<Station> {
     try {
       if (!this.isConnectionActive) throw new Error("Connection is dead");
-      const response = await httpRequest({
-        method: "POST",
-        url: `http://${this.host}:${this.managementPort}/api/stations/createStation`,
-        headers: {
-          Authorization: "Bearer " + this.accessToken,
-        },
-        bodyParams: {
-          name: name,
-          factory_name: factoryName,
-          retention_type: retentionType,
-          retention_value: retentionValue,
-          storage_type: storageType,
-          replicas: replicas,
-          dedup_enabled: dedupEnabled,
-          dedup_window_in_ms: dedupWindowMs,
-        },
-      });
-
-      return new Station(this, response.name);
+      let createStationReq = {
+            name: name,
+            factory_name: factoryName,
+            retention_type: retentionType,
+            retention_value: retentionValue,
+            storage_type: storageType,
+            replicas: replicas,
+            dedup_enabled: dedupEnabled,
+            dedup_window_in_ms: dedupWindowMs,
+          }
+        let data = this.JSONC.encode(createStationReq);
+        await this.brokerManager.publish("$memphis_station_creations", data);
+      return new Station(this, name);
     } catch (ex) {
       if (typeof ex == "string") {
         return new Station(this, name.toLowerCase());
@@ -351,21 +323,19 @@ export class Memphis {
   }): Promise<Producer> {
     try {
       if (!this.isConnectionActive) throw new Error("Connection is dead");
-
-      await httpRequest({
-        method: "POST",
-        url: `http://${this.host}:${this.managementPort}/api/producers/createProducer`,
-        headers: {
-          Authorization: "Bearer " + this.accessToken,
-        },
-        bodyParams: {
-          name: producerName,
-          station_name: stationName,
-          connection_id: this.connectionId,
-          producer_type: "application",
-        },
-      });
-
+      let createProducerReq = {
+        name: producerName,
+        station_name: stationName,
+        connection_id: this.connectionId,
+        producer_type: "application",
+      }
+      let data = this.JSONC.encode(createProducerReq);
+      let errMsg = await this.brokerManager.request("$memphis_producer_creations", data);
+      errMsg = errMsg.data.toString();
+      if (errMsg != ""){
+        throw new Error(errMsg);
+     }
+      
       return new Producer(this, producerName, stationName);
     } catch (ex) {
       throw ex;
@@ -380,7 +350,7 @@ export class Memphis {
    * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
    * @param {Number} batchSize - pull batch size.
    * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
-   * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+   * @param {Number} `maxAckTimeMs` - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
    */
   async consumer({
@@ -406,23 +376,21 @@ export class Memphis {
       if (!this.isConnectionActive) throw new Error("Connection is dead");
 
       consumerGroup = consumerGroup || consumerName;
-
-      await httpRequest({
-        method: "POST",
-        url: `http://${this.host}:${this.managementPort}/api/consumers/createConsumer`,
-        headers: {
-          Authorization: "Bearer " + this.accessToken,
-        },
-        bodyParams: {
-          name: consumerName,
-          station_name: stationName,
-          connection_id: this.connectionId,
-          consumer_type: "application",
-          consumers_group: consumerGroup,
-          max_ack_time_ms: maxAckTimeMs,
-          max_msg_deliveries: maxMsgDeliveries,
-        },
-      });
+      let createConsumerReq = {
+        name: consumerName,
+        station_name: stationName,
+        connection_id: this.connectionId,
+        consumer_type: "application",
+        consumers_group: consumerGroup,
+        max_ack_time_ms: maxAckTimeMs,
+        max_msg_deliveries: maxMsgDeliveries,
+      }
+      let data = this.JSONC.encode(createConsumerReq);
+      let errMsg = await this.brokerManager.request("$memphis_consumer_creations", data);
+      errMsg = errMsg.data.toString();
+      if (errMsg != ""){
+        throw new Error(errMsg);
+     }
 
       return new Consumer(
         this,
@@ -447,9 +415,7 @@ export class Memphis {
         try {
           await this.connect({
             host: this.host,
-            managementPort: this.managementPort,
-            tcpPort: this.tcpPort,
-            dataPort: this.dataPort,
+            port: this.port,
             username: this.username,
             connectionToken: this.connectionToken,
             reconnect: this.reconnect,
@@ -468,7 +434,6 @@ export class Memphis {
       this.client?.removeAllListeners("error");
       this.client?.removeAllListeners("close");
       this.client?.destroy();
-      clearTimeout(this.accessTokenTimeout);
       clearTimeout(this.pingTimeout);
       this.reconnectAttempts = 0;
       setTimeout(() => {
@@ -485,7 +450,6 @@ export class Memphis {
     this.client?.removeAllListeners("error");
     this.client?.removeAllListeners("close");
     this.client?.destroy();
-    clearTimeout(this.accessTokenTimeout);
     clearTimeout(this.pingTimeout);
     this.reconnectAttempts = 0;
     setTimeout(() => {
@@ -521,6 +485,7 @@ class Producer {
       const h = headers();
       h.append("connectionId", this.connection.connectionId);
       h.append("producedBy", this.producerName);
+      
       await this.connection.brokerConnection.publish(
         `${this.stationName}.final`,
         message,
@@ -541,17 +506,13 @@ class Producer {
    */
   async destroy(): Promise<void> {
     try {
-      await httpRequest({
-        method: "DELETE",
-        url: `http://${this.connection.host}:${this.connection.managementPort}/api/producers/destroyProducer`,
-        headers: {
-          Authorization: "Bearer " + this.connection.accessToken,
-        },
-        bodyParams: {
+      let removeProducerReq = {
           name: this.producerName,
           station_name: this.stationName,
-        },
-      });
+          username: this.connection.username
+      }
+      let data = this.connection.JSONC.encode(removeProducerReq);
+      await this.connection.brokerManager.publish("$memphis_producer_destructions", data);
     } catch (_) { }
   }
 }
@@ -661,6 +622,8 @@ class Consumer {
         durableName
       );
     } catch (ex) {
+      console.log(ex);
+      
       this.eventEmitter.emit("error", "station/consumer were not found");
     }
   }
@@ -674,17 +637,13 @@ class Consumer {
     clearInterval(this.pullInterval);
     clearInterval(this.pingConsumerInvterval);
     try {
-      await httpRequest({
-        method: "DELETE",
-        url: `http://${this.connection.host}:${this.connection.managementPort}/api/consumers/destroyConsumer`,
-        headers: {
-          Authorization: "Bearer " + this.connection.accessToken,
-        },
-        bodyParams: {
-          name: this.consumerName,
-          station_name: this.stationName,
-        },
-      });
+      let removeConsumerReq = {
+        name: this.consumerName,
+        station_name: this.stationName,
+        username: this.connection.username
+      }
+      let data = this.connection.JSONC.encode(removeConsumerReq);
+      await this.connection.brokerManager.publish("$memphis_consumer_destructions", data);
     } catch (_) { }
   }
 }
@@ -724,19 +683,12 @@ class Factory {
    */
   async destroy(): Promise<void> {
     try {
-      await httpRequest({
-        method: "DELETE",
-        url: `http://${this.connection.host}:${this.connection.managementPort}/api/factories/removeFactory`,
-        headers: {
-          Authorization: "Bearer " + this.connection.accessToken,
-        },
-        bodyParams: {
-          factory_name: this.name,
-        },
-      });
-    } catch (ex) {
-      throw ex;
-    }
+      let removeFactoryReq = {
+        name: this.name
+      }
+      let data = this.connection.JSONC.encode(removeFactoryReq);
+      await this.connection.brokerManager.publish("$memphis_factory_destructions", data);
+    } catch (_) { }
   }
 }
 
@@ -754,19 +706,12 @@ class Station {
    */
   async destroy(): Promise<void> {
     try {
-      await httpRequest({
-        method: "DELETE",
-        url: `http://${this.connection.host}:${this.connection.managementPort}/api/stations/removeStation`,
-        headers: {
-          Authorization: "Bearer " + this.connection.accessToken,
-        },
-        bodyParams: {
-          station_name: this.name,
-        },
-      });
-    } catch (ex) {
-      throw ex;
-    }
+      let removeStationReq = {
+        name: this.name
+      }
+      let data = this.connection.JSONC.encode(removeStationReq);
+      await this.connection.brokerManager.publish("$memphis_station_destructions", data);
+    } catch (_) { }
   }
 }
 
