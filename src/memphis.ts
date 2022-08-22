@@ -622,8 +622,6 @@ class Consumer {
         durableName
       );
     } catch (ex) {
-      console.log(ex);
-      
       this.eventEmitter.emit("error", "station/consumer were not found");
     }
   }
