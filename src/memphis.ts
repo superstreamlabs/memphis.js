@@ -16,7 +16,6 @@ import * as events from 'events';
 import * as broker from 'nats';
 import { headers } from 'nats';
 import { v4 as uuidv4 } from 'uuid';
-import ObjectID from 'bson-objectid';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -47,7 +46,6 @@ export class Memphis {
     public port: number;
     public username: string;
     private connectionToken: string;
-    private pingTimeout: any;
     private reconnect: boolean;
     private maxReconnect: number;
     private reconnectIntervalMs: number;
@@ -61,12 +59,10 @@ export class Memphis {
 
     constructor() {
         this.isConnectionActive = false;
-        this.connectionId = ObjectID().toHexString().toString();
         this.host = '';
         this.port = 6666;
         this.username = '';
         this.connectionToken = '';
-        this.pingTimeout = null;
         this.reconnect = true;
         this.maxReconnect = 3;
         this.reconnectIntervalMs = 200;
@@ -76,6 +72,9 @@ export class Memphis {
         this.brokerStats = null;
         this.retentionTypes = retentionTypes;
         this.storageTypes = storageTypes;
+        this.JSONC = broker.JSONCodec();
+        const genRanHex = (size) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+        this.connectionId = genRanHex(24);
     }
 
     /**
@@ -97,7 +96,7 @@ export class Memphis {
         connectionToken,
         reconnect = true,
         maxReconnect = 3,
-        reconnectIntervalMs = 200,
+        reconnectIntervalMs = 5000,
         timeoutMs = 15000
     }: {
         host: string;
@@ -130,11 +129,28 @@ export class Memphis {
                     token: this.connectionToken,
                     name: conId_username
                 });
-
                 this.brokerConnection = this.brokerManager.jetstream();
                 this.brokerStats = await this.brokerManager.jetstreamManager();
-                this.JSONC = broker.JSONCodec();
                 this.isConnectionActive = true;
+                (async () => {
+                    for await (const s of this.brokerManager.status()) {
+                        switch (s.type) {
+                            case 'update':
+                                console.log(`reconnected to memphis successfully`);
+                                this.isConnectionActive = true;
+                                break;
+                            case 'reconnecting':
+                                console.log(`trying to reconnect to memphis - ${s.data}`);
+                                break;
+                            case 'disconnect':
+                                console.log(`disconnected from memphis - ${s.data}`);
+                                this.isConnectionActive = false;
+                                break;
+                            default:
+                                this.isConnectionActive = true;
+                        }
+                    }
+                })().then();
                 return resolve(this);
             } catch (ex) {
                 return reject(ex);
@@ -158,7 +174,6 @@ export class Memphis {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
             let createFactoryReq = {
-                username: this.username,
                 factory_name: name,
                 factory_description: description
             };
@@ -170,7 +185,7 @@ export class Memphis {
             }
             return new Factory(this, name);
         } catch (ex) {
-            if (typeof ex == 'string') {
+            if (ex.message?.includes('already exists')) {
                 return new Factory(this, name.toLowerCase());
             }
             throw ex;
@@ -220,10 +235,14 @@ export class Memphis {
                 dedup_window_in_ms: dedupWindowMs
             };
             let data = this.JSONC.encode(createStationReq);
-            await this.brokerManager.publish('$memphis_station_creations', data);
+            let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw new Error(errMsg);
+            }
             return new Station(this, name);
         } catch (ex) {
-            if (typeof ex == 'string') {
+            if (ex.message?.includes('already exists')) {
                 return new Station(this, name.toLowerCase());
             }
             throw ex;
@@ -317,7 +336,6 @@ export class Memphis {
      * Close Memphis connection.
      */
     close() {
-        clearTimeout(this.pingTimeout);
         setTimeout(() => {
             this.brokerManager && this.brokerManager.close();
         }, 500);
@@ -362,8 +380,7 @@ class Producer {
         try {
             let removeProducerReq = {
                 name: this.producerName,
-                station_name: this.stationName,
-                username: this.connection.username
+                station_name: this.stationName
             };
             let data = this.connection.JSONC.encode(removeProducerReq);
             await this.connection.brokerManager.publish('$memphis_producer_destructions', data);
@@ -482,8 +499,7 @@ class Consumer {
         try {
             let removeConsumerReq = {
                 name: this.consumerName,
-                station_name: this.stationName,
-                username: this.connection.username
+                station_name: this.stationName
             };
             let data = this.connection.JSONC.encode(removeConsumerReq);
             await this.connection.brokerManager.publish('$memphis_consumer_destructions', data);
@@ -552,6 +568,10 @@ class Station {
             let removeStationReq = {
                 name: this.name
             };
+            5;
+
+            112233445;
+
             let data = this.connection.JSONC.encode(removeStationReq);
             await this.connection.brokerManager.publish('$memphis_station_destructions', data);
         } catch (_) {}
