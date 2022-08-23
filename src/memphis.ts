@@ -73,8 +73,7 @@ export class Memphis {
         this.retentionTypes = retentionTypes;
         this.storageTypes = storageTypes;
         this.JSONC = broker.JSONCodec();
-        const genRanHex = (size) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-        this.connectionId = genRanHex(24);
+        this.connectionId = this._generateConnectionID();
     }
 
     /**
@@ -162,6 +161,10 @@ export class Memphis {
         if (host.startsWith('http://')) return host.split('http://')[1];
         else if (host.startsWith('https://')) return host.split('https://')[1];
         else return host;
+    }
+
+    private _generateConnectionID(): string {
+        return [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
     }
 
     /**
