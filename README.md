@@ -95,9 +95,7 @@ First, we need to connect with Memphis by using `memphis.connect`.
 /* Javascript and typescript project */
 await memphis.connect({
             host: "<memphis-host>",
-            managementPort: <management-port>, // defaults to 5555
-            tcpPort: <tcp-port>, // defaults to 6666
-            dataPort: <data-port>, // defaults to 7766
+            port: <management-port>, // defaults to 6666
             username: "<username>", // (root/application type user)
             connectionToken: "<broker-token>", // you will get it on application type user creation
             reconnect: true, // defaults to false
