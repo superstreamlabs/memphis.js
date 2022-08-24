@@ -395,7 +395,9 @@ class Producer {
             };
             let data = this.connection.JSONC.encode(removeProducerReq);
             await this.connection.brokerManager.publish('$memphis_producer_destructions', data);
-        } catch (_) {}
+        } catch (ex) {
+            throw ex;
+        }
     }
 }
 
@@ -514,7 +516,9 @@ class Consumer {
             };
             let data = this.connection.JSONC.encode(removeConsumerReq);
             await this.connection.brokerManager.publish('$memphis_consumer_destructions', data);
-        } catch (_) {}
+        } catch (ex) {
+            throw ex;
+        }
     }
 }
 
@@ -558,7 +562,9 @@ class Factory {
             };
             let data = this.connection.JSONC.encode(removeFactoryReq);
             await this.connection.brokerManager.publish('$memphis_factory_destructions', data);
-        } catch (_) {}
+        } catch (ex) {
+            throw ex;
+        }
     }
 }
 
@@ -581,7 +587,9 @@ class Station {
             };
             let data = this.connection.JSONC.encode(removeStationReq);
             await this.connection.brokerManager.publish('$memphis_station_destructions', data);
-        } catch (_) {}
+        } catch (ex) {
+            throw ex;
+        }
     }
 }
 
