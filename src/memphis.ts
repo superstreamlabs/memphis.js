@@ -19,7 +19,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import * as net from 'net';
 import * as events from 'events';
 import * as broker from 'nats';
 import { headers } from 'nats';
@@ -134,7 +133,8 @@ export class Memphis {
                     reconnectTimeWait: this.reconnectIntervalMs,
                     timeout: this.timeoutMs,
                     token: this.connectionToken,
-                    name: conId_username
+                    name: conId_username,
+                    maxPingOut: 1
                 });
                 this.brokerConnection = this.brokerManager.jetstream();
                 this.brokerStats = await this.brokerManager.jetstreamManager();
