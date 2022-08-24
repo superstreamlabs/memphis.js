@@ -554,7 +554,7 @@ class Factory {
     async destroy(): Promise<void> {
         try {
             let removeFactoryReq = {
-                name: this.name
+                factory_name: this.name
             };
             let data = this.connection.JSONC.encode(removeFactoryReq);
             await this.connection.brokerManager.publish('$memphis_factory_destructions', data);
@@ -577,12 +577,8 @@ class Station {
     async destroy(): Promise<void> {
         try {
             let removeStationReq = {
-                name: this.name
+                station_name: this.name
             };
-            5;
-
-            112233445;
-
             let data = this.connection.JSONC.encode(removeStationReq);
             await this.connection.brokerManager.publish('$memphis_station_destructions', data);
         } catch (_) {}
