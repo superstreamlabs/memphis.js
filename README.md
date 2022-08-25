@@ -98,7 +98,7 @@ await memphis.connect({
             port: <management-port>, // defaults to 6666
             username: "<username>", // (root/application type user)
             connectionToken: "<broker-token>", // you will get it on application type user creation
-            reconnect: false, // defaults to false
+            reconnect: true, // defaults to true
             maxReconnect: 3, // defaults to 3
             reconnectIntervalMs: 1500, // defaults to 1500
             timeoutMs: 1500 // defaults to 1500
