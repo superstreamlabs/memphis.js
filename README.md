@@ -99,7 +99,7 @@ await memphis.connect({
             username: "<username>", // (root/application type user)
             connectionToken: "<broker-token>", // you will get it on application type user creation
             reconnect: true, // defaults to false
-            maxReconnect: 10, // defaults to 10
+            maxReconnect: 3, // defaults to 3
             reconnectIntervalMs: 1500, // defaults to 1500
             timeoutMs: 1500 // defaults to 1500
       });
