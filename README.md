@@ -106,7 +106,6 @@ await memphis.connect({
   timeoutMs: 1500 // defaults to 1500
 });
 
-
 /* Nest Injection */
 
 @Module({

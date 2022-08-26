@@ -10,48 +10,38 @@ interface IStorageTypes {
 export declare class Memphis {
     private isConnectionActive;
     connectionId: string;
-    accessToken: string;
     host: string;
-    managementPort: number;
-    private tcpPort;
-    private dataPort;
-    private username;
+    port: number;
+    username: string;
     private connectionToken;
-    private accessTokenTimeout;
-    private pingTimeout;
-    private client;
-    private reconnectAttempts;
     private reconnect;
     private maxReconnect;
     private reconnectIntervalMs;
     private timeoutMs;
-    private natsConnection;
     brokerConnection: any;
     brokerManager: any;
     brokerStats: any;
     retentionTypes: IRetentionTypes;
     storageTypes: IStorageTypes;
+    JSONC: any;
     constructor();
-    connect({ host, managementPort, tcpPort, dataPort, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, }: {
+    connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
         host: string;
-        managementPort?: number;
-        tcpPort?: number;
-        dataPort?: number;
+        port?: number;
         username: string;
         connectionToken: string;
         reconnect?: boolean;
         maxReconnect?: number;
         reconnectIntervalMs?: number;
         timeoutMs?: number;
-    }): Promise<void>;
+    }): Promise<Memphis>;
     private _normalizeHost;
-    private _keepAcessTokenFresh;
-    private _pingServer;
-    factory({ name, description, }: {
+    private _generateConnectionID;
+    factory({ name, description }: {
         name: string;
         description?: string;
     }): Promise<Factory>;
-    station({ name, factoryName, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs, }: {
+    station({ name, factoryName, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs }: {
         name: string;
         factoryName: string;
         retentionType?: string;
@@ -61,11 +51,11 @@ export declare class Memphis {
         dedupEnabled?: boolean;
         dedupWindowMs?: number;
     }): Promise<Station>;
-    producer({ stationName, producerName, }: {
+    producer({ stationName, producerName }: {
         stationName: string;
         producerName: string;
     }): Promise<Producer>;
-    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, }: {
+    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries }: {
         stationName: string;
         consumerName: string;
         consumerGroup: string;
@@ -75,7 +65,6 @@ export declare class Memphis {
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
     }): Promise<Consumer>;
-    private _close;
     close(): void;
 }
 declare class Producer {
@@ -83,7 +72,7 @@ declare class Producer {
     private producerName;
     private stationName;
     constructor(connection: Memphis, producerName: string, stationName: string);
-    produce({ message, ackWaitSec, }: {
+    produce({ message, ackWaitSec }: {
         message: Uint8Array;
         ackWaitSec?: number;
     }): Promise<void>;
