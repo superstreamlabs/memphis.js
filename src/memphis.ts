@@ -494,7 +494,7 @@ export class Memphis {
   }
 }
 
-class Producer {
+export class Producer {
   private connection: Memphis;
   private producerName: string;
   private stationName: string;
@@ -556,7 +556,7 @@ class Producer {
   }
 }
 
-class Consumer {
+export class Consumer {
   private connection: Memphis;
   private stationName: string;
   private consumerName: string;
@@ -689,7 +689,7 @@ class Consumer {
   }
 }
 
-class Message {
+export class Message {
   private message: broker.JsMsg;
 
   constructor(message: broker.JsMsg) {
@@ -710,7 +710,7 @@ class Message {
   }
 }
 
-class Factory {
+export class Factory {
   private connection: Memphis;
   private name: string;
 
@@ -740,7 +740,7 @@ class Factory {
   }
 }
 
-class Station {
+export class Station {
   private connection: Memphis;
   private name: string;
 
@@ -769,7 +769,3 @@ class Station {
     }
   }
 }
-
-const MemphisInstance = new Memphis();
-
-export default MemphisInstance

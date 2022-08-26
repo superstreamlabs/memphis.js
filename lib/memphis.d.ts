@@ -1,3 +1,4 @@
+import * as broker from "nats";
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -78,7 +79,7 @@ export declare class Memphis {
     private _close;
     close(): void;
 }
-declare class Producer {
+export declare class Producer {
     private connection;
     private producerName;
     private stationName;
@@ -89,7 +90,7 @@ declare class Producer {
     }): Promise<void>;
     destroy(): Promise<void>;
 }
-declare class Consumer {
+export declare class Consumer {
     private connection;
     private stationName;
     private consumerName;
@@ -109,17 +110,22 @@ declare class Consumer {
     private _pingConsumer;
     destroy(): Promise<void>;
 }
-declare class Factory {
+export declare class Message {
+    private message;
+    constructor(message: broker.JsMsg);
+    ack(): void;
+    getData(): Uint8Array;
+}
+export declare class Factory {
     private connection;
     private name;
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
-declare class Station {
+export declare class Station {
     private connection;
     private name;
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
-declare const MemphisInstance: Memphis;
-export default MemphisInstance;
+export {};

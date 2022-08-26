@@ -1,2 +1,3 @@
-import Memphis from "./memphis";
-export = Memphis;
+import { Memphis } from "./memphis";
+declare const _default: Memphis;
+export = _default;
