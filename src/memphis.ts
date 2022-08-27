@@ -385,9 +385,20 @@ class Producer {
                 name: this.producerName,
                 station_name: this.stationName
             };
+            // let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
             let data = this.connection.JSONC.encode(removeProducerReq);
-            await this.connection.brokerManager.publish('$memphis_producer_destructions', data);
-        } catch (_) {}
+            let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw new Error(errMsg);
+            }
+        } catch (ex) {
+            if (ex.message?.includes('no documents')) {
+                console.log('Producer already destroyed');
+                return;
+            }
+            throw ex;
+        }
     }
 }
 
@@ -505,8 +516,18 @@ class Consumer {
                 station_name: this.stationName
             };
             let data = this.connection.JSONC.encode(removeConsumerReq);
-            await this.connection.brokerManager.publish('$memphis_consumer_destructions', data);
-        } catch (_) {}
+            let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw new Error(errMsg);
+            }
+        } catch (ex) {
+            if (ex.message?.includes('no documents')) {
+                console.log('Consumer already destroyed');
+                return;
+            }
+            throw ex;
+        }
     }
 }
 
@@ -549,8 +570,18 @@ class Factory {
                 factory_name: this.name
             };
             let data = this.connection.JSONC.encode(removeFactoryReq);
-            await this.connection.brokerManager.publish('$memphis_factory_destructions', data);
-        } catch (_) {}
+            let errMsg = await this.connection.brokerManager.request('$memphis_factory_destructions', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw new Error(errMsg);
+            }
+        } catch (ex) {
+            if (ex.message?.includes('no documents')) {
+                console.log('Factory already destroyed');
+                return;
+            }
+            throw ex;
+        }
     }
 }
 
@@ -572,8 +603,18 @@ class Station {
                 station_name: this.name
             };
             let data = this.connection.JSONC.encode(removeStationReq);
-            await this.connection.brokerManager.publish('$memphis_station_destructions', data);
-        } catch (_) {}
+            let errMsg = await this.connection.brokerManager.request('$memphis_station_destructions', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw new Error(errMsg);
+            }
+        } catch (ex) {
+            if (ex.message?.includes('no documents')) {
+                console.log('Station already destroyed');
+                return;
+            }
+            throw ex;
+        }
     }
 }
 
