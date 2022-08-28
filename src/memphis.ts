@@ -385,7 +385,6 @@ class Producer {
                 name: this.producerName,
                 station_name: this.stationName
             };
-            // let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
             let data = this.connection.JSONC.encode(removeProducerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
             errMsg = errMsg.data.toString();
