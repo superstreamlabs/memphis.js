@@ -392,7 +392,7 @@ class Producer {
                 throw new Error(errMsg);
             }
         } catch (ex) {
-            if (ex.message?.includes('no documents')) {
+            if (ex.message?.includes('not exist')) {
                 return;
             }
             throw ex;
@@ -520,7 +520,7 @@ class Consumer {
                 throw new Error(errMsg);
             }
         } catch (ex) {
-            if (ex.message?.includes('no documents')) {
+            if (ex.message?.includes('not exist')) {
                 return;
             }
             throw ex;
@@ -573,7 +573,7 @@ class Factory {
                 throw new Error(errMsg);
             }
         } catch (ex) {
-            if (ex.message?.includes('no documents')) {
+            if (ex.message?.includes('not exist')) {
                 return;
             }
             throw ex;
@@ -605,7 +605,7 @@ class Station {
                 throw new Error(errMsg);
             }
         } catch (ex) {
-            if (ex.message?.includes('no documents')) {
+            if (ex.message?.includes('not exist')) {
                 return;
             }
             throw ex;
