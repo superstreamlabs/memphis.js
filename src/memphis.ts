@@ -394,7 +394,6 @@ class Producer {
             }
         } catch (ex) {
             if (ex.message?.includes('no documents')) {
-                console.log('Producer already destroyed');
                 return;
             }
             throw ex;
@@ -523,7 +522,6 @@ class Consumer {
             }
         } catch (ex) {
             if (ex.message?.includes('no documents')) {
-                console.log('Consumer already destroyed');
                 return;
             }
             throw ex;
@@ -577,7 +575,6 @@ class Factory {
             }
         } catch (ex) {
             if (ex.message?.includes('no documents')) {
-                console.log('Factory already destroyed');
                 return;
             }
             throw ex;
@@ -610,7 +607,6 @@ class Station {
             }
         } catch (ex) {
             if (ex.message?.includes('no documents')) {
-                console.log('Station already destroyed');
                 return;
             }
             throw ex;
