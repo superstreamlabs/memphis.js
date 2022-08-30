@@ -460,8 +460,7 @@ class Consumer {
                 .pullSubscribe(`${this.stationName}.final`, {
                     mack: true,
                     config: {
-                        durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName,
-                        ack_wait: this.maxAckTimeMs
+                        durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName
                     }
                 })
                 .then(async (psub: any) => {
