@@ -140,46 +140,11 @@ To disconnect from Memphis, call `close()` on the memphis object.
 memphisConnection.close();
 ```
 
-### Creating a Factory
-
-```js
-const factory = await memphisConnection.factory({
-            name: "<factory-name>",
-            description: ""
-      });
-
-@Module({
-    imports: [MemphisModule.register()],
-})
-
-class factoryModule {
-    constructor(private memphis: MemphisService) { }
-
-    createFactory() {
-        (async function () {
-                  await this.memphis.factory({
-                              name: "<factory-name>",
-                              description: ""
-                  });
-        })();
-    }
-}
-```
-
-### Destroying a Factory
-
-Destroying a factory will remove all its resources (stations/producers/consumers)
-
-```js
-await factory.destroy();
-```
-
 ### Creating a Station
 
 ```js
 const station = await memphis.station({
   name: "<station-name>",
-  factoryName: "<factory-name>",
   retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
   retentionValue: 604800, // defaults to 604800
   storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
@@ -201,7 +166,6 @@ class stationModule {
         (async function () {
                   const station = await this.memphis.station({
                         name: "<station-name>",
-                        factoryName: "<factory-name>",
                         retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, //                  defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
                         retentionValue: 604800, // defaults to 604800
                         storageType: memphis.storageTypes.FILE, // defaults to memphis.              storageTypes.FILE

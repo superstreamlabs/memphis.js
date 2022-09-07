@@ -37,13 +37,8 @@ export declare class Memphis {
     }): Promise<Memphis>;
     private _normalizeHost;
     private _generateConnectionID;
-    factory({ name, description }: {
+    station({ name, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs }: {
         name: string;
-        description?: string;
-    }): Promise<Factory>;
-    station({ name, factoryName, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs }: {
-        name: string;
-        factoryName: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
@@ -96,12 +91,6 @@ declare class Consumer {
     on(event: String, cb: (...args: any[]) => void): void;
     private _handleAsyncIterableSubscriber;
     private _pingConsumer;
-    destroy(): Promise<void>;
-}
-declare class Factory {
-    private connection;
-    private name;
-    constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
 declare class Station {
