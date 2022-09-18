@@ -5,7 +5,7 @@
 </div>
 
 <div align="center">
-<h1>A powerful message broker for modern developers</h1>
+<h1>Real-Time Data Processing Platform</h1>
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png">
 
@@ -140,46 +140,11 @@ To disconnect from Memphis, call `close()` on the memphis object.
 memphisConnection.close();
 ```
 
-### Creating a Factory
-
-```js
-const factory = await memphisConnection.factory({
-            name: "<factory-name>",
-            description: ""
-      });
-
-@Module({
-    imports: [MemphisModule.register()],
-})
-
-class factoryModule {
-    constructor(private memphis: MemphisService) { }
-
-    createFactory() {
-        (async function () {
-                  await this.memphis.factory({
-                              name: "<factory-name>",
-                              description: ""
-                  });
-        })();
-    }
-}
-```
-
-### Destroying a Factory
-
-Destroying a factory will remove all its resources (stations/producers/consumers)
-
-```js
-await factory.destroy();
-```
-
 ### Creating a Station
 
 ```js
 const station = await memphis.station({
   name: "<station-name>",
-  factoryName: "<factory-name>",
   retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
   retentionValue: 604800, // defaults to 604800
   storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
@@ -201,7 +166,6 @@ class stationModule {
         (async function () {
                   const station = await this.memphis.station({
                         name: "<station-name>",
-                        factoryName: "<factory-name>",
                         retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, //                  defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
                         retentionValue: 604800, // defaults to 604800
                         storageType: memphis.storageTypes.FILE, // defaults to memphis.              storageTypes.FILE

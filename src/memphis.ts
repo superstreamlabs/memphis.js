@@ -176,37 +176,8 @@ export class Memphis {
     }
 
     /**
-     * Creates a factory.
-     * @param {String} name - factory name.
-     * @param {String} description - factory description (optional).
-     */
-    async factory({ name, description = '' }: { name: string; description?: string }): Promise<Factory> {
-        try {
-            if (!this.isConnectionActive) throw new Error('Connection is dead');
-
-            let createFactoryReq = {
-                factory_name: name,
-                factory_description: description
-            };
-            let data = this.JSONC.encode(createFactoryReq);
-            let errMsg = await this.brokerManager.request('$memphis_factory_creations', data);
-            errMsg = errMsg.data.toString();
-            if (errMsg != '') {
-                throw new Error(errMsg);
-            }
-            return new Factory(this, name);
-        } catch (ex) {
-            if (ex.message?.includes('already exists')) {
-                return new Factory(this, name.toLowerCase());
-            }
-            throw ex;
-        }
-    }
-
-    /**
      * Creates a station.
      * @param {String} name - station name.
-     * @param {String} factoryName - factory name to link the station with.
      * @param {Memphis.retentionTypes} retentionType - retention type, default is MAX_MESSAGE_AGE_SECONDS.
      * @param {Number} retentionValue - number which represents the retention based on the retentionType, default is 604800.
      * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.FILE.
@@ -216,7 +187,6 @@ export class Memphis {
      */
     async station({
         name,
-        factoryName,
         retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS,
         retentionValue = 604800,
         storageType = storageTypes.FILE,
@@ -225,7 +195,6 @@ export class Memphis {
         dedupWindowMs = 0
     }: {
         name: string;
-        factoryName: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
@@ -237,7 +206,6 @@ export class Memphis {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
             let createStationReq = {
                 name: name,
-                factory_name: factoryName,
                 retention_type: retentionType,
                 retention_value: retentionValue,
                 storage_type: storageType,
@@ -553,38 +521,6 @@ class Message {
 
     getData() {
         return this.message.data;
-    }
-}
-
-class Factory {
-    private connection: Memphis;
-    private name: string;
-
-    constructor(connection: Memphis, name: string) {
-        this.connection = connection;
-        this.name = name.toLowerCase();
-    }
-
-    /**
-     * Destroy the factory.
-     */
-    async destroy(): Promise<void> {
-        try {
-            let removeFactoryReq = {
-                factory_name: this.name
-            };
-            let data = this.connection.JSONC.encode(removeFactoryReq);
-            let errMsg = await this.connection.brokerManager.request('$memphis_factory_destructions', data);
-            errMsg = errMsg.data.toString();
-            if (errMsg != '') {
-                throw new Error(errMsg);
-            }
-        } catch (ex) {
-            if (ex.message?.includes('not exist')) {
-                return;
-            }
-            throw ex;
-        }
     }
 }
 
