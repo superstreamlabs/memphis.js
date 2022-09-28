@@ -77,12 +77,16 @@ for javascript, you can choose to use the import or required keyword
 
 ```js
 const memphis = require("memphis-dev");
+```
+for Typescript, use the import keyword to aid for typechecking assistance
 
-/*------for Typescript, use the import keyword to aid for typechecking assistance----------*/
-
+```js
 import memphis from "memphis-dev";
+```
 
-/* To leverage Nestjs dependency injection feature */
+To leverage Nestjs dependency injection feature
+
+```js
 import { Module } from "@nestjs/common";
 import { MemphisModule, MemphisService } from "memphis-dev/nest";
 ```
@@ -103,9 +107,11 @@ await memphis.connect({
             reconnectIntervalMs: 1500, // defaults to 1500
             timeoutMs: 1500 // defaults to 1500
       });
+```
 
-/* Nest injection */
+Nest injection
 
+```js
 @Module({
     imports: [MemphisModule.register()],
 })
@@ -152,9 +158,11 @@ const station = await memphis.station({
   dedupEnabled: false, // defaults to false
   dedupWindowMs: 0, // defaults to 0
 });
+```
 
-/* Creating a station with Nestjs dependency injection */
+Creating a station with Nestjs dependency injection
 
+```js
 @Module({
     imports: [MemphisModule.register()],
 })
@@ -244,9 +252,11 @@ const producer = await memphisConnection.producer({
             stationName: "<station-name>",
             producerName: "<producer-name>"
       });
+```
 
-/* Creating producers with nestjs dependecy injection */
+Creating producers with nestjs dependecy injection
 
+```js
 @Module({
     imports: [MemphisModule.register()],
 })
@@ -293,9 +303,11 @@ const consumer = await memphisConnection.consumer({
             maxAckTimeMs: 30000 // defaults to 30000
             maxMsgDeliveries: 10 // defaults to 10
       });
+```
 
-/* Creating consumers with nestjs dependecy injection */
+Creating consumers with nestjs dependecy injection
 
+```js
 @Module({
     imports: [MemphisModule.register()],
 })

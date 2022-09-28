@@ -9,14 +9,15 @@ export class ProducerModule {
 
     startProducer() {
         (async function () {
+            let memphisConnection
             try {
-                await this.memphis.connect({
+                memphisConnection = await this.memphis.connect({
                     host: "<memphis-host>",
                     username: "<application type username>",
                     connectionToken: "<broker-token>"
                 });
 
-                const producer = await this.memphis.producer({
+                const producer = await memphisConnection.producer({
                     stationName: "<station-name>",
                     producerName: "<producer-name>"
                 });
@@ -29,10 +30,10 @@ export class ProducerModule {
                 }
 
                 console.log("All messages sent");
-                this.memphis.close();
+                memphisConnection.close();
             } catch (ex) {
                 console.log(ex);
-                this.memphis.close();
+                memphisConnection.close();
             }
         })();
     }

@@ -11,14 +11,15 @@ export class ConsumerModule {
 
     startConsumer() {
         (async function () {
+            let memphisConnection
             try {
-                await this.memphis.connect({
+                memphisConnection = await this.memphis.connect({
                     host: "<memphis-host>",
                     username: "<application type username>",
                     connectionToken: "<broker-token>",
                 });
 
-                const consumer = await this.memphis.consumer({
+                const consumer = await memphisConnection.consumer({
                     stationName: "<station-name>",
                     consumerName: "<consumer-name>",
                     consumerGroup: "",
@@ -32,7 +33,7 @@ export class ConsumerModule {
                 consumer.on("error", (error) => { });
             } catch (ex) {
                 console.log(ex);
-                this.memphis.close();
+                memphisConnection.close();
             }
         })();
     }
