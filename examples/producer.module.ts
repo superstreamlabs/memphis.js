@@ -33,7 +33,8 @@ export class ProducerModule {
                 memphisConnection.close();
             } catch (ex) {
                 console.log(ex);
-                memphisConnection.close();
+                if (memphisConnection)
+                    memphisConnection.close();
             }
         })();
     }

@@ -25,6 +25,7 @@ import memphis from "memphis-dev"
         });
     } catch (ex) {
         console.log(ex);
-        memphisConnection.close();
+        if (memphisConnection)
+            memphisConnection.close();
     }
 }());

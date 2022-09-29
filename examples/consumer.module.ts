@@ -33,7 +33,8 @@ export class ConsumerModule {
                 consumer.on("error", (error) => { });
             } catch (ex) {
                 console.log(ex);
-                memphisConnection.close();
+                if (memphisConnection)
+                    memphisConnection.close();
             }
         })();
     }
