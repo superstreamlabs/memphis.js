@@ -4,15 +4,19 @@
     "description": "A powerful messaging platform for modern developers",
     "exports": {
         ".": "./lib/index.js",
-        "./nest": "./lib/NestMemphis/index.js"
+        "./nest": "./lib/NestMemphis/index.js",
+        "./types": "./lib/types.js"
     },
     "typesVersions": {
         "*": {
             "*": [
-                "lib/index.d.ts"
+                "lib/types/index.d.ts"
             ],
             "nest": [
-                "lib/NestMemphis/index.d.ts"
+                "lib/types/NestMemphis/index.d.ts"
+            ],
+            "types": [
+                "lib/types/types.d.ts"
             ]
         }
     },

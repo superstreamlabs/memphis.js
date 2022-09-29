@@ -99,5 +99,8 @@ declare class Station {
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
-declare const MemphisInstance: Memphis;
+interface MemphisType extends Memphis {
+}
+declare const MemphisInstance: MemphisType;
+export type { MemphisType };
 export default MemphisInstance;

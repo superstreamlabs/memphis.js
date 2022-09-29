@@ -1,31 +1,32 @@
-import memphis from "memphis-dev"
+import memphis from 'memphis-dev';
+import type { MemphisType } from 'memphis-dev/types';
 
 (async function () {
-    let memphisConnection
+    let memphisConnection: MemphisType;
+
     try {
         memphisConnection = await memphis.connect({
-            host: "<memphis-host>",
-            username: "<application type username>",
-            connectionToken: "<broker-token>"
+            host: '<memphis-host>',
+            username: '<application type username>',
+            connectionToken: '<broker-token>'
         });
 
         const consumer = await memphisConnection.consumer({
-            stationName: "<station-name>",
-            consumerName: "<consumer-name>",
-            consumerGroup: ""
+            stationName: '<station-name>',
+            consumerName: '<consumer-name>',
+            consumerGroup: ''
         });
 
-        consumer.on("message", message => {
+        consumer.on('message', (message) => {
             console.log(message.getData().toString());
             message.ack();
         });
 
-        consumer.on("error", error => {
+        consumer.on('error', (error) => {
             console.log(error);
         });
     } catch (ex) {
         console.log(ex);
-        if (memphisConnection)
-            memphisConnection.close();
+        if (memphisConnection) memphisConnection.close();
     }
-}());
+})();
