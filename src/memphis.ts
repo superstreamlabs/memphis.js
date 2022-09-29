@@ -176,6 +176,39 @@ export class Memphis {
     }
 
     /**
+     * Produces a message into a station.
+     * @param {string} stationName - station name
+     * @param {string} producerName - producer name
+     * @param {Uint8Array} message - message to send into the station.
+     * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
+     */
+    async produce({
+        stationName,
+        producerName,
+        message,
+        ackWaitSec = 15
+    }: {
+        stationName: string;
+        producerName: string;
+        message: Uint8Array;
+        ackWaitSec?: number;
+    }): Promise<void> {
+        try {
+            const h = headers();
+            h.append('producedBy', producerName);
+            h.append('stationName', stationName);
+            h.append('connectionId', this.connectionId);
+
+            await this.brokerConnection.publish(`${stationName}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
+        } catch (ex: any) {
+            if (ex.code === '503') {
+                throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
+            }
+            throw ex;
+        }
+    }
+
+    /**
      * Creates a station.
      * @param {String} name - station name.
      * @param {Memphis.retentionTypes} retentionType - retention type, default is MAX_MESSAGE_AGE_SECONDS.
