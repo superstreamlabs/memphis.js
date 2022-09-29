@@ -10,6 +10,7 @@ export class ProducerModule {
     startProducer() {
         (async function () {
             let memphisConnection: MemphisType;
+            
             try {
                 memphisConnection = await this.memphis.connect({
                     host: "<memphis-host>",

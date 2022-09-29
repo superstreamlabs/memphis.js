@@ -9,8 +9,8 @@
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png">
 
+<a target="_blank" href="https://twitter.com/intent/tweet?text=Probably+The+Easiest+Message+Broker+In+The+World%21+%0D%0Ahttps%3A%2F%2Fgithub.com%2Fmemphisdev%2Fmemphis-broker+%0D%0A%0D%0A%23MemphisDev"><img src="https://user-images.githubusercontent.com/70286779/174467733-e7656c1e-cfeb-4877-a5f3-1bd4fccc8cf1.png" width="60"></a>
 
-<a target="_blank" href="https://twitter.com/intent/tweet?text=Probably+The+Easiest+Message+Broker+In+The+World%21+%0D%0Ahttps%3A%2F%2Fgithub.com%2Fmemphisdev%2Fmemphis-broker+%0D%0A%0D%0A%23MemphisDev"><img src="https://user-images.githubusercontent.com/70286779/174467733-e7656c1e-cfeb-4877-a5f3-1bd4fccc8cf1.png" width="60"></a> 
 </div>
  
  <p align="center">
@@ -26,11 +26,13 @@ Focusing on automatic optimization, schema management, inline processing, and tr
 Utilizing NATS core.
 
 ## 📸 Screenshots
-Dashboard             |  Station (Topic) overview|  CLI
-:-------------------------:|:-------------------------:|:-------------------------:
-<img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
+
+|                                                                   Dashboard                                                                   |                                                               Station (Topic) overview                                                               |                                                                     CLI                                                                      |
+| :-------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------: |
+| <img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png"> | <img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png"> | <img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/> |
 
 ## ⭐️ Why
+
 Working with data streaming is HARD.<br>
 As a developer, you need to build a dedicated pipeline per data source,<br>change the schema, individual analysis, enrich the data with other sources, it constantly crashes, it requires adaptation to different rate limits, constantly change APIs, and scale for better performance 🥵 .<br>
 **It takes time and resources that you don't have.**<br><br>
@@ -39,31 +41,33 @@ Message broker acts as the middleman and supports streaming architecture,<br>but
 Give memphis{dev} a spin before.
 
 ## 👉 Use-cases
-- Async task management
-- Real-time streaming pipelines
-- Data ingestion
-- Cloud Messaging
-  - Services (microservices, service mesh)
-  - Event/Data Streaming (observability, analytics, ML/AI)
-- Queuing
-- N:N communication patterns
+
+-   Async task management
+-   Real-time streaming pipelines
+-   Data ingestion
+-   Cloud Messaging
+    -   Services (microservices, service mesh)
+    -   Event/Data Streaming (observability, analytics, ML/AI)
+-   Queuing
+-   N:N communication patterns
 
 ## ✨ Features
 
 **v0.3.0**
 
-- 🚀 Fully optimized message broker in under 3 minutes
-- 💻 Easy-to-use UI, CLI, and SDKs
-- 📺 Data-level observability
-- ☠️ Dead-Letter Queue with automatic message retransmit
-- SDKs: Node.JS, Go, Python, Typescript, NestJS
-- 🐳☸ Runs on your Docker or Kubernetes
-- 👨‍💻 Community driven
+-   🚀 Fully optimized message broker in under 3 minutes
+-   💻 Easy-to-use UI, CLI, and SDKs
+-   📺 Data-level observability
+-   ☠️ Dead-Letter Queue with automatic message retransmit
+-   SDKs: Node.JS, Go, Python, Typescript, NestJS
+-   🐳☸ Runs on your Docker or Kubernetes
+-   👨‍💻 Community driven
 
 **Roadmap**
-- Embedded schema store and transformation
-- Inline processing
-- Connectors and analysis functions
+
+-   Embedded schema store and transformation
+-   Inline processing
+-   Connectors and analysis functions
 
 ## Installation
 
@@ -76,19 +80,22 @@ $ npm install memphis-dev
 for javascript, you can choose to use the import or required keyword
 
 ```js
-const memphis = require("memphis-dev");
+const memphis = require('memphis-dev');
 ```
+
 for Typescript, use the import keyword to aid for typechecking assistance
 
 ```js
-import memphis from "memphis-dev";
+import memphis from 'memphis-dev';
+import type { MemphisType } from 'memphis-dev/types';
 ```
 
 To leverage Nestjs dependency injection feature
 
 ```js
-import { Module } from "@nestjs/common";
-import { MemphisModule, MemphisService } from "memphis-dev/nest";
+import { Module } from '@nestjs/common';
+import { MemphisModule, MemphisService } from 'memphis-dev/nest';
+import type { MemphisType } from 'memphis-dev/types';
 ```
 
 ### Connecting to Memphis
@@ -121,15 +128,17 @@ class ConsumerModule {
 
     startConnection() {
         (async function () {
+            let memphisConnection: MemphisType;
+
             try {
-                await this.memphis.connect({
+               memphisConnection = await this.memphis.connect({
                     host: "<memphis-host>",
                     username: "<application type username>",
                     connectionToken: "<broker-token>",
                 });
             } catch (ex) {
                 console.log(ex);
-                this.memphis.close();
+                memphisConnection.close();
             }
         })();
     }
@@ -149,14 +158,16 @@ memphisConnection.close();
 ### Creating a Station
 
 ```js
-const station = await memphis.station({
-  name: "<station-name>",
-  retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
-  retentionValue: 604800, // defaults to 604800
-  storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
-  replicas: 1, // defaults to 1
-  dedupEnabled: false, // defaults to false
-  dedupWindowMs: 0, // defaults to 0
+//Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
+
+station = await memphis.station({
+    name: '<station-name>',
+    retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+    retentionValue: 604800, // defaults to 604800
+    storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
+    replicas: 1, // defaults to 1
+    dedupEnabled: false, // defaults to false
+    dedupWindowMs: 0 // defaults to 0
 });
 ```
 
@@ -172,7 +183,9 @@ class stationModule {
 
     createStation() {
         (async function () {
-                  const station = await this.memphis.station({
+                      //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
+
+                    station = await this.memphis.station({
                         name: "<station-name>",
                         retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, //                  defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
                         retentionValue: 604800, // defaults to 604800
@@ -249,9 +262,9 @@ of whether there are messages in flight for the client.
 
 ```js
 const producer = await memphisConnection.producer({
-            stationName: "<station-name>",
-            producerName: "<producer-name>"
-      });
+    stationName: '<station-name>',
+    producerName: '<producer-name>'
+});
 ```
 
 Creating producers with nestjs dependecy injection
@@ -266,7 +279,9 @@ class ProducerModule {
 
     createProducer() {
         (async function () {
-                const producer = await this.memphis.producer({
+                  //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
+
+                const producer = await memphisConnection.producer({
                     stationName: "<station-name>",
                     producerName: "<producer-name>"
                 });
@@ -279,8 +294,8 @@ class ProducerModule {
 
 ```js
 await producer.produce({
-  message: "<bytes array>", // Uint8Arrays
-  ackWaitSec: 15, // defaults to 15
+    message: '<bytes array>', // Uint8Arrays
+    ackWaitSec: 15 // defaults to 15
 });
 ```
 
@@ -316,7 +331,9 @@ class ConsumerModule {
 
     createConsumer() {
         (async function () {
-                const consumer = await this.memphis.consumer({
+               //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
+
+                const consumer = await memphisConnection.consumer({
                     stationName: "<station-name>",
                     consumerName: "<consumer-name>",
                     consumerGroup: "",
@@ -329,10 +346,10 @@ class ConsumerModule {
 ### Processing messages
 
 ```js
-consumer.on("message", (message) => {
-  // processing
-  console.log(message.getData());
-  message.ack();
+consumer.on('message', (message) => {
+    // processing
+    console.log(message.getData());
+    message.ack();
 });
 ```
 
@@ -347,8 +364,8 @@ message.ack();
 ### Catching async errors
 
 ```js
-consumer.on("error", (error) => {
-  // error handling
+consumer.on('error', (error) => {
+    // error handling
 });
 ```
 
