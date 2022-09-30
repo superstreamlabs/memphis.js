@@ -424,9 +424,9 @@ class Consumer {
      */
     on(event: String, cb: (...args: any[]) => void) {
         if (event === 'message') {
-            const subject = this.stationName.replace(/\.g/,'#');
-            const consumerGroup = this.consumerGroup.replace(/\.g/,'#');
-            const consumerName = this.consumerName.replace(/\.g/,'#');
+            const subject = this.stationName.replace(/\./g,'#');
+            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
+            const consumerName = this.consumerName.replace(/\./g,'#');
             this.connection.brokerConnection
                 .pullSubscribe(`${subject}.final`, {
                     mack: true,
@@ -474,9 +474,9 @@ class Consumer {
 
     private async _pingConsumer() {
         try {
-            const stationName = this.stationName.replace(/\.g/,'#');
-            const consumerGroup = this.consumerGroup.replace(/\.g/,'#');
-            const consumerName = this.consumerName.replace(/\.g/,'#');
+            const stationName = this.stationName.replace(/\./g,'#');
+            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
+            const consumerName = this.consumerName.replace(/\./g,'#');
             const durableName = consumerGroup || consumerName;
             await this.connection.brokerStats.consumers.info(stationName, durableName);
         } catch (ex) {
