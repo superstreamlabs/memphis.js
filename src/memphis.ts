@@ -177,8 +177,8 @@ export class Memphis {
 
     /**
      * Produces a message into a station.
-     * @param {string} stationName - station name
-     * @param {string} producerName - producer name
+     * @param {String} stationName - station name
+     * @param {String} producerName - producer name
      * @param {Uint8Array} message - message to send into the station.
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
      */
