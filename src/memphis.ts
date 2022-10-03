@@ -342,8 +342,8 @@ class Producer {
             const h = headers();
             h.append('connectionId', this.connection.connectionId);
             h.append('producedBy', this.producerName);
-
-            await this.connection.brokerConnection.publish(`${this.stationName}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
+            const subject = this.stationName.replace(/\./g, '#');
+            await this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
@@ -424,11 +424,14 @@ class Consumer {
      */
     on(event: String, cb: (...args: any[]) => void) {
         if (event === 'message') {
+            const subject = this.stationName.replace(/\./g,'#');
+            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
+            const consumerName = this.consumerName.replace(/\./g,'#');
             this.connection.brokerConnection
-                .pullSubscribe(`${this.stationName}.final`, {
+                .pullSubscribe(`${subject}.final`, {
                     mack: true,
                     config: {
-                        durable_name: this.consumerGroup ? this.consumerGroup : this.consumerName
+                        durable_name: this.consumerGroup ? consumerGroup : consumerName
                     }
                 })
                 .then(async (psub: any) => {
@@ -451,8 +454,8 @@ class Consumer {
                         } else clearInterval(this.pingConsumerInvterval);
                     }, this.pingConsumerInvtervalMs);
 
-                    const sub = this.connection.brokerManager.subscribe(`$memphis_dlq_${this.stationName}_${this.consumerGroup}`, {
-                        queue: `$memphis_${this.stationName}_${this.consumerGroup}`
+                    const sub = this.connection.brokerManager.subscribe(`$memphis_dlq_${subject}_${consumerGroup}`, {
+                        queue: `$memphis_${subject}_${consumerGroup}`
                     });
                     this._handleAsyncIterableSubscriber(psub);
                     this._handleAsyncIterableSubscriber(sub);
@@ -471,8 +474,11 @@ class Consumer {
 
     private async _pingConsumer() {
         try {
-            const durableName = this.consumerGroup || this.consumerName;
-            await this.connection.brokerStats.consumers.info(this.stationName, durableName);
+            const stationName = this.stationName.replace(/\./g,'#');
+            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
+            const consumerName = this.consumerName.replace(/\./g,'#');
+            const durableName = consumerGroup || consumerName;
+            await this.connection.brokerStats.consumers.info(stationName, durableName);
         } catch (ex) {
             this.eventEmitter.emit('error', 'station/consumer were not found');
         }

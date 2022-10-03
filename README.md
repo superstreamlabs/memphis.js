@@ -1,5 +1,11 @@
 <div align="center">
   
+  ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/master/logo-white.png?raw=true#gh-dark-mode-only)
+  
+</div>
+
+<div align="center">
+  
   ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/master/logo-black.png?raw=true#gh-light-mode-only)
   
 </div>
@@ -14,60 +20,22 @@
 </div>
  
  <p align="center">
-  <a href="https://memphis-demo.glitch.me">Glitch</a> - <a href="https://sandbox.memphis.dev/" target="_blank">Sandbox</a> - <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
+  <a href="https://demo.memphis.dev/">Playground</a> - <a href="https://sandbox.memphis.dev/" target="_blank">Sandbox</a> - <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
 </p>
 
 <p align="center">
-<a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a> <a href=""><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/LICENSE"><img src="https://img.shields.io/github/license/memphisdev/memphis-broker?color=ffc633" alt="License"></a> <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"> <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
+<a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a> <a href=""><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg"></a> <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"> <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
-**[Memphis{dev}](https://memphis.dev)** is a Go-based message broker for developers made out of devs' struggles develop around message brokers.<br>Enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
-Focusing on automatic optimization, schema management, inline processing, and troubleshooting abilities. All under the same hood.
+**[Memphis{dev}](https://memphis.dev)** is an open-source real-time data processing platform<br>
+that provides end-to-end support for in-app streaming use cases using Memphis distributed message broker.<br>
+Memphis' platform requires zero ops, enables rapid development, extreme cost reduction, <br>
+eliminates coding barriers, and saves a great amount of dev time for data-oriented developers and data engineers.
+
+Memphis{dev} enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
+
+Focusing on automatic optimization, schema management, stream processing and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
-
-## 📸 Screenshots
-
-|                                                                   Dashboard                                                                   |                                                               Station (Topic) overview                                                               |                                                                     CLI                                                                      |
-| :-------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------: |
-| <img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png"> | <img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png"> | <img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/> |
-
-## ⭐️ Why
-
-Working with data streaming is HARD.<br>
-As a developer, you need to build a dedicated pipeline per data source,<br>change the schema, individual analysis, enrich the data with other sources, it constantly crashes, it requires adaptation to different rate limits, constantly change APIs, and scale for better performance 🥵 .<br>
-**It takes time and resources that you don't have.**<br><br>
-Message broker is the answer. In short - It's an event-store.<br>
-Message broker acts as the middleman and supports streaming architecture,<br>but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
-Give memphis{dev} a spin before.
-
-## 👉 Use-cases
-
--   Async task management
--   Real-time streaming pipelines
--   Data ingestion
--   Cloud Messaging
-    -   Services (microservices, service mesh)
-    -   Event/Data Streaming (observability, analytics, ML/AI)
--   Queuing
--   N:N communication patterns
-
-## ✨ Features
-
-**v0.3.0**
-
--   🚀 Fully optimized message broker in under 3 minutes
--   💻 Easy-to-use UI, CLI, and SDKs
--   📺 Data-level observability
--   ☠️ Dead-Letter Queue with automatic message retransmit
--   SDKs: Node.JS, Go, Python, Typescript, NestJS
--   🐳☸ Runs on your Docker or Kubernetes
--   👨‍💻 Community driven
-
-**Roadmap**
-
--   Embedded schema store and transformation
--   Inline processing
--   Connectors and analysis functions
 
 ## Installation
 

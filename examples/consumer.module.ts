@@ -1,5 +1,5 @@
 import { Inject, Module } from '@nestjs/common';
-import { MemphisModule, MemphisService, createConsumer } from 'memphis-dev/nest';
+import { MemphisModule, MemphisService, consumeMessage } from 'memphis-dev/nest';
 import type { MemphisType } from 'memphis-dev/types';
 import memphis from 'memphis-dev';
 @Module({
@@ -8,7 +8,7 @@ import memphis from 'memphis-dev';
 export class ConsumerModule {
     // constructor(private memphis: MemphisService) {}
 
-    @createConsumer({
+    @consumeMessage({
         stationName: '<station-name>',
         consumerName: '<consumer-name>',
         consumerGroup: ''
