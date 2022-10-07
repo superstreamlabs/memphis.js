@@ -2,6 +2,7 @@ const memphis = require("memphis-dev");
 
 (async function () {
   let memphisConnection
+
   try {
     memphisConnection = await memphis.connect({
       host: "<memphis-host>",

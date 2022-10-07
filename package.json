@@ -10,13 +10,13 @@
     "typesVersions": {
         "*": {
             "*": [
-                "lib/types/index.d.ts"
+                "types/index.d.ts"
             ],
             "nest": [
-                "lib/types/NestMemphis/index.d.ts"
+                "types/NestMemphis/index.d.ts"
             ],
             "types": [
-                "lib/types/types.d.ts"
+                "types/types.d.ts"
             ]
         }
     },
@@ -34,6 +34,7 @@
     "dependencies": {
         "@nestjs/common": "^9.0.0",
         "@nestjs/core": "^9.0.0",
+        "@nestjs/microservices": "^9.1.4",
         "@nestjs/platform-express": "^9.0.0",
         "axios": "^0.26.1",
         "dotenv": "^16.0.1",
