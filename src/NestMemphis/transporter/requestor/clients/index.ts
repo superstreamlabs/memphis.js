@@ -1,1 +1,1 @@
-export * from './faye-client';
+export * from './memphis-client';
