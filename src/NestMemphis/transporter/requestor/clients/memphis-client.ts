@@ -42,7 +42,7 @@ export class ClientMemphis extends ClientProxy {
         try {
             this.consumer = await this.memphisClient.consumer(consumer);
         } catch (ex) {
-            this.handleError(ex);
+            console.log(ex)
         }
     }
 
@@ -73,14 +73,6 @@ export class ClientMemphis extends ClientProxy {
             }
 
             this.handleError(this.consumer);
-        }
-    }
-
-    public parsePacket(content: any): ReadPacket & PacketId {
-        try {
-            return JSON.parse(content);
-        } catch (e) {
-            return content;
         }
     }
 
