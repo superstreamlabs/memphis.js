@@ -1,13 +1,13 @@
 import { Server, CustomTransportStrategy, IncomingRequest, ReadPacket, PacketId } from '@nestjs/microservices';
 import Memphis, { MemphisType as MemphisClient, ConsumerType, ProducerType } from '../../../../memphis';
-import { MemphisOptions } from '../../interfaces/faye-options.interface';
+import { ProducerOptions } from '../../interfaces/faye-options.interface';
 
 export class ServerMemphis extends Server implements CustomTransportStrategy {
     // Holds our client interface to the Faye broker.
     private memphisClient: MemphisClient;
     private producer: ProducerType;
 
-    constructor(private readonly options: MemphisOptions) {
+    constructor(private readonly options: ProducerOptions) {
         super();
         // super class establishes the serializer and deserializer; sets up
         // defaults unless overridden via `options`
@@ -49,8 +49,6 @@ export class ServerMemphis extends Server implements CustomTransportStrategy {
             return;
         }
 
-        await this.createProducer();
-
         if (!this.producer) {
             return;
         }
@@ -62,6 +60,8 @@ export class ServerMemphis extends Server implements CustomTransportStrategy {
         const registeredPatterns = [...this.messageHandlers.keys()];
         registeredPatterns.forEach(async (pattern) => {
             const eventHandler = this.messageHandlers.get(pattern);
+            await this.createProducer(pattern);
+            if (!this.producer) return;
             await this.handleMessageProduction(eventHandler);
         });
     }
@@ -75,16 +75,16 @@ export class ServerMemphis extends Server implements CustomTransportStrategy {
         console.log('Message sent');
     }
 
-    public async createProducer(): Promise<any> {
-        const { producer, ...options } = this.options;
+    async createProducer(pattern: string): Promise<any> {
+        const { producerName } = this.options;
         try {
-            this.producer = await this.memphisClient.producer(producer);
+            this.producer = await this.memphisClient.producer({ stationName: pattern, producerName });
         } catch (ex) {
             this.handleError(ex);
         }
     }
 
-    public handleError(ex: any) {
+    handleError(ex: any) {
         console.log(ex);
         if (this.memphisClient) this.close();
     }

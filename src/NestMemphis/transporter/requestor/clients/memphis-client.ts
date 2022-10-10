@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { ClientProxy, ReadPacket, PacketId, WritePacket } from '@nestjs/microservices';
-import { MemphisOptions } from '../../interfaces/faye-options.interface';
+import { ConsumersOptions } from '../../interfaces/faye-options.interface';
 import Memphis, { MemphisType as MemphisClient, ConsumerType } from '../../../../memphis';
+import { send } from 'process';
 
 export class ClientMemphis extends ClientProxy {
     protected readonly logger = new Logger(ClientProxy.name);
@@ -9,7 +10,7 @@ export class ClientMemphis extends ClientProxy {
     private memphisClient: MemphisClient;
     private consumer: ConsumerType;
 
-    constructor(protected readonly options?: MemphisOptions) {
+    constructor(protected readonly options: ConsumersOptions) {
         super();
 
         this.initializeSerializer(options);
@@ -37,53 +38,42 @@ export class ClientMemphis extends ClientProxy {
     /**
      *
      */
-    async createConsumer(): Promise<any> {
+    private async createConsumer(): Promise<any> {
         const { consumer } = this.options;
         try {
             this.consumer = await this.memphisClient.consumer(consumer);
         } catch (ex) {
-            console.log(ex)
+            console.log(ex);
         }
     }
 
     protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): any {}
 
-    protected async dispatchEvent(packet: ReadPacket): Promise<any> {
-        try {
-            if (!this.consumer) {
-                this.createConsumer();
-                return;
-            }
-
-            let data: string;
-
-            await this.consumer.on('message', (message) => {
-                let innerData = message.getData().toString();
-                console.log(innerData);
-                data = innerData;
-
-                message.ack();
-            });
-
-            return data;
-        } catch (error) {
-            if (!this.consumer) {
-                this.logger.error(error);
-                return;
-            }
-
-            this.handleError(this.consumer);
+    protected async dispatchEvent(packet: ReadPacket<any>): Promise<any> {
+        if (!this.consumer) {
+            this.createConsumer();
+            return;
         }
+
+        let data: string;
+
+        this.consumer.on('message', (message) => {
+            let innerData = message.getData().toString();
+            console.log(innerData);
+            data = innerData;
+
+            message.ack();
+        });
+
+        this.consumer.on('error', (err: any) => {
+            this.logger.error(err), this.close();
+        });
+
+        return data;
     }
 
     public close() {
         this.memphisClient && this.memphisClient.close();
         this.memphisClient = null;
-    }
-
-    public handleError(stream: ConsumerType) {
-        stream.on('error', (err: any) => {
-            this.logger.error(err), this.close();
-        });
     }
 }
