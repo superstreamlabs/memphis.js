@@ -55,7 +55,7 @@ for Typescript, use the import keyword to aid for typechecking assistance
 
 ```js
 import memphis from 'memphis-dev';
-import type { MemphisType } from 'memphis-dev/types';
+import { Memphis} from 'memphis-dev/types';
 ```
 
 To leverage Nestjs dependency injection feature
@@ -128,7 +128,7 @@ memphisConnection.close();
 ```js
 //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
 
-station = await memphis.station({
+const station = await memphis.station({
     name: '<station-name>',
     retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
     retentionValue: 604800, // defaults to 604800
@@ -296,29 +296,95 @@ Creating consumers with nestjs dependecy injection
 })
 class ConsumerModule {
     constructor(private memphis: MemphisService) {}
+}
+```
 
-    createConsumer() {
-        (async function () {
-               //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
+We built a custom transporter integrated with memphis, to allow support for nestjs, just like Kafka and RabbitMQ, some complexity were absracted, to allow developers focus on writing what only matters to then. To work with producers:
+```js
+// In youe main.ts file
+import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions } from '@nestjs/microservices';
+import { AppModule } from './app.module';
+import { ServerMemphis } from 'memphis-dev/nest';
 
-                const consumer = await memphisConnection.consumer({
-                    stationName: "<station-name>",
-                    consumerName: "<consumer-name>",
-                    consumerGroup: "",
-                });
-        })();
+async function bootstrap() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      strategy: new ServerMemphis({
+        connect: {
+          host: '<memphis-host>',
+          username: '<application type username>',
+          connectionToken:
+            '<broker-token>',
+        },
+        producerName: '<producer-name>',
+      }),
+    },
+  );
+  
+  await app.listen();
+}
+
+bootstrap();
+
+// In your Contoller file
+import { EventPattern } from '@nestjs/microservices';
+
+@Controller()
+export class AppController {
+
+    @EventPattern("hello")
+    getHello(): string {
+        return "Hello World";
     }
 }
 ```
 
+To Consume a messages with our  built-in transporter
+
 ### Processing messages
 
 ```js
-consumer.on('message', (message) => {
-    // processing
-    console.log(message.getData());
-    message.ack();
-});
+import { Controller, Get } from '@nestjs/common';
+import { ClientMemphis } from 'memphis-dev/nest';
+import { Consumer } from 'memphis-dev/types';
+import {
+    Observable
+} from 'rxjs';
+
+
+@Controller('auth')
+export class AuthController {
+    client = new ClientMemphis({
+        connect: {
+            host: '<memphis-host>',
+            username: '<application type username>',
+            connectionToken: '<broker-token>',
+        },
+        consumer: {
+            consumerName: '<consumer-name>',
+            consumerGroup: '',
+        },
+    });
+
+
+    @Get('test')
+    async test() {
+        const listenEvent: Observable<Consumer> = await this.client.emit('<station-name>', '<string>data');
+
+        listenEvent.subscribe((consumer) => {
+            consumer.on('message', (message) => {
+                console.log(message.getData().toString());
+                message.ack();
+            });
+        })
+    }
+
+    async onApplicationBootstrap() {
+        await this.client.connect();
+    }
+}
 ```
 
 ### Acknowledge a message
