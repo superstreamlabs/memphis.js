@@ -1,45 +1,42 @@
-import { Controller } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { Controller, Get } from '@nestjs/common';
 import { ClientMemphis } from 'memphis-dev/nest';
 import { Consumer } from 'memphis-dev/types';
 import {
-  Observable
+    Observable
 } from 'rxjs';
 
 
 @Controller('auth')
 export class AuthController {
-  client = new ClientMemphis({
-    connect: {
-      host: 'localhost',
-      username: 'root',
-      connectionToken: 'memphis',
-    },
-    consumer: {
-      consumerName: 'nest_consumer',
-      consumerGroup: '',
-    },
-  });
-  constructor(private authService: AuthService) { }
+    client = new ClientMemphis({
+        connect: {
+            host: '<memphis-host>',
+            username: '<application type username>',
+            connectionToken: '<broker-token>',
+        },
+        consumer: {
+            consumerName: 'nest_consumer',
+            consumerGroup: '',
+        },
+    });
 
-  @Get('signup')
-  async signup() {
-    const listenEvent: Observable<Consumer> = await this.client.emit('hello', 'Hello world!');
 
-    listenEvent.subscribe((consumer) => {
+    @Get('signup')
+    async signup() {
+        const listenEvent: Observable<Consumer> = await this.client.emit('hello', 'Hello world!');
 
-      consumer.on('message', (message) => {
-        console.log(message.getData().toString());
-        message.ack();
-      });
+        listenEvent.subscribe((consumer) => {
 
-      consumer.on('error', (error) => { });
-    })
+            consumer.on('message', (message) => {
+                console.log(message.getData().toString());
+                message.ack();
+            });
 
-    return this.authService.signup();
-  }
-  
-  async onApplicationBootstrap() {
-    await this.client.connect();
-  }
+            consumer.on('error', (error) => { });
+        })
+    }
+
+    async onApplicationBootstrap() {
+        await this.client.connect();
+    }
 }

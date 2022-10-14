@@ -5,14 +5,14 @@ const memphis = require("memphis-dev");
 
     try {
         memphisConnection = await memphis.connect({
-            host: "localhost",
-            username: "root",
-            connectionToken: "memphis"
+            host: '<memphis-host>',
+            username: '<application type username>',
+            connectionToken: '<broker-token>'
         });
 
         const producer = await memphisConnection.producer({
-            stationName: "someStations",
-            producerName: "markBook"
+            stationName: "<station-name>",
+            producerName: "<producer-name>"
         });
 
         for (let index = 0; index < 100; index++) {
