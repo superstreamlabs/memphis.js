@@ -15,18 +15,16 @@ export class AuthController {
             connectionToken: '<broker-token>',
         },
         consumer: {
-            consumerName: 'nest_consumer',
+            consumerName: '<consumer-name>',
             consumerGroup: '',
         },
     });
 
-
     @Get('signup')
     async signup() {
-        const listenEvent: Observable<Consumer> = await this.client.emit('hello', 'Hello world!');
+        const listenEvent: Observable<Consumer> = await this.client.emit('<station-name>', '<string>data');
 
         listenEvent.subscribe((consumer) => {
-
             consumer.on('message', (message) => {
                 console.log(message.getData().toString());
                 message.ack();
