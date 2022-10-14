@@ -1,2 +1,2 @@
-export declare const ERROR_EVENT = "transport:down";
-export declare const CONNECT_EVENT = "transport:up";
+export declare const ERROR_EVENT = "error";
+export declare const CONNECT_EVENT = "message";
