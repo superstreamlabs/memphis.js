@@ -106,16 +106,16 @@ declare class Station {
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
-interface MemphisType extends Memphis {
+interface MemphisClient extends Memphis {
 }
-interface StationType extends Station {
+interface StationOptions extends Station {
 }
-interface ProducerType extends Producer {
+interface ProducerOptions extends Producer {
 }
-interface ConsumerType extends Consumer {
+interface ConsumerOptions extends Consumer {
 }
-interface MessageType extends Message {
+interface MessageOptions extends Message {
 }
-declare const MemphisInstance: MemphisType;
-export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
+declare const MemphisInstance: MemphisClient;
+export type { MemphisClient, StationOptions, ProducerOptions, ConsumerOptions, MessageOptions };
 export default MemphisInstance;

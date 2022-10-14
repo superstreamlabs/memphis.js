@@ -1,5 +1,17 @@
-export interface MemphisOptions {
-    url?: string;
+export interface ProducerOptions {
+    connect: {
+        host: string;
+        port?: number;
+        username: string;
+        connectionToken: string;
+        reconnect?: boolean;
+        maxReconnect?: number;
+        reconnectIntervalMs?: number;
+        timeoutMs?: number;
+    };
+    producerName: string;
+}
+export interface ConsumersOptions {
     connect: {
         host: string;
         port?: number;
@@ -19,9 +31,5 @@ export interface MemphisOptions {
         batchMaxTimeToWaitMs?: number;
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
-    };
-    producer: {
-        stationName: string;
-        producerName: string;
     };
 }

@@ -1,14 +1,16 @@
 import { Logger } from '@nestjs/common';
 import { ClientProxy, ReadPacket, PacketId, WritePacket } from '@nestjs/microservices';
 import { ConsumersOptions } from '../../interfaces/faye-options.interface';
-import Memphis, { MemphisType as MemphisClient, ConsumerType } from '../../../../memphis';
-import { send } from 'process';
+import Memphis, { MemphisClient, ConsumerOptions as Consumer } from '../../../../memphis';
+import { CONNECT_EVENT, ERROR_EVENT } from '../../constants';
+import { share } from 'rxjs/operators';
 
 export class ClientMemphis extends ClientProxy {
     protected readonly logger = new Logger(ClientProxy.name);
 
     private memphisClient: MemphisClient;
-    private consumer: ConsumerType;
+    private consumer: Consumer;
+    private connection: Promise<any>;
 
     constructor(protected readonly options: ConsumersOptions) {
         super();
@@ -27,8 +29,8 @@ export class ClientMemphis extends ClientProxy {
             const { connect } = this.options;
 
             this.memphisClient = await Memphis.connect(connect);
-
-            return this.memphisClient;
+            this.connection = await this.connect$(this.memphisClient).pipe(share()).toPromise();
+            return this.connection;
         } catch (ex) {
             console.log(ex);
             this.close();
@@ -38,38 +40,24 @@ export class ClientMemphis extends ClientProxy {
     /**
      *
      */
-    private async createConsumer(): Promise<any> {
+    private async createConsumer(pattern: string): Promise<any> {
         const { consumer } = this.options;
         try {
-            this.consumer = await this.memphisClient.consumer(consumer);
+            this.consumer = await this.memphisClient.consumer({ ...consumer, stationName: pattern });
         } catch (ex) {
             console.log(ex);
         }
     }
 
-    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): any {}
+    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): any { }
 
     protected async dispatchEvent(packet: ReadPacket<any>): Promise<any> {
-        if (!this.consumer) {
-            this.createConsumer();
-            return;
-        }
+        const pattern = this.normalizePattern(packet.pattern);
+        await this.createConsumer(pattern);
 
-        let data: string;
+        const consumer = this.consumer
 
-        this.consumer.on('message', (message) => {
-            let innerData = message.getData().toString();
-            console.log(innerData);
-            data = innerData;
-
-            message.ack();
-        });
-
-        this.consumer.on('error', (err: any) => {
-            this.logger.error(err), this.close();
-        });
-
-        return data;
+        return consumer
     }
 
     public close() {
