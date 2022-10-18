@@ -151,8 +151,6 @@ class stationModule {
 
     createStation() {
         (async function () {
-                      //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
-
                     station = await this.memphis.station({
                         name: "<station-name>",
                         retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, //                  defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
@@ -247,8 +245,6 @@ class ProducerModule {
 
     createProducer() {
         (async function () {
-                  //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
-
                 const producer = await memphisConnection.producer({
                     stationName: "<station-name>",
                     producerName: "<producer-name>"
@@ -291,22 +287,33 @@ const consumer = await memphisConnection.consumer({
 Creating consumers with nestjs dependecy injection
 
 ```js
-@Module({
-    imports: [MemphisModule.register()],
-})
-class ConsumerModule {
-    constructor(private memphis: MemphisService) {}
+export class Controller {
+    import { consumeMessage } from 'memphis-dev/nest';
 
-    createConsumer() {
-        (async function () {
-               //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
+    @Get('signup')
+    @consumeMessage({
+        host: '<memphis-host>',
+        username: '<application type username>',
+        connectionToken: '<broker-token>'
+        },
+        {
+        stationName: '<station-name>',
+        consumerName: '<consumer-name>',
+        consumerGroup: ''
+    })
+    async signup(consumer) {
+        try {
+            consumer.on('message', (message) => {
+                console.log(message.getData().toString());
+                message.ack();
+            });
 
-                const consumer = await memphisConnection.consumer({
-                    stationName: "<station-name>",
-                    consumerName: "<consumer-name>",
-                    consumerGroup: "",
-                });
-        })();
+            consumer.on('error', (error) => {
+                console.log(error);
+            });
+        } catch (ex) {
+            console.log(ex);
+        }
     }
 }
 ```
