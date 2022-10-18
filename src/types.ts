@@ -1,3 +1,3 @@
-import { MemphisType, StationType, ProducerType, ConsumerType, MessageType } from './memphis';
+import { MemphisType as Memphis, StationType as Station, ProducerType as Producer, ConsumerType as Consumer, MessageType as Message } from './memphis';
 
-export { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
+export { Memphis, Station, Producer, Consumer, Message };
