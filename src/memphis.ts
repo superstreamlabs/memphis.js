@@ -340,8 +340,8 @@ class Producer {
     async produce({ message, ackWaitSec = 15 }: { message: Uint8Array; ackWaitSec?: number }): Promise<void> {
         try {
             const h = headers();
-            h.append('connectionId', this.connection.connectionId);
-            h.append('producedBy', this.producerName);
+            h.append('$memphisconnectionId', this.connection.connectionId);
+            h.append('$memphisproducedBy', this.producerName);
             const subject = this.stationName.replace(/\./g, '#');
             await this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
