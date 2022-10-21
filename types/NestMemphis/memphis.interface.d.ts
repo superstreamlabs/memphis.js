@@ -1,4 +1,4 @@
-export interface connectOption {
+export interface MemphisConnectionOptions {
     host: string;
     port?: number;
     username: string;
@@ -8,8 +8,11 @@ export interface connectOption {
     reconnectIntervalMs?: number;
     timeoutMs?: number;
 }
-
-export interface consumerOption {
+export interface MemphisPattern<TPattern = string> {
+    transport: string;
+    pattern: TPattern;
+}
+export interface MemphisConsumerOption {
     stationName: string;
     consumerName: string;
     consumerGroup: string;

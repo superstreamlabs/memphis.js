@@ -55,7 +55,7 @@ for Typescript, use the import keyword to aid for typechecking assistance
 
 ```js
 import memphis from 'memphis-dev';
-import type { MemphisType } from 'memphis-dev/types';
+import type { Memphis } from 'memphis-dev/types';
 ```
 
 To leverage Nestjs dependency injection feature
@@ -63,7 +63,7 @@ To leverage Nestjs dependency injection feature
 ```js
 import { Module } from '@nestjs/common';
 import { MemphisModule, MemphisService } from 'memphis-dev/nest';
-import type { MemphisType } from 'memphis-dev/types';
+import type { Memphis } from 'memphis-dev/types';
 ```
 
 ### Connecting to Memphis
@@ -128,7 +128,7 @@ memphisConnection.close();
 ```js
 //Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
 
-station = await memphis.station({
+const station = await memphis.station({
     name: '<station-name>',
     retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
     retentionValue: 604800, // defaults to 604800
@@ -151,7 +151,7 @@ class stationModule {
 
     createStation() {
         (async function () {
-                    station = await this.memphis.station({
+                  const station = await this.memphis.station({
                         name: "<station-name>",
                         retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, //                  defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
                         retentionValue: 604800, // defaults to 604800
@@ -284,36 +284,44 @@ const consumer = await memphisConnection.consumer({
       });
 ```
 
-Creating consumers with nestjs dependecy injection
+To set Up connection in nestjs
+
+```js
+async function bootstrap() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      strategy: new MemphisServer({
+        host: 'localhost',
+        username: 'root',
+        connectionToken: 'memphis',
+      }),
+    },
+  );
+
+  await app.listen();
+}
+bootstrap();
+```
+
+To Consume messages in nestjs
 
 ```js
 export class Controller {
     import { consumeMessage } from 'memphis-dev/nest';
 
-    @Get('signup')
     @consumeMessage({
-        host: '<memphis-host>',
-        username: '<application type username>',
-        connectionToken: '<broker-token>'
-        },
-        {
         stationName: '<station-name>',
         consumerName: '<consumer-name>',
         consumerGroup: ''
     })
     async signup(consumer) {
-        try {
-            consumer.on('message', (message) => {
+            // On Message Success
                 console.log(message.getData().toString());
                 message.ack();
-            });
 
-            consumer.on('error', (error) => {
+         // On Message Error
                 console.log(error);
-            });
-        } catch (ex) {
-            console.log(ex);
-        }
     }
 }
 ```

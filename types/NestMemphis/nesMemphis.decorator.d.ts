@@ -1,2 +1,2 @@
-import { connectOption, consumerOption } from './interface';
-export declare const consumeMessage: (connection: connectOption, consumer: consumerOption) => (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
+import { MemphisConsumerOption } from './memphis.interface';
+export declare const consumeMessage: (consumer: MemphisConsumerOption) => MethodDecorator;
