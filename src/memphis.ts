@@ -233,9 +233,11 @@ export class Memphis {
      * @param {String} stationName - station name to produce messages into.
      * @param {String} producerName - name for the producer.
      */
-    async producer({ stationName, producerName }: { stationName: string; producerName: string }): Promise<Producer> {
+    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix: boolean }): Promise<Producer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
+            producerName = genUniqueSuffix ? producerName + "_" + generateNameSuffix() : producerName;
+
             let createProducerReq = {
                 name: producerName,
                 station_name: stationName,
@@ -274,7 +276,8 @@ export class Memphis {
         batchSize = 10,
         batchMaxTimeToWaitMs = 5000,
         maxAckTimeMs = 30000,
-        maxMsgDeliveries = 10
+        maxMsgDeliveries = 10,
+        genUniqueSuffix = false
     }: {
         stationName: string;
         consumerName: string;
@@ -284,10 +287,12 @@ export class Memphis {
         batchMaxTimeToWaitMs?: number;
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
+        genUniqueSuffix?: boolean
     }): Promise<Consumer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
+            consumerName = genUniqueSuffix ? consumerName + "_" + generateNameSuffix() : consumerName;
             consumerGroup = consumerGroup || consumerName;
             let createConsumerReq = {
                 name: consumerName,
@@ -507,6 +512,10 @@ class Consumer {
             throw ex;
         }
     }
+}
+
+function generateNameSuffix(): string {
+    return [...Array(8)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 }
 
 class Message {
