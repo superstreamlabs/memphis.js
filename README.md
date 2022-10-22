@@ -96,7 +96,7 @@ class ConsumerModule {
 
     startConnection() {
         (async function () {
-            let memphisConnection: MemphisType;
+            let memphisConnection: Memphis;
 
             try {
                memphisConnection = await this.memphis.connect({
@@ -126,8 +126,6 @@ memphisConnection.close();
 ### Creating a Station
 
 ```js
-//Firstly, Instantiantethe memphisConnection variable by calling connect method, check connection example to find out how to do this.
-
 const station = await memphis.station({
     name: '<station-name>',
     retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
@@ -287,14 +285,16 @@ const consumer = await memphisConnection.consumer({
 To set Up connection in nestjs
 
 ```js
+import {MemphisServer} from 'memphis-dev/nest'
+
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
       strategy: new MemphisServer({
-        host: 'localhost',
-        username: 'root',
-        connectionToken: 'memphis',
+        host: '<memphis-host>',
+        username: '<application type username>',
+        connectionToken: '<broker-token>'
       }),
     },
   );
@@ -309,13 +309,14 @@ To Consume messages in nestjs
 ```js
 export class Controller {
     import { consumeMessage } from 'memphis-dev/nest';
+    import { Message } from 'memphis-dev/types';
 
     @consumeMessage({
         stationName: '<station-name>',
         consumerName: '<consumer-name>',
         consumerGroup: ''
     })
-    async signup(consumer) {
+    async signup(message: Message) {
             // On Message Success
                 console.log(message.getData().toString());
                 message.ack();

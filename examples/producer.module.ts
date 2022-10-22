@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { MemphisModule, MemphisService } from "memphis-dev/nest"
-import type { MemphisType } from 'memphis-dev/types';
+import type { Memphis } from 'memphis-dev/types';
 @Module({
     imports: [MemphisModule.register()],
 })
@@ -9,7 +9,7 @@ export class ProducerModule {
 
     startProducer() {
         (async function () {
-            let memphisConnection: MemphisType;
+            let memphisConnection: Memphis;
             
             try {
                 memphisConnection = await this.memphis.connect({
