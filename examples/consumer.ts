@@ -1,5 +1,5 @@
 import memphis from 'memphis-dev';
-import { Memphis } from 'memphis-dev/types';
+import { Memphis, Message } from 'memphis-dev/types';
 
 (async function () {
     let memphisConnection: Memphis;
@@ -17,7 +17,7 @@ import { Memphis } from 'memphis-dev/types';
             consumerGroup: ''
         });
 
-        consumer.on('message', (message) => {
+        consumer.on('message', (message: Message) => {
             console.log(message.getData().toString());
             message.ack();
         });
