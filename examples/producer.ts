@@ -1,7 +1,9 @@
 import memphis from "memphis-dev"
+import type { Memphis } from 'memphis-dev/types';
 
 (async function () {
-    let memphisConnection
+    let memphisConnection: Memphis;
+    
     try {
         memphisConnection = await memphis.connect({
             host: "<memphis-host>",

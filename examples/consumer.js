@@ -1,29 +1,29 @@
-const memphis = require("memphis-dev");
+const memphis = require('memphis-dev');
 
 (async function () {
-  let memphisConnection
-  try {
-    memphisConnection = await memphis.connect({
-      host: "<memphis-host>",
-      username: "<application type username>",
-      connectionToken: "<broker-token>",
-    });
+    let memphisConnection;
 
-    const consumer = await memphisConnection.consumer({
-      stationName: "<station-name>",
-      consumerName: "<consumer-name>",
-      consumerGroup: "",
-    });
+    try {
+        memphisConnection = await memphis.connect({
+            host: '<memphis-host>',
+            username: '<application type username>',
+            connectionToken: '<broker-token>'
+        });
 
-    consumer.on("message", (message) => {
-      console.log(message.getData().toString());
-      message.ack();
-    });
+        const consumer = await memphisConnection.consumer({
+            stationName: '<station-name>',
+            consumerName: '<consumer-name>',
+            consumerGroup: ''
+        });
 
-    consumer.on("error", (error) => { });
-  } catch (ex) {
-    console.log(ex);
-    if (memphisConnection)
-      memphisConnection.close();
-  }
+        consumer.on('message', (message) => {
+            console.log(message.getData().toString());
+            message.ack();
+        });
+
+        consumer.on('error', (error) => {});
+    } catch (ex) {
+        console.log(ex);
+        if (memphisConnection) memphisConnection.close();
+    }
 })();

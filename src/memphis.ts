@@ -562,6 +562,14 @@ class Station {
     }
 }
 
-const MemphisInstance = new Memphis();
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+
+const MemphisInstance: MemphisType = new Memphis();
+
+export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
 
 export default MemphisInstance;

@@ -2,11 +2,12 @@ const memphis = require("memphis-dev");
 
 (async function () {
     let memphisConnection
+
     try {
         memphisConnection = await memphis.connect({
-            host: "<memphis-host>",
-            username: "<application type username>",
-            connectionToken: "<broker-token>"
+            host: '<memphis-host>',
+            username: '<application type username>',
+            connectionToken: '<broker-token>'
         });
 
         const producer = await memphisConnection.producer({
