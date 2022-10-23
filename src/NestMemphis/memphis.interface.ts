@@ -1,5 +1,3 @@
-import { LoggerService } from '@nestjs/common';
-
 export interface MemphisConnectionOptions {
     host: string;
     port?: number;

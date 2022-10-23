@@ -1,4 +1,3 @@
-import memphis, { MemphisType } from '../memphis';
 import { EventPattern } from '@nestjs/microservices';
 import { MemphisConsumerOption } from './memphis.interface';
 
