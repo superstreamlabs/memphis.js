@@ -232,6 +232,7 @@ export class Memphis {
      * Creates a producer.
      * @param {String} stationName - station name to produce messages into.
      * @param {String} producerName - name for the producer.
+     * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
     async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix: boolean; }): Promise<Producer> {
         try {
@@ -267,6 +268,7 @@ export class Memphis {
      * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
      * @param {Number} `maxAckTimeMs` - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
      * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
+     * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
     async consumer({
         stationName,

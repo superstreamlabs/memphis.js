@@ -227,7 +227,8 @@ of whether there are messages in flight for the client.
 ```js
 const producer = await memphisConnection.producer({
     stationName: '<station-name>',
-    producerName: '<producer-name>'
+    producerName: '<producer-name>',
+    genUniqueSuffix: false
 });
 ```
 
@@ -277,8 +278,9 @@ const consumer = await memphisConnection.consumer({
             pullIntervalMs: 1000, // defaults to 1000
             batchSize: 10, // defaults to 10
             batchMaxTimeToWaitMs: 5000, // defaults to 5000
-            maxAckTimeMs: 30000 // defaults to 30000
-            maxMsgDeliveries: 10 // defaults to 10
+            maxAckTimeMs: 30000, // defaults to 30000
+            maxMsgDeliveries: 10, // defaults to 10
+            genUniqueSuffix: false
       });
 ```
 
