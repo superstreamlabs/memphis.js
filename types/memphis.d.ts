@@ -47,11 +47,12 @@ export declare class Memphis {
         dedupEnabled?: boolean;
         dedupWindowMs?: number;
     }): Promise<Station>;
-    producer({ stationName, producerName }: {
+    producer({ stationName, producerName, genUniqueSuffix }: {
         stationName: string;
         producerName: string;
+        genUniqueSuffix: boolean;
     }): Promise<Producer>;
-    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries }: {
+    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix }: {
         stationName: string;
         consumerName: string;
         consumerGroup: string;
@@ -60,6 +61,7 @@ export declare class Memphis {
         batchMaxTimeToWaitMs?: number;
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
+        genUniqueSuffix?: boolean;
     }): Promise<Consumer>;
     close(): void;
 }

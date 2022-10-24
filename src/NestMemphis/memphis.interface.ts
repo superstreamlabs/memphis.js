@@ -23,4 +23,5 @@ export interface MemphisConsumerOption {
     batchMaxTimeToWaitMs?: number;
     maxAckTimeMs?: number;
     maxMsgDeliveries?: number;
+    genUniqueSuffix?: boolean;
 }
