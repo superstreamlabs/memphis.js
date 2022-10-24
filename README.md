@@ -285,7 +285,7 @@ const consumer = await memphisConnection.consumer({
 To set Up connection in nestjs
 
 ```js
-import {MemphisServer} from 'memphis-dev/nest'
+import { MemphisServer } from 'memphis-dev/nest'
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -316,13 +316,9 @@ export class Controller {
         consumerName: '<consumer-name>',
         consumerGroup: ''
     })
-    async signup(message: Message) {
-            // On Message Success
-                console.log(message.getData().toString());
-                message.ack();
-
-         // On Message Error
-                console.log(error);
+    async messageHandler(message: Message) {
+        console.log(message.getData().toString());
+        message.ack();
     }
 }
 ```
