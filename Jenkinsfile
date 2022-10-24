@@ -1,20 +1,33 @@
-def gitURL = "git@github.com:Memphis-OS/memphis.js.git"
-def gitBranch = "master"
-unique_Id = UUID.randomUUID().toString()
+def gitBranch = env.BRANCH_NAME
+def gitURL = "git@github.com:Memphisdev/memphis.js.git"
+def repoUrlPrefix = "memphisos"
 
-node {
+node ("small-ec2-fleet") {
+  git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+  
   try{
-    stage('SCM checkout') {
-        git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+   stage('Push to NPM') {
+      sh 'sudo npm install'
+      withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
+       sh "echo //registry.npmjs.org/:_authToken=$npm_token > .npmrc"
+       sh 'npm publish'
+      }
     }
-
-    stage('Push to NPM') {
-
+    
+    stage('Checkout to version branch'){
+      sh(script:"""jq -r '"v" + .version' package.json > version.conf""", returnStdout: true)
+      withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
+        sh "git reset --hard origin/latest"
+        sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b \$(cat version.conf)"
+        sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin \$(cat version.conf)"
+      }
     }
+    
     notifySuccessful()
 
   } catch (e) {
       currentBuild.result = "FAILED"
+      cleanWs()
       notifyFailed()
       throw e
   }

@@ -1,13 +1,14 @@
-const memphis = require("memphis-dev");
+import memphis from "memphis-dev"
+import type { Memphis } from 'memphis-dev/types';
 
 (async function () {
-    let memphisConnection
-
+    let memphisConnection: Memphis;
+    
     try {
         memphisConnection = await memphis.connect({
-            host: '<memphis-host>',
-            username: '<application type username>',
-            connectionToken: '<broker-token>'
+            host: "<memphis-host>",
+            username: "<application type username>",
+            connectionToken: "<broker-token>"
         });
 
         const producer = await memphisConnection.producer({

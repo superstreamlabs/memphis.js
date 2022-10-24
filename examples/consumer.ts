@@ -1,7 +1,8 @@
-const memphis = require('memphis-dev');
+import memphis from 'memphis-dev';
+import { Memphis, Message } from 'memphis-dev/types';
 
 (async function () {
-    let memphisConnection;
+    let memphisConnection: Memphis;
 
     try {
         memphisConnection = await memphis.connect({
@@ -16,12 +17,14 @@ const memphis = require('memphis-dev');
             consumerGroup: ''
         });
 
-        consumer.on('message', (message) => {
+        consumer.on('message', (message: Message) => {
             console.log(message.getData().toString());
             message.ack();
         });
 
-        consumer.on('error', (error) => {});
+        consumer.on('error', (error) => {
+            console.log(error);
+        });
     } catch (ex) {
         console.log(ex);
         if (memphisConnection) memphisConnection.close();
