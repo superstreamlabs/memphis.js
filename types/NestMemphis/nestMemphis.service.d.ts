@@ -1,3 +1,3 @@
-import { Memphis } from "../memphis";
+import { Memphis } from '../memphis';
 export declare class MemphisService extends Memphis {
 }

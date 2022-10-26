@@ -1,3 +1,4 @@
+import * as broker from 'nats';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -46,11 +47,12 @@ export declare class Memphis {
         dedupEnabled?: boolean;
         dedupWindowMs?: number;
     }): Promise<Station>;
-    producer({ stationName, producerName }: {
+    producer({ stationName, producerName, genUniqueSuffix }: {
         stationName: string;
         producerName: string;
+        genUniqueSuffix: boolean;
     }): Promise<Producer>;
-    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries }: {
+    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix }: {
         stationName: string;
         consumerName: string;
         consumerGroup: string;
@@ -59,6 +61,7 @@ export declare class Memphis {
         batchMaxTimeToWaitMs?: number;
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
+        genUniqueSuffix?: boolean;
     }): Promise<Consumer>;
     close(): void;
 }
@@ -67,9 +70,10 @@ declare class Producer {
     private producerName;
     private stationName;
     constructor(connection: Memphis, producerName: string, stationName: string);
-    produce({ message, ackWaitSec }: {
+    produce({ message, ackWaitSec, asyncProduce }: {
         message: Uint8Array;
         ackWaitSec?: number;
+        asyncProduce?: boolean;
     }): Promise<void>;
     destroy(): Promise<void>;
 }
@@ -93,11 +97,28 @@ declare class Consumer {
     private _pingConsumer;
     destroy(): Promise<void>;
 }
+declare class Message {
+    private message;
+    constructor(message: broker.JsMsg);
+    ack(): void;
+    getData(): Uint8Array;
+}
 declare class Station {
     private connection;
     private name;
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
-declare const MemphisInstance: Memphis;
+interface MemphisType extends Memphis {
+}
+interface StationType extends Station {
+}
+interface ProducerType extends Producer {
+}
+interface ConsumerType extends Consumer {
+}
+interface MessageType extends Message {
+}
+declare const MemphisInstance: MemphisType;
+export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
 export default MemphisInstance;

@@ -15,8 +15,8 @@
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png">
 
+<a target="_blank" href="https://twitter.com/intent/tweet?text=Probably+The+Easiest+Message+Broker+In+The+World%21+%0D%0Ahttps%3A%2F%2Fgithub.com%2Fmemphisdev%2Fmemphis-broker+%0D%0A%0D%0A%23MemphisDev"><img src="https://user-images.githubusercontent.com/70286779/174467733-e7656c1e-cfeb-4877-a5f3-1bd4fccc8cf1.png" width="60"></a>
 
-<a target="_blank" href="https://twitter.com/intent/tweet?text=Probably+The+Easiest+Message+Broker+In+The+World%21+%0D%0Ahttps%3A%2F%2Fgithub.com%2Fmemphisdev%2Fmemphis-broker+%0D%0A%0D%0A%23MemphisDev"><img src="https://user-images.githubusercontent.com/70286779/174467733-e7656c1e-cfeb-4877-a5f3-1bd4fccc8cf1.png" width="60"></a> 
 </div>
  
  <p align="center">
@@ -48,19 +48,22 @@ $ npm install memphis-dev
 for javascript, you can choose to use the import or required keyword
 
 ```js
-const memphis = require("memphis-dev");
+const memphis = require('memphis-dev');
 ```
+
 for Typescript, use the import keyword to aid for typechecking assistance
 
 ```js
-import memphis from "memphis-dev";
+import memphis from 'memphis-dev';
+import type { Memphis } from 'memphis-dev/types';
 ```
 
 To leverage Nestjs dependency injection feature
 
 ```js
-import { Module } from "@nestjs/common";
-import { MemphisModule, MemphisService } from "memphis-dev/nest";
+import { Module } from '@nestjs/common';
+import { MemphisModule, MemphisService } from 'memphis-dev/nest';
+import type { Memphis } from 'memphis-dev/types';
 ```
 
 ### Connecting to Memphis
@@ -93,15 +96,17 @@ class ConsumerModule {
 
     startConnection() {
         (async function () {
+            let memphisConnection: Memphis;
+
             try {
-                await this.memphis.connect({
+               memphisConnection = await this.memphis.connect({
                     host: "<memphis-host>",
                     username: "<application type username>",
                     connectionToken: "<broker-token>",
                 });
             } catch (ex) {
                 console.log(ex);
-                this.memphis.close();
+                memphisConnection.close();
             }
         })();
     }
@@ -122,13 +127,13 @@ memphisConnection.close();
 
 ```js
 const station = await memphis.station({
-  name: "<station-name>",
-  retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
-  retentionValue: 604800, // defaults to 604800
-  storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
-  replicas: 1, // defaults to 1
-  dedupEnabled: false, // defaults to false
-  dedupWindowMs: 0, // defaults to 0
+    name: '<station-name>',
+    retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+    retentionValue: 604800, // defaults to 604800
+    storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
+    replicas: 1, // defaults to 1
+    dedupEnabled: false, // defaults to false
+    dedupWindowMs: 0 // defaults to 0
 });
 ```
 
@@ -221,9 +226,10 @@ of whether there are messages in flight for the client.
 
 ```js
 const producer = await memphisConnection.producer({
-            stationName: "<station-name>",
-            producerName: "<producer-name>"
-      });
+    stationName: '<station-name>',
+    producerName: '<producer-name>',
+    genUniqueSuffix: false
+});
 ```
 
 Creating producers with nestjs dependecy injection
@@ -238,7 +244,7 @@ class ProducerModule {
 
     createProducer() {
         (async function () {
-                const producer = await this.memphis.producer({
+                const producer = await memphisConnection.producer({
                     stationName: "<station-name>",
                     producerName: "<producer-name>"
                 });
@@ -251,8 +257,19 @@ class ProducerModule {
 
 ```js
 await producer.produce({
-  message: "<bytes array>", // Uint8Arrays
-  ackWaitSec: 15, // defaults to 15
+    message: '<bytes array>', // Uint8Arrays
+    ackWaitSec: 15 // defaults to 15
+});
+```
+
+### Async produce
+Meaning your application won't wait for broker acknowledgement - use only in case you are tolerant for data loss
+
+```js
+await producer.produce({
+    message: '<bytes array>', // Uint8Arrays
+    ackWaitSec: 15, // defaults to 15
+    asyncProduce: true // defaults to false
 });
 ```
 
@@ -272,28 +289,49 @@ const consumer = await memphisConnection.consumer({
             pullIntervalMs: 1000, // defaults to 1000
             batchSize: 10, // defaults to 10
             batchMaxTimeToWaitMs: 5000, // defaults to 5000
-            maxAckTimeMs: 30000 // defaults to 30000
-            maxMsgDeliveries: 10 // defaults to 10
+            maxAckTimeMs: 30000, // defaults to 30000
+            maxMsgDeliveries: 10, // defaults to 10
+            genUniqueSuffix: false
       });
 ```
 
-Creating consumers with nestjs dependecy injection
+To set Up connection in nestjs
 
 ```js
-@Module({
-    imports: [MemphisModule.register()],
-})
-class ConsumerModule {
-    constructor(private memphis: MemphisService) {}
+import { MemphisServer } from 'memphis-dev/nest'
 
-    createConsumer() {
-        (async function () {
-                const consumer = await this.memphis.consumer({
-                    stationName: "<station-name>",
-                    consumerName: "<consumer-name>",
-                    consumerGroup: "",
-                });
-        })();
+async function bootstrap() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      strategy: new MemphisServer({
+        host: '<memphis-host>',
+        username: '<application type username>',
+        connectionToken: '<broker-token>'
+      }),
+    },
+  );
+
+  await app.listen();
+}
+bootstrap();
+```
+
+To Consume messages in nestjs
+
+```js
+export class Controller {
+    import { consumeMessage } from 'memphis-dev/nest';
+    import { Message } from 'memphis-dev/types';
+
+    @consumeMessage({
+        stationName: '<station-name>',
+        consumerName: '<consumer-name>',
+        consumerGroup: ''
+    })
+    async messageHandler(message: Message) {
+        console.log(message.getData().toString());
+        message.ack();
     }
 }
 ```
@@ -301,10 +339,10 @@ class ConsumerModule {
 ### Processing messages
 
 ```js
-consumer.on("message", (message) => {
-  // processing
-  console.log(message.getData());
-  message.ack();
+consumer.on('message', (message) => {
+    // processing
+    console.log(message.getData());
+    message.ack();
 });
 ```
 
@@ -319,8 +357,8 @@ message.ack();
 ### Catching async errors
 
 ```js
-consumer.on("error", (error) => {
-  // error handling
+consumer.on('error', (error) => {
+    // error handling
 });
 ```
 

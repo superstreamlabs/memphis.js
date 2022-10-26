@@ -232,10 +232,13 @@ export class Memphis {
      * Creates a producer.
      * @param {String} stationName - station name to produce messages into.
      * @param {String} producerName - name for the producer.
+     * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
-    async producer({ stationName, producerName }: { stationName: string; producerName: string }): Promise<Producer> {
+    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix: boolean; }): Promise<Producer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
+
+            producerName = genUniqueSuffix ? producerName + "_" + generateNameSuffix() : producerName;
             let createProducerReq = {
                 name: producerName,
                 station_name: stationName,
@@ -265,6 +268,7 @@ export class Memphis {
      * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
      * @param {Number} `maxAckTimeMs` - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
      * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
+     * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
     async consumer({
         stationName,
@@ -274,7 +278,8 @@ export class Memphis {
         batchSize = 10,
         batchMaxTimeToWaitMs = 5000,
         maxAckTimeMs = 30000,
-        maxMsgDeliveries = 10
+        maxMsgDeliveries = 10,
+        genUniqueSuffix = false
     }: {
         stationName: string;
         consumerName: string;
@@ -284,10 +289,12 @@ export class Memphis {
         batchMaxTimeToWaitMs?: number;
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
+        genUniqueSuffix?: boolean;
     }): Promise<Consumer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
+            consumerName = genUniqueSuffix ? consumerName + "_" + generateNameSuffix() : consumerName;
             consumerGroup = consumerGroup || consumerName;
             let createConsumerReq = {
                 name: consumerName,
@@ -336,14 +343,19 @@ class Producer {
      * Produces a message into a station.
      * @param {Uint8Array} message - message to send into the station.
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
+     * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
      */
-    async produce({ message, ackWaitSec = 15 }: { message: Uint8Array; ackWaitSec?: number }): Promise<void> {
+    async produce({ message, ackWaitSec = 15, asyncProduce = false }: { message: Uint8Array; ackWaitSec?: number; asyncProduce?: boolean }): Promise<void> {
         try {
             const h = headers();
             h.append('$memphisconnectionId', this.connection.connectionId);
             h.append('$memphisproducedBy', this.producerName);
             const subject = this.stationName.replace(/\./g, '#');
-            await this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
+
+            if (asyncProduce)
+                this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
+            else
+                await this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
@@ -424,9 +436,9 @@ class Consumer {
      */
     on(event: String, cb: (...args: any[]) => void) {
         if (event === 'message') {
-            const subject = this.stationName.replace(/\./g,'#');
-            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
-            const consumerName = this.consumerName.replace(/\./g,'#');
+            const subject = this.stationName.replace(/\./g, '#');
+            const consumerGroup = this.consumerGroup.replace(/\./g, '#');
+            const consumerName = this.consumerName.replace(/\./g, '#');
             this.connection.brokerConnection
                 .pullSubscribe(`${subject}.final`, {
                     mack: true,
@@ -474,9 +486,9 @@ class Consumer {
 
     private async _pingConsumer() {
         try {
-            const stationName = this.stationName.replace(/\./g,'#');
-            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
-            const consumerName = this.consumerName.replace(/\./g,'#');
+            const stationName = this.stationName.replace(/\./g, '#');
+            const consumerGroup = this.consumerGroup.replace(/\./g, '#');
+            const consumerName = this.consumerName.replace(/\./g, '#');
             const durableName = consumerGroup || consumerName;
             await this.connection.brokerStats.consumers.info(stationName, durableName);
         } catch (ex) {
@@ -509,6 +521,9 @@ class Consumer {
     }
 }
 
+function generateNameSuffix(): string {
+    return [...Array(8)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+}
 class Message {
     private message: broker.JsMsg;
 
@@ -562,6 +577,14 @@ class Station {
     }
 }
 
-const MemphisInstance = new Memphis();
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
+
+const MemphisInstance: MemphisType = new Memphis();
+
+export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
 
 export default MemphisInstance;
