@@ -70,9 +70,10 @@ declare class Producer {
     private producerName;
     private stationName;
     constructor(connection: Memphis, producerName: string, stationName: string);
-    produce({ message, ackWaitSec }: {
+    produce({ message, ackWaitSec, asyncProduce }: {
         message: Uint8Array;
         ackWaitSec?: number;
+        asyncProduce?: boolean;
     }): Promise<void>;
     destroy(): Promise<void>;
 }

@@ -262,6 +262,17 @@ await producer.produce({
 });
 ```
 
+### Async produce
+Meaning your application won't wait for broker acknowledgement - use only in case you are tolerant for data loss
+
+```js
+await producer.produce({
+    message: '<bytes array>', // Uint8Arrays
+    ackWaitSec: 15, // defaults to 15
+    asyncProduce: true // defaults to false
+});
+```
+
 ### Destroying a Producer
 
 ```js

@@ -237,7 +237,7 @@ export class Memphis {
     async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix: boolean; }): Promise<Producer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
-            
+
             producerName = genUniqueSuffix ? producerName + "_" + generateNameSuffix() : producerName;
             let createProducerReq = {
                 name: producerName,
@@ -343,14 +343,19 @@ class Producer {
      * Produces a message into a station.
      * @param {Uint8Array} message - message to send into the station.
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
+     * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
      */
-    async produce({ message, ackWaitSec = 15 }: { message: Uint8Array; ackWaitSec?: number }): Promise<void> {
+    async produce({ message, ackWaitSec = 15, asyncProduce = false }: { message: Uint8Array; ackWaitSec?: number; asyncProduce?: boolean }): Promise<void> {
         try {
             const h = headers();
             h.append('connectionId', this.connection.connectionId);
             h.append('producedBy', this.producerName);
             const subject = this.stationName.replace(/\./g, '#');
-            await this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
+
+            if (asyncProduce)
+                this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
+            else
+                await this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
@@ -431,9 +436,9 @@ class Consumer {
      */
     on(event: String, cb: (...args: any[]) => void) {
         if (event === 'message') {
-            const subject = this.stationName.replace(/\./g,'#');
-            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
-            const consumerName = this.consumerName.replace(/\./g,'#');
+            const subject = this.stationName.replace(/\./g, '#');
+            const consumerGroup = this.consumerGroup.replace(/\./g, '#');
+            const consumerName = this.consumerName.replace(/\./g, '#');
             this.connection.brokerConnection
                 .pullSubscribe(`${subject}.final`, {
                     mack: true,
@@ -481,9 +486,9 @@ class Consumer {
 
     private async _pingConsumer() {
         try {
-            const stationName = this.stationName.replace(/\./g,'#');
-            const consumerGroup = this.consumerGroup.replace(/\./g,'#');
-            const consumerName = this.consumerName.replace(/\./g,'#');
+            const stationName = this.stationName.replace(/\./g, '#');
+            const consumerGroup = this.consumerGroup.replace(/\./g, '#');
+            const consumerName = this.consumerName.replace(/\./g, '#');
             const durableName = consumerGroup || consumerName;
             await this.connection.brokerStats.consumers.info(stationName, durableName);
         } catch (ex) {
@@ -572,11 +577,11 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
