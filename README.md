@@ -262,6 +262,17 @@ await producer.produce({
 });
 ```
 
+### Add Header
+
+```js
+const headers = new MsgHeaders()
+headers.add({key:"<key>", value:"<value>"})
+await producer.produce({
+                message: '<bytes array>', // Uint8Arrays
+                msgHeaders: headers //defults to empty MsgHeaders
+            });
+```
+
 ### Async produce
 Meaning your application won't wait for broker acknowledgement - use only in case you are tolerant for data loss
 
