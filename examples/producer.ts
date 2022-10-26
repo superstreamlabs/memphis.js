@@ -16,9 +16,12 @@ import type { Memphis } from 'memphis-dev/types';
             producerName: "<producer-name>"
         });
 
+        const headers = new MsgHeaders()
+        headers.add("<key>", "<value>")
         for (let index = 0; index < 100; index++) {
             await producer.produce({
-                message: Buffer.from(`Message #${index}: Hello world`)
+                message: Buffer.from(`Message #${index}: Hello world`),
+                msgHeaders: headers
             });
             console.log("Message sent");
         }

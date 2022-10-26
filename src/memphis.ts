@@ -341,7 +341,7 @@ export class MsgHeaders {
      * @param {String} key - header key.
      * @param {String} value - header value.
      */
-    add({ key, value }: { key: string; value: string }): void {
+    add(key:string, value:string): void {
         this.headers.append(key, value);
     }
 }
