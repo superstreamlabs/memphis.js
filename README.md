@@ -366,6 +366,14 @@ Acknowledge a message indicates the Memphis server to not re-send the same messa
 message.ack();
 ```
 
+
+### Get headers 
+Get headers per message
+
+``js
+headers = message.getHeaders()
+```
+
 ### Catching async errors
 
 ```js

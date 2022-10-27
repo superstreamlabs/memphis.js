@@ -110,6 +110,7 @@ declare class Message {
     constructor(message: broker.JsMsg);
     ack(): void;
     getData(): Uint8Array;
+    getHeaders(): Map<string, string[]>;
 }
 declare class Station {
     private connection;

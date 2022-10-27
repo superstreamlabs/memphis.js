@@ -20,6 +20,7 @@ import { Memphis, Message } from 'memphis-dev/types';
         consumer.on('message', (message: Message) => {
             console.log(message.getData().toString());
             message.ack();
+            const headers = message.getHeaders()
         });
 
         consumer.on('error', (error) => {
