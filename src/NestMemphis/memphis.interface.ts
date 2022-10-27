@@ -17,7 +17,7 @@ export interface MemphisPattern<TPattern = string> {
 export interface MemphisConsumerOption {
     stationName: string;
     consumerName: string;
-    consumerGroup: string;
+    consumerGroup?: string;
     pullIntervalMs?: number;
     batchSize?: number;
     batchMaxTimeToWaitMs?: number;
