@@ -575,6 +575,16 @@ class Message {
     getData() {
         return this.message.data;
     }
+
+    getHeaders() {
+        const msgHeaders = new Map<string, string[]>();
+        const hdrs = this.message.headers['headers'];
+
+        for (let [key, value] of hdrs) {
+            msgHeaders[key] = value;
+        }
+        return msgHeaders;
+    }
 }
 
 class Station {

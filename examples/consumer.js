@@ -19,6 +19,7 @@ const memphis = require('memphis-dev');
         consumer.on('message', (message) => {
             console.log(message.getData().toString());
             message.ack();
+            const headers = message.getHeaders()
         });
 
         consumer.on('error', (error) => {});
