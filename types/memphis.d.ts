@@ -50,12 +50,12 @@ export declare class Memphis {
     producer({ stationName, producerName, genUniqueSuffix }: {
         stationName: string;
         producerName: string;
-        genUniqueSuffix: boolean;
+        genUniqueSuffix?: boolean;
     }): Promise<Producer>;
     consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix }: {
         stationName: string;
         consumerName: string;
-        consumerGroup: string;
+        consumerGroup?: string;
         pullIntervalMs?: number;
         batchSize?: number;
         batchMaxTimeToWaitMs?: number;

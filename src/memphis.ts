@@ -233,7 +233,7 @@ export class Memphis {
      * @param {String} producerName - name for the producer.
      * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
-    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix: boolean }): Promise<Producer> {
+    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean; }): Promise<Producer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
@@ -272,7 +272,7 @@ export class Memphis {
     async consumer({
         stationName,
         consumerName,
-        consumerGroup,
+        consumerGroup = "",
         pullIntervalMs = 1000,
         batchSize = 10,
         batchMaxTimeToWaitMs = 5000,
@@ -282,7 +282,7 @@ export class Memphis {
     }: {
         stationName: string;
         consumerName: string;
-        consumerGroup: string;
+        consumerGroup?: string;
         pullIntervalMs?: number;
         batchSize?: number;
         batchMaxTimeToWaitMs?: number;
