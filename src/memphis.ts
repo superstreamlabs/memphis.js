@@ -21,8 +21,7 @@
 
 import * as events from 'events';
 import * as broker from 'nats';
-import { headers } from 'nats';
-import { v4 as uuidv4 } from 'uuid';
+import { headers, MsgHdrs } from 'nats';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -318,6 +317,10 @@ export class Memphis {
         }
     }
 
+    headers() {
+        return new MsgHeaders();
+    }
+
     /**
      * Close Memphis connection.
      */
@@ -325,6 +328,27 @@ export class Memphis {
         setTimeout(() => {
             this.brokerManager && this.brokerManager.close();
         }, 500);
+    }
+}
+
+class MsgHeaders {
+    headers: MsgHdrs;
+
+    constructor() {
+        this.headers = headers();
+    }
+
+    /**
+     * Add a header.
+     * @param {String} key - header key.
+     * @param {String} value - header value.
+     */
+    add(key: string, value: string): void {
+        if (!key.startsWith('$memphis')) {
+            this.headers.append(key, value);
+        } else {
+            throw new Error('Keys in headers should not start with $memphis');
+        }
     }
 }
 
@@ -344,18 +368,26 @@ class Producer {
      * @param {Uint8Array} message - message to send into the station.
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
      * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
+     * @param {MsgHeaders} headers - Message headers.
      */
-    async produce({ message, ackWaitSec = 15, asyncProduce = false }: { message: Uint8Array; ackWaitSec?: number; asyncProduce?: boolean }): Promise<void> {
+    async produce({
+        message,
+        ackWaitSec = 15,
+        asyncProduce = false,
+        headers = new MsgHeaders()
+    }: {
+        message: Uint8Array;
+        ackWaitSec?: number;
+        asyncProduce?: boolean;
+        headers?: MsgHeaders;
+    }): Promise<void> {
         try {
-            const h = headers();
-            h.append('connectionId', this.connection.connectionId);
-            h.append('producedBy', this.producerName);
+            headers.headers.set('$memphis_connectionId', this.connection.connectionId);
+            headers.headers.set('$memphis_producedBy', this.producerName);
             const subject = this.stationName.replace(/\./g, '#');
-
             if (asyncProduce)
-                this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
-            else
-                await this.connection.brokerConnection.publish(`${subject}.final`, message, { msgID: uuidv4(), headers: h, ackWait: ackWaitSec * 1000 * 1000000 });
+                this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
+            else await this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
@@ -582,9 +614,10 @@ interface StationType extends Station { }
 interface ProducerType extends Producer { }
 interface ConsumerType extends Consumer { }
 interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
-export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
+export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType, MsgHeadersType };
 
 export default MemphisInstance;
