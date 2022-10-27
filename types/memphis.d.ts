@@ -1,4 +1,5 @@
 import * as broker from 'nats';
+import { MsgHdrs } from 'nats';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -63,17 +64,24 @@ export declare class Memphis {
         maxMsgDeliveries?: number;
         genUniqueSuffix?: boolean;
     }): Promise<Consumer>;
+    headers(): MsgHeaders;
     close(): void;
+}
+declare class MsgHeaders {
+    headers: MsgHdrs;
+    constructor();
+    add(key: string, value: string): void;
 }
 declare class Producer {
     private connection;
     private producerName;
     private stationName;
     constructor(connection: Memphis, producerName: string, stationName: string);
-    produce({ message, ackWaitSec, asyncProduce }: {
+    produce({ message, ackWaitSec, asyncProduce, headers }: {
         message: Uint8Array;
         ackWaitSec?: number;
         asyncProduce?: boolean;
+        headers?: MsgHeaders;
     }): Promise<void>;
     destroy(): Promise<void>;
 }
@@ -119,6 +127,8 @@ interface ConsumerType extends Consumer {
 }
 interface MessageType extends Message {
 }
+interface MsgHeadersType extends MsgHeaders {
+}
 declare const MemphisInstance: MemphisType;
-export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
+export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType, MsgHeadersType };
 export default MemphisInstance;

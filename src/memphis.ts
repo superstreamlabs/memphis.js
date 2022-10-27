@@ -317,6 +317,10 @@ export class Memphis {
         }
     }
 
+    headers() {
+        return new MsgHeaders();
+    }
+
     /**
      * Close Memphis connection.
      */
@@ -327,7 +331,7 @@ export class Memphis {
     }
 }
 
-export class Headers {
+class MsgHeaders {
     headers: MsgHdrs;
 
     constructor() {
@@ -363,19 +367,19 @@ class Producer {
      * Produces a message into a station.
      * @param {Uint8Array} message - message to send into the station.
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
-     * @param {Headers} headers - Message headers.
      * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
+     * @param {MsgHeaders} headers - Message headers.
      */
     async produce({
         message,
         ackWaitSec = 15,
         asyncProduce = false,
-        headers = new Headers()
+        headers = new MsgHeaders()
     }: {
         message: Uint8Array;
         ackWaitSec?: number;
         asyncProduce?: boolean;
-        headers?: Headers;
+        headers?: MsgHeaders;
     }): Promise<void> {
         try {
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
@@ -610,8 +614,10 @@ interface StationType extends Station { }
 interface ProducerType extends Producer { }
 interface ConsumerType extends Consumer { }
 interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
-export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType };
+export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType, MsgHeadersType };
+
 export default MemphisInstance;

@@ -265,11 +265,11 @@ await producer.produce({
 ### Add Header
 
 ```js
-const headers = new Headers();
+const headers = memphis.headers()
 headers.add('<key>', '<value>');
 await producer.produce({
     message: '<bytes array>', // Uint8Arrays
-    headers: headers //defults to empty Headers
+    headers: headers // defults to empty
 });
 ```
 
