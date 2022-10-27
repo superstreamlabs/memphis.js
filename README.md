@@ -265,15 +265,16 @@ await producer.produce({
 ### Add Header
 
 ```js
-const headers = new Headers()
-headers.add("<key>", "<value>")
+const headers = new Headers();
+headers.add('<key>', '<value>');
 await producer.produce({
-                message: '<bytes array>', // Uint8Arrays
-                Headers: headers //defults to empty Headers
-            });
+    message: '<bytes array>', // Uint8Arrays
+    headers: headers //defults to empty Headers
+});
 ```
 
 ### Async produce
+
 Meaning your application won't wait for broker acknowledgement - use only in case you are tolerant for data loss
 
 ```js
@@ -294,16 +295,16 @@ await producer.destroy();
 
 ```js
 const consumer = await memphisConnection.consumer({
-            stationName: "<station-name>",
-            consumerName: "<consumer-name>",
-            consumerGroup: "<group-name>", // defaults to the consumer name.
-            pullIntervalMs: 1000, // defaults to 1000
-            batchSize: 10, // defaults to 10
-            batchMaxTimeToWaitMs: 5000, // defaults to 5000
-            maxAckTimeMs: 30000, // defaults to 30000
-            maxMsgDeliveries: 10, // defaults to 10
-            genUniqueSuffix: false
-      });
+    stationName: '<station-name>',
+    consumerName: '<consumer-name>',
+    consumerGroup: '<group-name>', // defaults to the consumer name.
+    pullIntervalMs: 1000, // defaults to 1000
+    batchSize: 10, // defaults to 10
+    batchMaxTimeToWaitMs: 5000, // defaults to 5000
+    maxAckTimeMs: 30000, // defaults to 30000
+    maxMsgDeliveries: 10, // defaults to 10
+    genUniqueSuffix: false
+});
 ```
 
 To set Up connection in nestjs

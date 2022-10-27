@@ -233,7 +233,7 @@ export class Memphis {
      * @param {String} producerName - name for the producer.
      * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
-    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix: boolean; }): Promise<Producer> {
+    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix: boolean }): Promise<Producer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
@@ -339,12 +339,11 @@ export class Headers {
      * @param {String} key - header key.
      * @param {String} value - header value.
      */
-    add(key:string, value:string): void {
-        if  (!key.startsWith("$memphis")){
+    add(key: string, value: string): void {
+        if (!key.startsWith('$memphis')) {
             this.headers.append(key, value);
-        }
-        else{
-            throw new Error("Keys in headers should not start with $memphis")
+        } else {
+            throw new Error('Keys in headers should not start with $memphis');
         }
     }
 }

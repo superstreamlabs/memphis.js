@@ -11,25 +11,24 @@ const memphis = require("memphis-dev");
         });
 
         const producer = await memphisConnection.producer({
-            stationName: "<station-name>",
-            producerName: "<producer-name>"
+            stationName: '<station-name>',
+            producerName: '<producer-name>'
         });
 
         const headers = new Headers()
-        headers.add("<key>", "<value>")
+        headers.add('<key>', '<value>')
         for (let index = 0; index < 100; index++) {
             await producer.produce({
                 message: Buffer.from(`Message #${index}: Hello world`),
                 headers: headers
             });
-            console.log("Message sent");
+            console.log('Message sent');
         }
 
-        console.log("All messages sent");
+        console.log('All messages sent');
         memphisConnection.close();
     } catch (ex) {
         console.log(ex);
-        if (memphisConnection)
-            memphisConnection.close();
+        if (memphisConnection) memphisConnection.close();
     }
 })();
