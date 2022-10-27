@@ -572,11 +572,17 @@ class Message {
             this.message.ack();
     }
 
-    getData() {
+    /**
+     * Returns the message payload.
+     */
+    getData(): Uint8Array {
         return this.message.data;
     }
 
-    getHeaders() {
+    /**
+     * Returns the message headers.
+     */
+    getHeaders(): Map<string, string[]> {
         const msgHeaders = new Map<string, string[]>();
         const hdrs = this.message.headers['headers'];
 
