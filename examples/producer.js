@@ -15,9 +15,12 @@ const memphis = require("memphis-dev");
             producerName: "<producer-name>"
         });
 
+        const headers = new Headers()
+        headers.add("<key>", "<value>")
         for (let index = 0; index < 100; index++) {
             await producer.produce({
-                message: Buffer.from(`Message #${index}: Hello world`)
+                message: Buffer.from(`Message #${index}: Hello world`),
+                headers: headers
             });
             console.log("Message sent");
         }

@@ -265,11 +265,11 @@ await producer.produce({
 ### Add Header
 
 ```js
-const headers = new MsgHeaders()
-headers.add({key:"<key>", value:"<value>"})
+const headers = new Headers()
+headers.add("<key>", "<value>")
 await producer.produce({
                 message: '<bytes array>', // Uint8Arrays
-                msgHeaders: headers //defults to empty MsgHeaders
+                Headers: headers //defults to empty Headers
             });
 ```
 
