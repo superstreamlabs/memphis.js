@@ -62,6 +62,9 @@ export class Memphis {
     public retentionTypes!: IRetentionTypes;
     public storageTypes!: IStorageTypes;
     public JSONC: any;
+    public stationSchemaDataMap: Map<string, Object>;
+    public schemaUpdatesSubs: Map<string, broker.Subscription>;
+    public producersPerStation: Map<string, number>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -80,6 +83,36 @@ export class Memphis {
         this.storageTypes = storageTypes;
         this.JSONC = broker.JSONCodec();
         this.connectionId = this._generateConnectionID();
+        this.stationSchemaDataMap = new Map();
+        this.schemaUpdatesSubs = new Map();
+        this.producersPerStation = new Map();
+    }
+
+    private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object) {
+        let empty = schemaUpdateData['schema_name'] === '';
+        const subName = stationName.replace(/\./g, '#');
+        let schemaDataExist = this.stationSchemaDataMap.has(subName);
+        if (empty) {
+            this.stationSchemaDataMap.set(subName, {});
+        } else {
+            this.stationSchemaDataMap.set(subName, schemaUpdateData);
+        }
+        if (schemaDataExist) {
+            this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
+        } else {
+            const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
+            this.producersPerStation.set(subName, 1);
+            this.schemaUpdatesSubs.set(subName, sub);
+            for await (const m of sub) {
+                let data = this.JSONC.decode(m._rdata);
+                empty = data['schema_name'] === '';
+                if (empty) {
+                    this.stationSchemaDataMap.set(subName, {});
+                } else {
+                    this.stationSchemaDataMap.set(subName, data.init);
+                }
+            }
+        }
     }
 
     /**
@@ -233,11 +266,11 @@ export class Memphis {
      * @param {String} producerName - name for the producer.
      * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
-    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean; }): Promise<Producer> {
+    async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean }): Promise<Producer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
-            producerName = genUniqueSuffix ? producerName + "_" + generateNameSuffix() : producerName;
+            producerName = genUniqueSuffix ? producerName + '_' + generateNameSuffix() : producerName;
             let createProducerReq = {
                 name: producerName,
                 station_name: stationName,
@@ -245,12 +278,13 @@ export class Memphis {
                 producer_type: 'application'
             };
             let data = this.JSONC.encode(createProducerReq);
-            let errMsg = await this.brokerManager.request('$memphis_producer_creations', data);
-            errMsg = errMsg.data.toString();
-            if (errMsg != '') {
-                throw new Error(errMsg);
+            let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
+            createRes = this.JSONC.decode(createRes.data);
+            if (createRes.error != '') {
+                throw new Error(createRes.error);
             }
 
+            this._scemaUpdatesListener(stationName, createRes.schema_update);
             return new Producer(this, producerName, stationName);
         } catch (ex) {
             throw ex;
@@ -272,7 +306,7 @@ export class Memphis {
     async consumer({
         stationName,
         consumerName,
-        consumerGroup = "",
+        consumerGroup = '',
         pullIntervalMs = 1000,
         batchSize = 10,
         batchMaxTimeToWaitMs = 5000,
@@ -293,7 +327,7 @@ export class Memphis {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
-            consumerName = genUniqueSuffix ? consumerName + "_" + generateNameSuffix() : consumerName;
+            consumerName = genUniqueSuffix ? consumerName + '_' + generateNameSuffix() : consumerName;
             consumerGroup = consumerGroup || consumerName;
             let createConsumerReq = {
                 name: consumerName,
@@ -325,6 +359,13 @@ export class Memphis {
      * Close Memphis connection.
      */
     close() {
+        for (let key of this.schemaUpdatesSubs.keys()) {
+            let sub = this.schemaUpdatesSubs.get(key);
+            sub.unsubscribe();
+            this.stationSchemaDataMap.delete(key);
+            this.schemaUpdatesSubs.delete(key);
+            this.producersPerStation.delete(key);
+        }
         setTimeout(() => {
             this.brokerManager && this.brokerManager.close();
         }, 500);
@@ -385,8 +426,7 @@ class Producer {
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
             const subject = this.stationName.replace(/\./g, '#');
-            if (asyncProduce)
-                this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
+            if (asyncProduce) this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
             else await this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
             if (ex.code === '503') {
@@ -408,6 +448,15 @@ class Producer {
             let data = this.connection.JSONC.encode(removeProducerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
             errMsg = errMsg.data.toString();
+            const subName = this.stationName.replace(/\./g, '#');
+            let prodNumber = this.connection.producersPerStation.get(subName) - 1;
+            this.connection.producersPerStation.set(subName, prodNumber);
+            if (prodNumber === 0) {
+                let sub = this.connection.schemaUpdatesSubs.get(subName);
+                sub.unsubscribe();
+                this.connection.stationSchemaDataMap.delete(subName);
+                this.connection.schemaUpdatesSubs.delete(subName);
+            }
             if (errMsg != '') {
                 throw new Error(errMsg);
             }
@@ -610,6 +659,12 @@ class Station {
             let removeStationReq = {
                 station_name: this.name
             };
+            const subName = this.name.replace(/\./g, '#');
+            let sub = this.connection.schemaUpdatesSubs.get(subName);
+            sub.unsubscribe();
+            this.connection.stationSchemaDataMap.delete(subName);
+            this.connection.schemaUpdatesSubs.delete(subName);
+            this.connection.producersPerStation.delete(subName);
             let data = this.connection.JSONC.encode(removeStationReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_station_destructions', data);
             errMsg = errMsg.data.toString();
@@ -625,12 +680,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
