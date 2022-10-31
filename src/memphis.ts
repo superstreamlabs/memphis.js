@@ -88,33 +88,6 @@ export class Memphis {
         this.producersPerStation = new Map();
     }
 
-    private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object) {
-        let empty = schemaUpdateData['schema_name'] === '';
-        const subName = stationName.replace(/\./g, '#');
-        let schemaDataExist = this.stationSchemaDataMap.has(subName);
-        if (empty) {
-            this.stationSchemaDataMap.set(subName, {});
-        } else {
-            this.stationSchemaDataMap.set(subName, schemaUpdateData);
-        }
-        if (schemaDataExist) {
-            this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
-        } else {
-            const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
-            this.producersPerStation.set(subName, 1);
-            this.schemaUpdatesSubs.set(subName, sub);
-            for await (const m of sub) {
-                let data = this.JSONC.decode(m._rdata);
-                empty = data['schema_name'] === '';
-                if (empty) {
-                    this.stationSchemaDataMap.set(subName, {});
-                } else {
-                    this.stationSchemaDataMap.set(subName, data.init);
-                }
-            }
-        }
-    }
-
     /**
      * Creates connection with Memphis.
      * @param {String} host - memphis host.
@@ -195,6 +168,33 @@ export class Memphis {
                 return reject(ex);
             }
         });
+    }
+
+    private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object): Promise<void> {
+        let empty = schemaUpdateData['schema_name'] === '';
+        const subName = stationName.replace(/\./g, '#');
+        let schemaDataExist = this.stationSchemaDataMap.has(subName);
+        if (empty) {
+            this.stationSchemaDataMap.set(subName, {});
+        } else {
+            this.stationSchemaDataMap.set(subName, schemaUpdateData);
+        }
+        if (schemaDataExist) {
+            this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
+        } else {
+            const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
+            this.producersPerStation.set(subName, 1);
+            this.schemaUpdatesSubs.set(subName, sub);
+            for await (const m of sub) {
+                let data = this.JSONC.decode(m._rdata);
+                empty = data['schema_name'] === '';
+                if (empty) {
+                    this.stationSchemaDataMap.set(subName, {});
+                } else {
+                    this.stationSchemaDataMap.set(subName, data.init);
+                }
+            }
+        }
     }
 
     private _normalizeHost(host: string): string {
@@ -448,6 +448,9 @@ class Producer {
             let data = this.connection.JSONC.encode(removeProducerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
             errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw new Error(errMsg);
+            }
             const subName = this.stationName.replace(/\./g, '#');
             let prodNumber = this.connection.producersPerStation.get(subName) - 1;
             this.connection.producersPerStation.set(subName, prodNumber);
@@ -456,9 +459,6 @@ class Producer {
                 sub.unsubscribe();
                 this.connection.stationSchemaDataMap.delete(subName);
                 this.connection.schemaUpdatesSubs.delete(subName);
-            }
-            if (errMsg != '') {
-                throw new Error(errMsg);
             }
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
