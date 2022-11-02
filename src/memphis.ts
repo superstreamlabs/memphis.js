@@ -22,6 +22,10 @@
 import * as events from 'events';
 import * as broker from 'nats';
 import { headers, MsgHdrs } from 'nats';
+import * as protobuf from 'protobufjs';
+import * as descriptor from 'protobufjs/ext/descriptor';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -65,6 +69,7 @@ export class Memphis {
     public stationSchemaDataMap: Map<string, Object>;
     public schemaUpdatesSubs: Map<string, broker.Subscription>;
     public producersPerStation: Map<string, number>;
+    public meassageDescriptors: Map<string, protobuf.Type>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -86,6 +91,7 @@ export class Memphis {
         this.stationSchemaDataMap = new Map();
         this.schemaUpdatesSubs = new Map();
         this.producersPerStation = new Map();
+        this.meassageDescriptors = new Map();
     }
 
     /**
@@ -171,27 +177,53 @@ export class Memphis {
     }
 
     private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object): Promise<void> {
-        let empty = schemaUpdateData['schema_name'] === '';
-        const subName = stationName.replace(/\./g, '#');
-        let schemaDataExist = this.stationSchemaDataMap.has(subName);
-        if (empty) {
-            this.stationSchemaDataMap.set(subName, {});
-        } else {
-            this.stationSchemaDataMap.set(subName, schemaUpdateData);
+        try {
+            let empty = schemaUpdateData['schema_name'] === '';
+            const subName = stationName.replace(/\./g, '#');
+            let schemaDataExist = this.stationSchemaDataMap.has(subName);
+            if (empty) {
+                this.stationSchemaDataMap.set(subName, {});
+                this.meassageDescriptors.set(subName, null);
+            } else {
+                let protoPathName = `${__dirname}/memphisMeassageDescriptor_${schemaUpdateData['schema_name']}.proto`;
+                this.stationSchemaDataMap.set(subName, schemaUpdateData);
+                fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
+                let root = await protobuf.load(protoPathName);
+                let meassageDescriptor = root.lookupType(`${schemaUpdateData['active_version']['message_struct_name']}`);
+                this.meassageDescriptors.set(subName, meassageDescriptor);
+                fs.unlinkSync(protoPathName);
+            }
+            if (schemaDataExist) {
+                this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
+            } else {
+                const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
+                this.producersPerStation.set(subName, 1);
+                this.schemaUpdatesSubs.set(subName, sub);
+                this._listen(sub, subName);
+            }
+        } catch (err) {
+            throw err;
         }
-        if (schemaDataExist) {
-            this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
-        } else {
-            const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
-            this.producersPerStation.set(subName, 1);
-            this.schemaUpdatesSubs.set(subName, sub);
-            for await (const m of sub) {
-                let data = this.JSONC.decode(m._rdata);
-                empty = data['schema_name'] === '';
-                if (empty) {
-                    this.stationSchemaDataMap.set(subName, {});
-                } else {
-                    this.stationSchemaDataMap.set(subName, data.init);
+    }
+
+    private async _listen(sub: any, subName: string): Promise<void> {
+        for await (const m of sub) {
+            let data = this.JSONC.decode(m._rdata);
+            let empty = data['schema_name'] === '';
+            if (empty) {
+                this.stationSchemaDataMap.set(subName, {});
+                this.meassageDescriptors.set(subName, null);
+            } else {
+                this.stationSchemaDataMap.set(subName, data.init);
+                try {
+                    let protoPathName = `${__dirname}/memphisMeassageDescriptor_${data['schema_name']}.proto`;
+                    fs.writeFileSync(protoPathName, data['active_version']['schema_content']);
+                    let root = await protobuf.load(protoPathName);
+                    let meassageDescriptor = root.lookupType(`${data['active_version']['message_struct_name']}`);
+                    this.meassageDescriptors.set(subName, meassageDescriptor);
+                    fs.unlinkSync(protoPathName);
+                } catch (err) {
+                    throw err;
                 }
             }
         }
@@ -275,7 +307,8 @@ export class Memphis {
                 name: producerName,
                 station_name: stationName,
                 connection_id: this.connectionId,
-                producer_type: 'application'
+                producer_type: 'application',
+                req_version: 1
             };
             let data = this.JSONC.encode(createProducerReq);
             let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
@@ -284,7 +317,7 @@ export class Memphis {
                 throw new Error(createRes.error);
             }
 
-            this._scemaUpdatesListener(stationName, createRes.schema_update);
+            await this._scemaUpdatesListener(stationName, createRes.schema_update);
             return new Producer(this, producerName, stationName);
         } catch (ex) {
             throw ex;
@@ -365,6 +398,7 @@ export class Memphis {
             this.stationSchemaDataMap.delete(key);
             this.schemaUpdatesSubs.delete(key);
             this.producersPerStation.delete(key);
+            this.meassageDescriptors.delete(key);
         }
         setTimeout(() => {
             this.brokerManager && this.brokerManager.close();
@@ -426,6 +460,11 @@ class Producer {
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
             const subject = this.stationName.replace(/\./g, '#');
+            let schemaData = this.connection.stationSchemaDataMap.get(subject);
+            if (Object.keys(schemaData).length > 0) {
+                let meassageDescriptor = this.connection.meassageDescriptors.get(subject);
+                meassageDescriptor.decode(message);
+            }
             if (asyncProduce) this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
             else await this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
         } catch (ex: any) {
@@ -459,6 +498,7 @@ class Producer {
                 sub.unsubscribe();
                 this.connection.stationSchemaDataMap.delete(subName);
                 this.connection.schemaUpdatesSubs.delete(subName);
+                this.connection.meassageDescriptors.delete(subName);
             }
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
@@ -665,6 +705,7 @@ class Station {
             this.connection.stationSchemaDataMap.delete(subName);
             this.connection.schemaUpdatesSubs.delete(subName);
             this.connection.producersPerStation.delete(subName);
+            this.connection.meassageDescriptors.delete(subName);
             let data = this.connection.JSONC.encode(removeStationReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_station_destructions', data);
             errMsg = errMsg.data.toString();
