@@ -185,7 +185,7 @@ export class Memphis {
                 this.stationSchemaDataMap.set(subName, {});
                 this.meassageDescriptors.set(subName, null);
             } else {
-                let protoPathName = `${__dirname}/memphisMeassageDescriptor_${schemaUpdateData['schema_name']}.proto`;
+                let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_.proto`;
                 this.stationSchemaDataMap.set(subName, schemaUpdateData);
                 fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
                 let root = await protobuf.load(protoPathName);
@@ -216,10 +216,10 @@ export class Memphis {
             } else {
                 this.stationSchemaDataMap.set(subName, data.init);
                 try {
-                    let protoPathName = `${__dirname}/memphisMeassageDescriptor_${data['schema_name']}.proto`;
-                    fs.writeFileSync(protoPathName, data['active_version']['schema_content']);
+                    let protoPathName = `${__dirname}/${data['init']['schema_name']}_.proto`;
+                    fs.writeFileSync(protoPathName, data['init']['active_version']['schema_content']);
                     let root = await protobuf.load(protoPathName);
-                    let meassageDescriptor = root.lookupType(`${data['active_version']['message_struct_name']}`);
+                    let meassageDescriptor = root.lookupType(`${data['init']['active_version']['message_struct_name']}`);
                     this.meassageDescriptors.set(subName, meassageDescriptor);
                     fs.unlinkSync(protoPathName);
                 } catch (err) {
@@ -431,11 +431,13 @@ class Producer {
     private connection: Memphis;
     private producerName: string;
     private stationName: string;
+    private internal_station: string;
 
     constructor(connection: Memphis, producerName: string, stationName: string) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
+        this.internal_station = this.stationName.replace(/\./g, '#');
     }
 
     /**
@@ -451,25 +453,47 @@ class Producer {
         asyncProduce = false,
         headers = new MsgHeaders()
     }: {
-        message: Uint8Array;
+        message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: MsgHeaders;
     }): Promise<void> {
         try {
+            let messageToSend;
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
-            const subject = this.stationName.replace(/\./g, '#');
-            let schemaData = this.connection.stationSchemaDataMap.get(subject);
-            if (Object.keys(schemaData).length > 0) {
-                let meassageDescriptor = this.connection.meassageDescriptors.get(subject);
-                meassageDescriptor.decode(message);
+            let schemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
+            if (schemaData['schema_name']) {
+                let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+                if (message instanceof Uint8Array) {
+                    messageToSend = message;
+                    meassageDescriptor.decode(messageToSend);
+                } else if (message instanceof Object) {
+                    let errMsg = meassageDescriptor.verify(message);
+                    if (errMsg) {
+                        throw Error(errMsg);
+                    }
+                    messageToSend = meassageDescriptor.encode(message).finish();
+                } else {
+                    throw Error('Unsupported message type');
+                }
             }
-            if (asyncProduce) this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
-            else await this.connection.brokerConnection.publish(`${subject}.final`, message, { headers: headers.headers, ackWait: ackWaitSec * 1000 * 1000000 });
+            if (asyncProduce)
+                this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
+                    headers: headers.headers,
+                    ackWait: ackWaitSec * 1000 * 1000000
+                });
+            else
+                await this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
+                    headers: headers.headers,
+                    ackWait: ackWaitSec * 1000 * 1000000
+                });
         } catch (ex: any) {
             if (ex.code === '503') {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
+            }
+            if (ex.message?.includes('missing required') || ex.message?.includes('expected')) {
+                throw new Error(`Schema validation has failed: ${ex.message}`);
             }
             throw ex;
         }
