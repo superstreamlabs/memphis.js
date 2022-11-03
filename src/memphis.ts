@@ -180,17 +180,14 @@ export class Memphis {
         try {
             let shouldDrop = schemaUpdateData['schema_name'] === '';
             const subName = stationName.replace(/\./g, '#');
-            if (shouldDrop) {
-                this.stationSchemaDataMap.delete(subName);
-                this.meassageDescriptors.delete(subName);
-            } else {
+            if (!shouldDrop) {
                 let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_${schemaUpdateData['active_version']['version_number']}.proto`;
                 this.stationSchemaDataMap.set(subName, schemaUpdateData);
                 fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
                 let root = await protobuf.load(protoPathName);
+                fs.unlinkSync(protoPathName);
                 let meassageDescriptor = root.lookupType(`${schemaUpdateData['active_version']['message_struct_name']}`);
                 this.meassageDescriptors.set(subName, meassageDescriptor);
-                fs.unlinkSync(protoPathName);
             }
             let schemaUpdateSubscription = this.schemaUpdatesSubs.has(subName);
             if (schemaUpdateSubscription) {
@@ -219,9 +216,9 @@ export class Memphis {
                     let protoPathName = `${__dirname}/${data['init']['schema_name']}_${data['init']['active_version']['version_number']}.proto`;
                     fs.writeFileSync(protoPathName, data['init']['active_version']['schema_content']);
                     let root = await protobuf.load(protoPathName);
+                    fs.unlinkSync(protoPathName);
                     let meassageDescriptor = root.lookupType(`${data['init']['active_version']['message_struct_name']}`);
                     this.meassageDescriptors.set(subName, meassageDescriptor);
-                    fs.unlinkSync(protoPathName);
                 } catch (err) {
                     throw err;
                 }
@@ -466,15 +463,19 @@ class Producer {
             if (meassageDescriptor) {
                 if (message instanceof Uint8Array) {
                     messageToSend = message;
-                    meassageDescriptor.decode(messageToSend);
+                    try {
+                        meassageDescriptor.decode(messageToSend);
+                    } catch (ex) {
+                        throw new Error(`Schema validation has failed: ${ex}`);
+                    }
                 } else if (message instanceof Object) {
                     let errMsg = meassageDescriptor.verify(message);
                     if (errMsg) {
-                        throw Error(errMsg);
+                        throw new Error(`Schema validation has failed: ${errMsg}`);
                     }
                     messageToSend = meassageDescriptor.encode(message).finish();
                 } else {
-                    throw Error('Unsupported message type');
+                    throw new Error('Schema validation has failed: Unsupported message type');
                 }
             }
             if (asyncProduce)
@@ -490,9 +491,6 @@ class Producer {
         } catch (ex: any) {
             if (ex.code === '503') {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
-            }
-            if (ex.message?.includes('missing required') || ex.message?.includes('expected')) {
-                throw new Error(`Schema validation has failed: ${ex.message}`);
             }
             throw ex;
         }
