@@ -178,32 +178,32 @@ export class Memphis {
 
     private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object): Promise<void> {
         try {
-            let shouldDrop = schemaUpdateData['schema_name'] === '';
             const subName = stationName.replace(/\./g, '#');
-            if (!shouldDrop) {
-                let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_${schemaUpdateData['active_version']['version_number']}.proto`;
-                this.stationSchemaDataMap.set(subName, schemaUpdateData);
-                fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
-                let root = await protobuf.load(protoPathName);
-                fs.unlinkSync(protoPathName);
-                let meassageDescriptor = root.lookupType(`${schemaUpdateData['active_version']['message_struct_name']}`);
-                this.meassageDescriptors.set(subName, meassageDescriptor);
-            }
             let schemaUpdateSubscription = this.schemaUpdatesSubs.has(subName);
             if (schemaUpdateSubscription) {
                 this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
             } else {
+                let shouldDrop = schemaUpdateData['schema_name'] === '';
+                if (!shouldDrop) {
+                    let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_${schemaUpdateData['active_version']['version_number']}.proto`;
+                    this.stationSchemaDataMap.set(subName, schemaUpdateData);
+                    fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
+                    let root = await protobuf.load(protoPathName);
+                    fs.unlinkSync(protoPathName);
+                    let meassageDescriptor = root.lookupType(`${schemaUpdateData['active_version']['message_struct_name']}`);
+                    this.meassageDescriptors.set(subName, meassageDescriptor);
+                }
                 const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
                 this.producersPerStation.set(subName, 1);
                 this.schemaUpdatesSubs.set(subName, sub);
-                this._listen(sub, subName);
+                this._listenForSchemaUpdates(sub, subName);
             }
         } catch (err) {
             throw err;
         }
     }
 
-    private async _listen(sub: any, subName: string): Promise<void> {
+    private async _listenForSchemaUpdates(sub: any, subName: string): Promise<void> {
         for await (const m of sub) {
             let data = this.JSONC.decode(m._rdata);
             let shouldDrop = data['schema_name'] === '';
@@ -466,7 +466,7 @@ class Producer {
                     try {
                         meassageDescriptor.decode(messageToSend);
                     } catch (ex) {
-                        throw new Error(`Schema validation has failed: ${ex}`);
+                        throw new Error(`Schema validation has failed: ${ex.message}`);
                     }
                 } else if (message instanceof Object) {
                     let errMsg = meassageDescriptor.verify(message);
