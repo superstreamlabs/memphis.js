@@ -1,5 +1,6 @@
 import * as broker from 'nats';
 import { MsgHdrs } from 'nats';
+import * as protobuf from 'protobufjs';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -26,6 +27,10 @@ export declare class Memphis {
     retentionTypes: IRetentionTypes;
     storageTypes: IStorageTypes;
     JSONC: any;
+    stationSchemaDataMap: Map<string, Object>;
+    schemaUpdatesSubs: Map<string, broker.Subscription>;
+    producersPerStation: Map<string, number>;
+    meassageDescriptors: Map<string, protobuf.Type>;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
         host: string;
@@ -37,6 +42,8 @@ export declare class Memphis {
         reconnectIntervalMs?: number;
         timeoutMs?: number;
     }): Promise<Memphis>;
+    private _scemaUpdatesListener;
+    private _listenForSchemaUpdates;
     private _normalizeHost;
     private _generateConnectionID;
     station({ name, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs }: {
@@ -76,9 +83,10 @@ declare class Producer {
     private connection;
     private producerName;
     private stationName;
+    private internal_station;
     constructor(connection: Memphis, producerName: string, stationName: string);
     produce({ message, ackWaitSec, asyncProduce, headers }: {
-        message: Uint8Array;
+        message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: MsgHeaders;

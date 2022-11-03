@@ -40,6 +40,7 @@
         "dotenv": "^16.0.1",
         "nats": "^2.6.1",
         "prettier": "^2.7.1",
+        "protobufjs": "^7.1.2",
         "reflect-metadata": "^0.1.13",
         "rimraf": "^3.0.2",
         "rxjs": "^7.2.0",
