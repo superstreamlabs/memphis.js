@@ -74,7 +74,7 @@ First, we need to connect with Memphis by using `memphis.connect`.
 /* Javascript and typescript project */
 await memphis.connect({
             host: "<memphis-host>",
-            port: <management-port>, // defaults to 6666
+            port: <port>, // defaults to 6666
             username: "<username>", // (root/application type user)
             connectionToken: "<broker-token>", // you will get it on application type user creation
             reconnect: true, // defaults to true
@@ -370,7 +370,7 @@ message.ack();
 ### Get headers 
 Get headers per message
 
-``js
+```js
 headers = message.getHeaders()
 ```
 
