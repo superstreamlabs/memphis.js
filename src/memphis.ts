@@ -178,14 +178,13 @@ export class Memphis {
 
     private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object): Promise<void> {
         try {
-            let empty = schemaUpdateData['schema_name'] === '';
+            let shouldDrop = schemaUpdateData['schema_name'] === '';
             const subName = stationName.replace(/\./g, '#');
-            let schemaDataExist = this.stationSchemaDataMap.has(subName);
-            if (empty) {
-                this.stationSchemaDataMap.set(subName, {});
-                this.meassageDescriptors.set(subName, null);
+            if (shouldDrop) {
+                this.stationSchemaDataMap.delete(subName);
+                this.meassageDescriptors.delete(subName);
             } else {
-                let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_.proto`;
+                let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_${schemaUpdateData['active_version']['version_number']}.proto`;
                 this.stationSchemaDataMap.set(subName, schemaUpdateData);
                 fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
                 let root = await protobuf.load(protoPathName);
@@ -193,7 +192,8 @@ export class Memphis {
                 this.meassageDescriptors.set(subName, meassageDescriptor);
                 fs.unlinkSync(protoPathName);
             }
-            if (schemaDataExist) {
+            let schemaUpdateSubscription = this.schemaUpdatesSubs.has(subName);
+            if (schemaUpdateSubscription) {
                 this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
             } else {
                 const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
@@ -209,14 +209,14 @@ export class Memphis {
     private async _listen(sub: any, subName: string): Promise<void> {
         for await (const m of sub) {
             let data = this.JSONC.decode(m._rdata);
-            let empty = data['schema_name'] === '';
-            if (empty) {
-                this.stationSchemaDataMap.set(subName, {});
-                this.meassageDescriptors.set(subName, null);
+            let shouldDrop = data['schema_name'] === '';
+            if (shouldDrop) {
+                this.stationSchemaDataMap.delete(subName);
+                this.meassageDescriptors.delete(subName);
             } else {
                 this.stationSchemaDataMap.set(subName, data.init);
                 try {
-                    let protoPathName = `${__dirname}/${data['init']['schema_name']}_.proto`;
+                    let protoPathName = `${__dirname}/${data['init']['schema_name']}_${data['init']['active_version']['version_number']}.proto`;
                     fs.writeFileSync(protoPathName, data['init']['active_version']['schema_content']);
                     let root = await protobuf.load(protoPathName);
                     let meassageDescriptor = root.lookupType(`${data['init']['active_version']['message_struct_name']}`);
@@ -462,9 +462,8 @@ class Producer {
             let messageToSend;
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
-            let schemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
-            if (schemaData['schema_name']) {
-                let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+            let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+            if (meassageDescriptor) {
                 if (message instanceof Uint8Array) {
                     messageToSend = message;
                     meassageDescriptor.decode(messageToSend);
