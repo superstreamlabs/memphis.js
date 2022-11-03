@@ -439,7 +439,7 @@ class Producer {
 
     /**
      * Produces a message into a station.
-     * @param {Uint8Array} message - message to send into the station.
+     * @param {any} message - message to send into the station (Uint8Arrays / object-in case your station is schema validated).
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
      * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
      * @param {MsgHeaders} headers - Message headers.
