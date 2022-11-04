@@ -206,7 +206,7 @@ export class Memphis {
     private async _listenForSchemaUpdates(sub: any, subName: string): Promise<void> {
         for await (const m of sub) {
             let data = this.JSONC.decode(m._rdata);
-            let shouldDrop = data['schema_name'] === '';
+            let shouldDrop = data['init']['schema_name'] === '';
             if (shouldDrop) {
                 this.stationSchemaDataMap.delete(subName);
                 this.meassageDescriptors.delete(subName);
