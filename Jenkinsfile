@@ -15,6 +15,7 @@ node ("small-ec2-fleet") {
     }
     
     stage('Checkout to version branch'){
+      sh 'sudo yum install jq -y'
       sh(script:"""jq -r '"v" + .version' package.json > version.conf""", returnStdout: true)
       withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
         sh "git reset --hard origin/latest"
