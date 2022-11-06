@@ -1,3 +1,6 @@
+import * as broker from 'nats';
+import { MsgHdrs } from 'nats';
+import * as protobuf from 'protobufjs';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -24,6 +27,10 @@ export declare class Memphis {
     retentionTypes: IRetentionTypes;
     storageTypes: IStorageTypes;
     JSONC: any;
+    stationSchemaDataMap: Map<string, Object>;
+    schemaUpdatesSubs: Map<string, broker.Subscription>;
+    producersPerStation: Map<string, number>;
+    meassageDescriptors: Map<string, protobuf.Type>;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
         host: string;
@@ -35,6 +42,8 @@ export declare class Memphis {
         reconnectIntervalMs?: number;
         timeoutMs?: number;
     }): Promise<Memphis>;
+    private _scemaUpdatesListener;
+    private _listenForSchemaUpdates;
     private _normalizeHost;
     private _generateConnectionID;
     station({ name, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs }: {
@@ -46,31 +55,43 @@ export declare class Memphis {
         dedupEnabled?: boolean;
         dedupWindowMs?: number;
     }): Promise<Station>;
-    producer({ stationName, producerName }: {
+    producer({ stationName, producerName, genUniqueSuffix }: {
         stationName: string;
         producerName: string;
+        genUniqueSuffix?: boolean;
     }): Promise<Producer>;
-    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries }: {
+    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix }: {
         stationName: string;
         consumerName: string;
-        consumerGroup: string;
+        consumerGroup?: string;
         pullIntervalMs?: number;
         batchSize?: number;
         batchMaxTimeToWaitMs?: number;
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
+        genUniqueSuffix?: boolean;
     }): Promise<Consumer>;
+    headers(): MsgHeaders;
     close(): void;
+}
+declare class MsgHeaders {
+    headers: MsgHdrs;
+    constructor();
+    add(key: string, value: string): void;
 }
 declare class Producer {
     private connection;
     private producerName;
     private stationName;
+    private internal_station;
     constructor(connection: Memphis, producerName: string, stationName: string);
-    produce({ message, ackWaitSec }: {
-        message: Uint8Array;
+    produce({ message, ackWaitSec, asyncProduce, headers }: {
+        message: any;
         ackWaitSec?: number;
+        asyncProduce?: boolean;
+        headers?: MsgHeaders;
     }): Promise<void>;
+    private _validateMessage;
     destroy(): Promise<void>;
 }
 declare class Consumer {
@@ -93,11 +114,31 @@ declare class Consumer {
     private _pingConsumer;
     destroy(): Promise<void>;
 }
+declare class Message {
+    private message;
+    constructor(message: broker.JsMsg);
+    ack(): void;
+    getData(): Uint8Array;
+    getHeaders(): Map<string, string[]>;
+}
 declare class Station {
     private connection;
     private name;
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
-declare const MemphisInstance: Memphis;
+interface MemphisType extends Memphis {
+}
+interface StationType extends Station {
+}
+interface ProducerType extends Producer {
+}
+interface ConsumerType extends Consumer {
+}
+interface MessageType extends Message {
+}
+interface MsgHeadersType extends MsgHeaders {
+}
+declare const MemphisInstance: MemphisType;
+export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType, MsgHeadersType };
 export default MemphisInstance;
