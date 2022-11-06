@@ -456,13 +456,12 @@ class Producer {
         headers?: MsgHeaders;
     }): Promise<void> {
         try {
-            let messageToSend;
+            let messageToSend = message;
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
             let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
             if (meassageDescriptor) {
                 if (message instanceof Uint8Array) {
-                    messageToSend = message;
                     try {
                         meassageDescriptor.decode(messageToSend);
                     } catch (ex) {
@@ -473,7 +472,9 @@ class Producer {
                     if (errMsg) {
                         throw new Error(`Schema validation has failed: ${errMsg}`);
                     }
-                    messageToSend = meassageDescriptor.encode(message).finish();
+
+                    const protoMsg = meassageDescriptor.create(message);
+                    messageToSend = meassageDescriptor.encode(protoMsg).finish();
                 } else {
                     throw new Error('Schema validation has failed: Unsupported message type');
                 }
@@ -742,12 +743,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
-interface MsgHeadersType extends MsgHeaders {}
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
