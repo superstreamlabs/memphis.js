@@ -14,6 +14,7 @@ node ("small-ec2-fleet") {
     }
     
    stage('Push to NPM') {
+      sh 'sudo yum install jq -y'
       sh 'sudo npm install'
       withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
        sh "echo //registry.npmjs.org/:_authToken=$npm_token > .npmrc"
