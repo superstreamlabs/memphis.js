@@ -456,31 +456,9 @@ class Producer {
         headers?: MsgHeaders;
     }): Promise<void> {
         try {
-            let messageToSend = message;
+            let messageToSend = this._validateMessage(message);
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
-            let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
-            if (meassageDescriptor) {
-                if (message instanceof Uint8Array) {
-                    try {
-                        meassageDescriptor.decode(messageToSend);
-                    } catch (ex) {
-                        if (ex.message.includes("index out of range"))
-                            ex = new Error("Invalid message structure, expecting protobuf")
-                        throw new Error(`Schema validation has failed: ${ex.message}`);
-                    }
-                } else if (message instanceof Object) {
-                    let errMsg = meassageDescriptor.verify(message);
-                    if (errMsg) {
-                        throw new Error(`Schema validation has failed: ${errMsg}`);
-                    }
-
-                    const protoMsg = meassageDescriptor.create(message);
-                    messageToSend = meassageDescriptor.encode(protoMsg).finish();
-                } else {
-                    throw new Error('Schema validation has failed: Unsupported message type');
-                }
-            }
             if (asyncProduce)
                 this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
                     headers: headers.headers,
@@ -496,6 +474,41 @@ class Producer {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
             }
             throw ex;
+        }
+    }
+
+    private _validateMessage(msg: any): any {
+        let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
+        if (stationSchemaData) {
+            switch (stationSchemaData['type']) {
+                case 'protobuf':
+                    let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+                    if (meassageDescriptor) {
+                        if (msg instanceof Uint8Array) {
+                            try {
+                                meassageDescriptor.decode(msg);
+                                return msg;
+                            } catch (ex) {
+                                if (ex.message.includes('index out of range')) ex = new Error('Invalid message format, expecting protobuf');
+                                throw new Error(`Schema validation has failed: ${ex.message}`);
+                            }
+                        } else if (msg instanceof Object) {
+                            let errMsg = meassageDescriptor.verify(msg);
+                            if (errMsg) {
+                                throw new Error(`Schema validation has failed: ${errMsg}`);
+                            }
+                            const protoMsg = meassageDescriptor.create(msg);
+                            const messageToSend = meassageDescriptor.encode(protoMsg).finish();
+                            return messageToSend;
+                        } else {
+                            throw new Error('Schema validation has failed: Unsupported message type');
+                        }
+                    }
+                default:
+                    return msg;
+            }
+        } else {
+            return msg;
         }
     }
 
@@ -745,12 +758,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
