@@ -91,6 +91,7 @@ declare class Producer {
         asyncProduce?: boolean;
         headers?: MsgHeaders;
     }): Promise<void>;
+    private _validateMessage;
     destroy(): Promise<void>;
 }
 declare class Consumer {
