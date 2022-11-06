@@ -391,7 +391,8 @@ export class Memphis {
     close() {
         for (let key of this.schemaUpdatesSubs.keys()) {
             let sub = this.schemaUpdatesSubs.get(key);
-            sub.unsubscribe();
+            if (sub)
+                sub.unsubscribe();
             this.stationSchemaDataMap.delete(key);
             this.schemaUpdatesSubs.delete(key);
             this.producersPerStation.delete(key);
@@ -533,7 +534,8 @@ class Producer {
             this.connection.producersPerStation.set(subName, prodNumber);
             if (prodNumber === 0) {
                 let sub = this.connection.schemaUpdatesSubs.get(subName);
-                sub.unsubscribe();
+                if (sub)
+                    sub.unsubscribe();
                 this.connection.stationSchemaDataMap.delete(subName);
                 this.connection.schemaUpdatesSubs.delete(subName);
                 this.connection.meassageDescriptors.delete(subName);
@@ -739,7 +741,8 @@ class Station {
             };
             const subName = this.name.replace(/\./g, '#');
             let sub = this.connection.schemaUpdatesSubs.get(subName);
-            sub.unsubscribe();
+            if (sub)
+                sub.unsubscribe();
             this.connection.stationSchemaDataMap.delete(subName);
             this.connection.schemaUpdatesSubs.delete(subName);
             this.connection.producersPerStation.delete(subName);
@@ -759,12 +762,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
-interface MsgHeadersType extends MsgHeaders {}
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
