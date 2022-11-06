@@ -6,6 +6,13 @@ node ("small-ec2-fleet") {
   git credentialsId: 'main-github', url: gitURL, branch: gitBranch
   
   try{
+    stage('Install NPM') {
+      sh """
+        curl -sL https://rpm.nodesource.com/setup_16.x | sudo bash -
+        sudo yum install -y nodejs
+      """
+    }
+    
    stage('Push to NPM') {
       sh 'sudo npm install'
       withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
