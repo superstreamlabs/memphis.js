@@ -13,7 +13,7 @@ node ("small-ec2-fleet") {
         sudo yum install -y nodejs
       """
     }
-   
+
    stage('Push to NPM') {
       sh 'sudo npm install'
       withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
