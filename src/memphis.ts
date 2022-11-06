@@ -329,7 +329,7 @@ export class Memphis {
      * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
      * @param {Number} batchSize - pull batch size.
      * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
-     * @param {Number} `maxAckTimeMs` - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+     * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
      * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
      * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
      */
@@ -473,6 +473,7 @@ class Producer {
             if (ex.code === '503') {
                 throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
             }
+            if (ex.message.includes('BAD_PAYLOAD')) ex = new Error('Invalid message format, expecting Uint8Array');
             throw ex;
         }
     }
