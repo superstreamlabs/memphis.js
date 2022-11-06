@@ -178,7 +178,7 @@ export class Memphis {
 
     private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object): Promise<void> {
         try {
-            const subName = stationName.replace(/\./g, '#');
+            const subName = stationName.replace(/\./g, '#').toLowerCase();
             let schemaUpdateSubscription = this.schemaUpdatesSubs.has(subName);
             if (schemaUpdateSubscription) {
                 this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
@@ -435,7 +435,7 @@ class Producer {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
-        this.internal_station = this.stationName.replace(/\./g, '#');
+        this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
     }
 
     /**
@@ -529,7 +529,7 @@ class Producer {
             if (errMsg != '') {
                 throw new Error(errMsg);
             }
-            const subName = this.stationName.replace(/\./g, '#');
+            const subName = this.stationName.replace(/\./g, '#').toLowerCase();
             let prodNumber = this.connection.producersPerStation.get(subName) - 1;
             this.connection.producersPerStation.set(subName, prodNumber);
             if (prodNumber === 0) {
@@ -597,9 +597,9 @@ class Consumer {
      */
     on(event: String, cb: (...args: any[]) => void) {
         if (event === 'message') {
-            const subject = this.stationName.replace(/\./g, '#');
-            const consumerGroup = this.consumerGroup.replace(/\./g, '#');
-            const consumerName = this.consumerName.replace(/\./g, '#');
+            const subject = this.stationName.replace(/\./g, '#').toLowerCase();
+            const consumerGroup = this.consumerGroup.replace(/\./g, '#').toLowerCase();
+            const consumerName = this.consumerName.replace(/\./g, '#').toLowerCase();
             this.connection.brokerConnection
                 .pullSubscribe(`${subject}.final`, {
                     mack: true,
@@ -647,9 +647,9 @@ class Consumer {
 
     private async _pingConsumer() {
         try {
-            const stationName = this.stationName.replace(/\./g, '#');
-            const consumerGroup = this.consumerGroup.replace(/\./g, '#');
-            const consumerName = this.consumerName.replace(/\./g, '#');
+            const stationName = this.stationName.replace(/\./g, '#').toLowerCase();
+            const consumerGroup = this.consumerGroup.replace(/\./g, '#').toLowerCase();
+            const consumerName = this.consumerName.replace(/\./g, '#').toLowerCase();
             const durableName = consumerGroup || consumerName;
             await this.connection.brokerStats.consumers.info(stationName, durableName);
         } catch (ex) {
@@ -739,7 +739,7 @@ class Station {
             let removeStationReq = {
                 station_name: this.name
             };
-            const subName = this.name.replace(/\./g, '#');
+            const subName = this.name.replace(/\./g, '#').toLowerCase();
             let sub = this.connection.schemaUpdatesSubs.get(subName);
             if (sub)
                 sub.unsubscribe();
