@@ -483,7 +483,8 @@ class Producer {
                                 meassageDescriptor.decode(msg);
                                 return msg;
                             } catch (ex) {
-                                if (ex.message.includes('index out of range')) ex = new Error('Invalid message format, expecting protobuf');
+                                if (ex.message.includes('index out of range'))
+                                    throw new Error('Schema validation has failed: Invalid message format, expecting protobuf');
                                 throw new Error(`Schema validation has failed: ${ex.message}`);
                             }
                         } else if (msg instanceof Object) {
