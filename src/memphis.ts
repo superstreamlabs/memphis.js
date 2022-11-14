@@ -33,12 +33,12 @@ const retentionTypes: IRetentionTypes = {
 };
 
 interface IStorageTypes {
-    FILE: string;
+    DISK: string;
     MEMORY: string;
 }
 
 const storageTypes: IStorageTypes = {
-    FILE: 'file',
+    DISK: 'file',
     MEMORY: 'memory'
 };
 
@@ -234,7 +234,7 @@ export class Memphis {
      * @param {String} name - station name.
      * @param {Memphis.retentionTypes} retentionType - retention type, default is MAX_MESSAGE_AGE_SECONDS.
      * @param {Number} retentionValue - number which represents the retention based on the retentionType, default is 604800.
-     * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.FILE.
+     * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.DISK.
      * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
      * @param {Boolean} dedupEnabled - whether to allow dedup mecanism, dedup happens based on message ID, default is false.
      * @param {Number} dedupWindowMs - time frame in which dedup track messages, default is 0.
@@ -243,7 +243,7 @@ export class Memphis {
         name,
         retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS,
         retentionValue = 604800,
-        storageType = storageTypes.FILE,
+        storageType = storageTypes.DISK,
         replicas = 1,
         dedupEnabled = false,
         dedupWindowMs = 0
