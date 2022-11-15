@@ -16,9 +16,7 @@ import * as events from 'events';
 import * as broker from 'nats';
 import { headers, MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
-import * as descriptor from 'protobufjs/ext/descriptor';
 import * as fs from 'fs';
-import * as path from 'path';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -41,6 +39,25 @@ const storageTypes: IStorageTypes = {
     DISK: 'file',
     MEMORY: 'memory'
 };
+
+const MemphisError = (error: Error): Error => {
+    if (error?.message) {
+        error.message = error.message.replace("NatsError", "memphis");
+        error.message = error.message.replace("Nats", "memphis");
+        error.message = error.message.replace("nats", "memphis");
+    }
+    if (error?.stack) {
+        error.stack = error.stack.replace("NatsError", "memphis");
+        error.stack = error.stack.replace("Nats:", "memphis");
+        error.stack = error.stack.replace("nats:", "memphis");
+    }
+    if (error?.name) {
+        error.name = error.name.replace("NatsError", "MemphisError");
+        error.name = error.name.replace("Nats", "MemphisError");
+        error.name = error.name.replace("nats", "MemphisError");
+    }
+    return error;
+}
 
 export class Memphis {
     private isConnectionActive: boolean;
@@ -164,7 +181,7 @@ export class Memphis {
                 })().then();
                 return resolve(this);
             } catch (ex) {
-                return reject(ex);
+                return reject(MemphisError(ex));
             }
         });
     }
@@ -192,7 +209,7 @@ export class Memphis {
                 this._listenForSchemaUpdates(sub, subName);
             }
         } catch (err) {
-            throw err;
+            throw MemphisError(err);
         }
     }
 
@@ -213,7 +230,7 @@ export class Memphis {
                     let meassageDescriptor = root.lookupType(`${data['init']['active_version']['message_struct_name']}`);
                     this.meassageDescriptors.set(subName, meassageDescriptor);
                 } catch (err) {
-                    throw err;
+                    throw MemphisError(err);
                 }
             }
         }
@@ -271,14 +288,14 @@ export class Memphis {
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
             return new Station(this, name);
         } catch (ex) {
             if (ex.message?.includes('already exists')) {
                 return new Station(this, name.toLowerCase());
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 
@@ -290,7 +307,7 @@ export class Memphis {
      */
     async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean }): Promise<Producer> {
         try {
-            if (!this.isConnectionActive) throw new Error('Connection is dead');
+            if (!this.isConnectionActive) throw MemphisError(new Error('Connection is dead'));
 
             producerName = genUniqueSuffix ? producerName + '_' + generateNameSuffix() : producerName;
             let createProducerReq = {
@@ -304,13 +321,13 @@ export class Memphis {
             let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
             createRes = this.JSONC.decode(createRes.data);
             if (createRes.error != '') {
-                throw new Error(createRes.error);
+                throw MemphisError(new Error(createRes.error));
             }
 
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
             return new Producer(this, producerName, stationName);
         } catch (ex) {
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 
@@ -365,12 +382,12 @@ export class Memphis {
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
 
             return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries);
         } catch (ex) {
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 
@@ -412,7 +429,7 @@ class MsgHeaders {
         if (!key.startsWith('$memphis')) {
             this.headers.append(key, value);
         } else {
-            throw new Error('Keys in headers should not start with $memphis');
+            throw MemphisError(new Error('Keys in headers should not start with $memphis'));
         }
     }
 }
@@ -464,10 +481,10 @@ class Producer {
                 });
         } catch (ex: any) {
             if (ex.code === '503') {
-                throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
+                throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer are still exist'));
             }
-            if (ex.message.includes('BAD_PAYLOAD')) ex = new Error('Invalid message format, expecting Uint8Array');
-            throw ex;
+            if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
+            throw MemphisError(ex);
         }
     }
 
@@ -484,19 +501,19 @@ class Producer {
                                 return msg;
                             } catch (ex) {
                                 if (ex.message.includes('index out of range'))
-                                    throw new Error('Schema validation has failed: Invalid message format, expecting protobuf');
-                                throw new Error(`Schema validation has failed: ${ex.message}`);
+                                    throw MemphisError(new Error('Schema validation has failed: Invalid message format, expecting protobuf'));
+                                throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                             }
                         } else if (msg instanceof Object) {
                             let errMsg = meassageDescriptor.verify(msg);
                             if (errMsg) {
-                                throw new Error(`Schema validation has failed: ${errMsg}`);
+                                throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
                             }
                             const protoMsg = meassageDescriptor.create(msg);
                             const messageToSend = meassageDescriptor.encode(protoMsg).finish();
                             return messageToSend;
                         } else {
-                            throw new Error('Schema validation has failed: Unsupported message type');
+                            throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
                         }
                     }
                 default:
@@ -520,7 +537,7 @@ class Producer {
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
             const subName = this.stationName.replace(/\./g, '#').toLowerCase();
             let prodNumber = this.connection.producersPerStation.get(subName) - 1;
@@ -536,7 +553,7 @@ class Producer {
             if (ex.message?.includes('not exist')) {
                 return;
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 }
@@ -625,7 +642,7 @@ class Consumer {
                     this._handleAsyncIterableSubscriber(psub);
                     this._handleAsyncIterableSubscriber(sub);
                 })
-                .catch((error: any) => this.eventEmitter.emit('error', error));
+                .catch((error: any) => this.eventEmitter.emit('error', MemphisError(error)));
         }
 
         this.eventEmitter.on(<string>event, cb);
@@ -645,7 +662,7 @@ class Consumer {
             const durableName = consumerGroup || consumerName;
             await this.connection.brokerStats.consumers.info(stationName, durableName);
         } catch (ex) {
-            this.eventEmitter.emit('error', 'station/consumer were not found');
+            this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
         }
     }
 
@@ -663,13 +680,13 @@ class Consumer {
             let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 }
@@ -742,23 +759,23 @@ class Station {
             let errMsg = await this.connection.brokerManager.request('$memphis_station_destructions', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
-interface MsgHeadersType extends MsgHeaders {}
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
