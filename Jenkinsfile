@@ -31,6 +31,8 @@ node ("small-ec2-fleet") {
         sh "git reset --hard origin/latest"
         sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b \$(cat version.conf)"
         sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin \$(cat version.conf)"
+      }
+      withCredentials([string(credentialsId: 'gh_token', variable: 'GH_TOKEN')]) {
         sh(script:"""gh release create \$(cat version.conf) --generate-notes""", returnStdout: true)
       }
     }
