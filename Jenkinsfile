@@ -24,12 +24,15 @@ node ("small-ec2-fleet") {
     }
     
     stage('Checkout to version branch'){
+      sh 'sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo'
+      sh 'sudo yum install gh -y'
       sh 'sudo yum install jq -y'
       sh(script:"""jq -r '"v" + .version' package.json > version.conf""", returnStdout: true)
       withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
         sh "git reset --hard origin/latest"
         sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b \$(cat version.conf)"
         sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin \$(cat version.conf)"
+        sh(script:"""gh release create \$(cat version.conf) --generate-notes""", returnStdout: true)
       }
     }
     

@@ -1,31 +1,22 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the MIT License (the "License");
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-
-// This license limiting reselling the software itself "AS IS".
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+// Licensed under the Apache License, Version 2.0 (the “License”);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an “AS IS” BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.package server
 
 import * as events from 'events';
 import * as broker from 'nats';
 import { headers, MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
-import * as descriptor from 'protobufjs/ext/descriptor';
 import * as fs from 'fs';
-import * as path from 'path';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -40,14 +31,33 @@ const retentionTypes: IRetentionTypes = {
 };
 
 interface IStorageTypes {
-    FILE: string;
+    DISK: string;
     MEMORY: string;
 }
 
 const storageTypes: IStorageTypes = {
-    FILE: 'file',
+    DISK: 'file',
     MEMORY: 'memory'
 };
+
+const MemphisError = (error: Error): Error => {
+    if (error?.message) {
+        error.message = error.message.replace("NatsError", "memphis");
+        error.message = error.message.replace("Nats", "memphis");
+        error.message = error.message.replace("nats", "memphis");
+    }
+    if (error?.stack) {
+        error.stack = error.stack.replace("NatsError", "memphis");
+        error.stack = error.stack.replace("Nats:", "memphis");
+        error.stack = error.stack.replace("nats:", "memphis");
+    }
+    if (error?.name) {
+        error.name = error.name.replace("NatsError", "MemphisError");
+        error.name = error.name.replace("Nats", "MemphisError");
+        error.name = error.name.replace("nats", "MemphisError");
+    }
+    return error;
+}
 
 export class Memphis {
     private isConnectionActive: boolean;
@@ -171,7 +181,7 @@ export class Memphis {
                 })().then();
                 return resolve(this);
             } catch (ex) {
-                return reject(ex);
+                return reject(MemphisError(ex));
             }
         });
     }
@@ -199,7 +209,7 @@ export class Memphis {
                 this._listenForSchemaUpdates(sub, subName);
             }
         } catch (err) {
-            throw err;
+            throw MemphisError(err);
         }
     }
 
@@ -220,7 +230,7 @@ export class Memphis {
                     let meassageDescriptor = root.lookupType(`${data['init']['active_version']['message_struct_name']}`);
                     this.meassageDescriptors.set(subName, meassageDescriptor);
                 } catch (err) {
-                    throw err;
+                    throw MemphisError(err);
                 }
             }
         }
@@ -241,7 +251,7 @@ export class Memphis {
      * @param {String} name - station name.
      * @param {Memphis.retentionTypes} retentionType - retention type, default is MAX_MESSAGE_AGE_SECONDS.
      * @param {Number} retentionValue - number which represents the retention based on the retentionType, default is 604800.
-     * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.FILE.
+     * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.DISK.
      * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
      * @param {Boolean} dedupEnabled - whether to allow dedup mecanism, dedup happens based on message ID, default is false.
      * @param {Number} dedupWindowMs - time frame in which dedup track messages, default is 0.
@@ -250,7 +260,7 @@ export class Memphis {
         name,
         retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS,
         retentionValue = 604800,
-        storageType = storageTypes.FILE,
+        storageType = storageTypes.DISK,
         replicas = 1,
         dedupEnabled = false,
         dedupWindowMs = 0
@@ -278,14 +288,14 @@ export class Memphis {
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
             return new Station(this, name);
         } catch (ex) {
             if (ex.message?.includes('already exists')) {
                 return new Station(this, name.toLowerCase());
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 
@@ -297,7 +307,7 @@ export class Memphis {
      */
     async producer({ stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean }): Promise<Producer> {
         try {
-            if (!this.isConnectionActive) throw new Error('Connection is dead');
+            if (!this.isConnectionActive) throw MemphisError(new Error('Connection is dead'));
 
             producerName = genUniqueSuffix ? producerName + '_' + generateNameSuffix() : producerName;
             let createProducerReq = {
@@ -311,13 +321,13 @@ export class Memphis {
             let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
             createRes = this.JSONC.decode(createRes.data);
             if (createRes.error != '') {
-                throw new Error(createRes.error);
+                throw MemphisError(new Error(createRes.error));
             }
 
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
             return new Producer(this, producerName, stationName);
         } catch (ex) {
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 
@@ -372,12 +382,12 @@ export class Memphis {
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
 
             return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries);
         } catch (ex) {
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 
@@ -391,8 +401,7 @@ export class Memphis {
     close() {
         for (let key of this.schemaUpdatesSubs.keys()) {
             let sub = this.schemaUpdatesSubs.get(key);
-            if (sub)
-                sub.unsubscribe();
+            if (sub) sub.unsubscribe();
             this.stationSchemaDataMap.delete(key);
             this.schemaUpdatesSubs.delete(key);
             this.producersPerStation.delete(key);
@@ -420,7 +429,7 @@ class MsgHeaders {
         if (!key.startsWith('$memphis')) {
             this.headers.append(key, value);
         } else {
-            throw new Error('Keys in headers should not start with $memphis');
+            throw MemphisError(new Error('Keys in headers should not start with $memphis'));
         }
     }
 }
@@ -472,10 +481,10 @@ class Producer {
                 });
         } catch (ex: any) {
             if (ex.code === '503') {
-                throw new Error('Produce operation has failed, please check whether Station/Producer are still exist');
+                throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer are still exist'));
             }
-            if (ex.message.includes('BAD_PAYLOAD')) ex = new Error('Invalid message format, expecting Uint8Array');
-            throw ex;
+            if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
+            throw MemphisError(ex);
         }
     }
 
@@ -491,19 +500,20 @@ class Producer {
                                 meassageDescriptor.decode(msg);
                                 return msg;
                             } catch (ex) {
-                                if (ex.message.includes('index out of range')) ex = new Error('Invalid message format, expecting protobuf');
-                                throw new Error(`Schema validation has failed: ${ex.message}`);
+                                if (ex.message.includes('index out of range'))
+                                    throw MemphisError(new Error('Schema validation has failed: Invalid message format, expecting protobuf'));
+                                throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                             }
                         } else if (msg instanceof Object) {
                             let errMsg = meassageDescriptor.verify(msg);
                             if (errMsg) {
-                                throw new Error(`Schema validation has failed: ${errMsg}`);
+                                throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
                             }
                             const protoMsg = meassageDescriptor.create(msg);
                             const messageToSend = meassageDescriptor.encode(protoMsg).finish();
                             return messageToSend;
                         } else {
-                            throw new Error('Schema validation has failed: Unsupported message type');
+                            throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
                         }
                     }
                 default:
@@ -527,15 +537,14 @@ class Producer {
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
             const subName = this.stationName.replace(/\./g, '#').toLowerCase();
             let prodNumber = this.connection.producersPerStation.get(subName) - 1;
             this.connection.producersPerStation.set(subName, prodNumber);
             if (prodNumber === 0) {
                 let sub = this.connection.schemaUpdatesSubs.get(subName);
-                if (sub)
-                    sub.unsubscribe();
+                if (sub) sub.unsubscribe();
                 this.connection.stationSchemaDataMap.delete(subName);
                 this.connection.schemaUpdatesSubs.delete(subName);
                 this.connection.meassageDescriptors.delete(subName);
@@ -544,7 +553,7 @@ class Producer {
             if (ex.message?.includes('not exist')) {
                 return;
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 }
@@ -633,7 +642,7 @@ class Consumer {
                     this._handleAsyncIterableSubscriber(psub);
                     this._handleAsyncIterableSubscriber(sub);
                 })
-                .catch((error: any) => this.eventEmitter.emit('error', error));
+                .catch((error: any) => this.eventEmitter.emit('error', MemphisError(error)));
         }
 
         this.eventEmitter.on(<string>event, cb);
@@ -653,7 +662,7 @@ class Consumer {
             const durableName = consumerGroup || consumerName;
             await this.connection.brokerStats.consumers.info(stationName, durableName);
         } catch (ex) {
-            this.eventEmitter.emit('error', 'station/consumer were not found');
+            this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
         }
     }
 
@@ -671,13 +680,13 @@ class Consumer {
             let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 }
@@ -741,8 +750,7 @@ class Station {
             };
             const subName = this.name.replace(/\./g, '#').toLowerCase();
             let sub = this.connection.schemaUpdatesSubs.get(subName);
-            if (sub)
-                sub.unsubscribe();
+            if (sub) sub.unsubscribe();
             this.connection.stationSchemaDataMap.delete(subName);
             this.connection.schemaUpdatesSubs.delete(subName);
             this.connection.producersPerStation.delete(subName);
@@ -751,13 +759,13 @@ class Station {
             let errMsg = await this.connection.brokerManager.request('$memphis_station_destructions', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
-                throw new Error(errMsg);
+                throw MemphisError(new Error(errMsg));
             }
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;
             }
-            throw ex;
+            throw MemphisError(ex);
         }
     }
 }

@@ -7,7 +7,7 @@ interface IRetentionTypes {
     BYTES: string;
 }
 interface IStorageTypes {
-    FILE: string;
+    DISK: string;
     MEMORY: string;
 }
 export declare class Memphis {
