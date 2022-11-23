@@ -236,6 +236,14 @@ export class Memphis {
         }
     }
 
+    public sendNotification(title: string, msg: string) {
+        let buf = this.JSONC.encode({
+            title: title,
+            msg: msg
+        });
+        this.brokerManager.publish('$memphis_schema_validation_fail_updates', buf);
+    }
+
     private _normalizeHost(host: string): string {
         if (host.startsWith('http://')) return host.split('http://')[1];
         else if (host.startsWith('https://')) return host.split('https://')[1];
@@ -500,36 +508,32 @@ class Producer {
                                 meassageDescriptor.decode(msg);
                                 return msg;
                             } catch (ex) {
-                                if (ex.code === '503') {
-                                    ex = new Error('Validate Message operation has failed');
-                                }
                                 if (ex.message.includes('index out of range')) {
                                     ex = new Error('Invalid message format, expecting protobuf');
                                 }
-                                if (ex.message.includes('BAD_PAYLOAD')) ex = new Error('Invalid message format, expecting Uint8Array');
-                                let data = this.connection.JSONC.encode({
-                                    msg: `Schema validation has failed at station ${this.stationName} with producer ${this.producerName}: ${ex.message}`
-                                });
-                                this.connection.brokerManager.publish('$memphis_schema_validation_fail_updates', data);
+                                this.connection.sendNotification(
+                                    'Schema validation has failed',
+                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`
+                                );
                                 throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                             }
                         } else if (msg instanceof Object) {
                             let errMsg = meassageDescriptor.verify(msg);
                             if (errMsg) {
-                                let data = this.connection.JSONC.encode({
-                                    msg: `Schema validation has failed at station ${this.stationName} with producer ${this.producerName}: ${errMsg}`
-                                });
-                                this.connection.brokerManager.publish('$memphis_schema_validation_fail_updates', data);
+                                this.connection.sendNotification(
+                                    'Schema validation has failed',
+                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${errMsg}`
+                                );
                                 throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
                             }
                             const protoMsg = meassageDescriptor.create(msg);
                             const messageToSend = meassageDescriptor.encode(protoMsg).finish();
                             return messageToSend;
                         } else {
-                            let data = this.connection.JSONC.encode({
-                                msg: `Schema validation has failed at station ${this.stationName} with producer ${this.producerName}: Unsupported message type`
-                            });
-                            this.connection.brokerManager.publish('$memphis_schema_validation_fail_updates', data);
+                            this.connection.sendNotification(
+                                'Schema validation has failed',
+                                `\nStation: ${this.stationName}\nProducer: ${this.producerName}\nError: Unsupported message type`
+                            );
                             throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
                         }
                     }
