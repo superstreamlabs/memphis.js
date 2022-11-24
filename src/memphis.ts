@@ -17,6 +17,11 @@ import * as broker from 'nats';
 import { headers, MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
 import * as fs from 'fs';
+import Ajv from 'ajv';
+import jsonSchemaDraft04 from 'ajv-draft-04';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
+import Ajv2020 from 'ajv/dist/2020';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -488,6 +493,60 @@ class Producer {
         }
     }
 
+    private _validateJsonSchemaMessage(msg: any): any {
+        const ajv = new Ajv();
+        let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
+        const schema = stationSchemaData['active_version']['schema_content'];
+        const schemaObj = JSON.parse(schema);
+        let validate: any;
+        try {
+            validate = ajv.compile(schemaObj);
+        } catch (error) {
+            try {
+                ajv.addMetaSchema(draft7MetaSchema);
+                validate = ajv.compile(schemaObj);
+            } catch (error) {
+                try {
+                    const ajv = new jsonSchemaDraft04();
+                    validate = ajv.compile(schemaObj);
+                } catch (error) {
+                    try {
+                        const ajv = new Ajv2020();
+                        validate = ajv.compile(schemaObj);
+                    } catch (error) {
+                        try {
+                            ajv.addMetaSchema(draft6MetaSchema);
+                        } catch (error) {
+                            return new Error('invalid json schema');
+                        }
+                    }
+                }
+            }
+        } finally {
+            let msgObj: Object;
+            let msgToSend = new Uint8Array();
+            const msgType = Buffer.isBuffer(msg);
+            if (msg instanceof Object) {
+                if (msgType) {
+                    msgObj = JSON.parse(msg.toString());
+                    msgToSend = msg;
+                } else {
+                    msgObj = msg;
+                    let enc = new TextEncoder();
+                    msgToSend = enc.encode(msg);
+                }
+
+                const valid = validate(msgObj);
+                if (!valid) {
+                    throw MemphisError(new Error(`Schema validation has failed: ${validate.errors[0].message}`));
+                }
+                return msgToSend;
+            } else {
+                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+            }
+        }
+    }
+
     private _validateMessage(msg: any): any {
         let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
         if (stationSchemaData) {
@@ -516,11 +575,17 @@ class Producer {
                             throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
                         }
                     }
+                case 'json':
+                    return this._validateJsonSchemaMessage(msg)
                 default:
                     return msg;
             }
         } else {
-            return msg;
+            if (msg instanceof Object && !Buffer.isBuffer(msg)) {
+                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+            } else {
+                return msg;
+            }
         }
     }
 
