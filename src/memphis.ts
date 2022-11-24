@@ -241,7 +241,7 @@ export class Memphis {
             title: title,
             msg: msg
         });
-        this.brokerManager.publish('$memphis_schema_validation_fail_updates', buf);
+        this.brokerManager.publish('$memphis_notifications', buf);
     }
 
     private _normalizeHost(host: string): string {
