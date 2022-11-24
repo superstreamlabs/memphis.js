@@ -493,7 +493,7 @@ class Producer {
         }
     }
 
-    private _validateJsonSchemaMessage(msg: any): any {
+    private _parseJsonSchema(): any {
         const ajv = new Ajv();
         let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
         const schema = stationSchemaData['active_version']['schema_content'];
@@ -501,28 +501,38 @@ class Producer {
         let validate: any;
         try {
             validate = ajv.compile(schemaObj);
+            return validate;
         } catch (error) {
             try {
                 ajv.addMetaSchema(draft7MetaSchema);
                 validate = ajv.compile(schemaObj);
+                return validate;
             } catch (error) {
                 try {
                     const ajv = new jsonSchemaDraft04();
                     validate = ajv.compile(schemaObj);
+                    return validate;
                 } catch (error) {
                     try {
                         const ajv = new Ajv2020();
                         validate = ajv.compile(schemaObj);
+                        return validate;
                     } catch (error) {
                         try {
                             ajv.addMetaSchema(draft6MetaSchema);
+                            return validate;
                         } catch (error) {
-                            return new Error('invalid json schema');
+                            throw MemphisError(new Error('invalid json schema'));
                         }
                     }
                 }
             }
-        } finally {
+        }
+    }
+
+    private _validateJsonSchemaMessage(msg: any): any {
+        try {
+            let validate = this._parseJsonSchema();
             let msgObj: Object;
             let msgToSend = new Uint8Array();
             const msgType = Buffer.isBuffer(msg);
@@ -544,6 +554,8 @@ class Producer {
             } else {
                 throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
             }
+        } catch (ex) {
+            throw MemphisError(new Error(ex.message));
         }
     }
 
@@ -576,7 +588,7 @@ class Producer {
                         }
                     }
                 case 'json':
-                    return this._validateJsonSchemaMessage(msg)
+                    return this._validateJsonSchemaMessage(msg);
                 default:
                     return msg;
             }
