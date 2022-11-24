@@ -559,34 +559,38 @@ class Producer {
         }
     }
 
+    private _validateProtobufMessage(msg: any): any {
+        let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+        if (meassageDescriptor) {
+            if (msg instanceof Uint8Array) {
+                try {
+                    meassageDescriptor.decode(msg);
+                    return msg;
+                } catch (ex) {
+                    if (ex.message.includes('index out of range'))
+                        throw MemphisError(new Error('Schema validation has failed: Invalid message format, expecting protobuf'));
+                    throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
+                }
+            } else if (msg instanceof Object) {
+                let errMsg = meassageDescriptor.verify(msg);
+                if (errMsg) {
+                    throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
+                }
+                const protoMsg = meassageDescriptor.create(msg);
+                const messageToSend = meassageDescriptor.encode(protoMsg).finish();
+                return messageToSend;
+            } else {
+                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+            }
+        }
+    }
+
     private _validateMessage(msg: any): any {
         let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
         if (stationSchemaData) {
             switch (stationSchemaData['type']) {
                 case 'protobuf':
-                    let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
-                    if (meassageDescriptor) {
-                        if (msg instanceof Uint8Array) {
-                            try {
-                                meassageDescriptor.decode(msg);
-                                return msg;
-                            } catch (ex) {
-                                if (ex.message.includes('index out of range'))
-                                    throw MemphisError(new Error('Schema validation has failed: Invalid message format, expecting protobuf'));
-                                throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
-                            }
-                        } else if (msg instanceof Object) {
-                            let errMsg = meassageDescriptor.verify(msg);
-                            if (errMsg) {
-                                throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
-                            }
-                            const protoMsg = meassageDescriptor.create(msg);
-                            const messageToSend = meassageDescriptor.encode(protoMsg).finish();
-                            return messageToSend;
-                        } else {
-                            throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
-                        }
-                    }
+                    return this._validateProtobufMessage(msg);
                 case 'json':
                     return this._validateJsonSchemaMessage(msg);
                 default:
