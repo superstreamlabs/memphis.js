@@ -236,10 +236,11 @@ export class Memphis {
         }
     }
 
-    public sendNotification(title: string, msg: string) {
+    public sendNotification(title: string, msg: string, failedMsg: any) {
         let buf = this.JSONC.encode({
             title: title,
-            msg: msg
+            msg: msg,
+            code: failedMsg
         });
         this.brokerManager.publish('$memphis_notifications', buf);
     }
@@ -513,7 +514,8 @@ class Producer {
                                 }
                                 this.connection.sendNotification(
                                     'Schema validation has failed',
-                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`
+                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
+                                    String.fromCharCode.apply(null, msg)
                                 );
                                 throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                             }
@@ -522,7 +524,8 @@ class Producer {
                             if (errMsg) {
                                 this.connection.sendNotification(
                                     'Schema validation has failed',
-                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${errMsg}`
+                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${errMsg}`,
+                                    JSON.stringify(msg)
                                 );
                                 throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
                             }
@@ -532,7 +535,8 @@ class Producer {
                         } else {
                             this.connection.sendNotification(
                                 'Schema validation has failed',
-                                `\nStation: ${this.stationName}\nProducer: ${this.producerName}\nError: Unsupported message type`
+                                `\nStation: ${this.stationName}\nProducer: ${this.producerName}\nError: Unsupported message type`,
+                                JSON.stringify(msg)
                             );
                             throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
                         }
