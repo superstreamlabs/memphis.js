@@ -46,14 +46,13 @@ export declare class Memphis {
     private _listenForSchemaUpdates;
     private _normalizeHost;
     private _generateConnectionID;
-    station({ name, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs }: {
+    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
         replicas?: number;
-        dedupEnabled?: boolean;
-        dedupWindowMs?: number;
+        idempotencyWindowMs?: number;
     }): Promise<Station>;
     producer({ stationName, producerName, genUniqueSuffix }: {
         stationName: string;
@@ -85,11 +84,12 @@ declare class Producer {
     private stationName;
     private internal_station;
     constructor(connection: Memphis, producerName: string, stationName: string);
-    produce({ message, ackWaitSec, asyncProduce, headers }: {
+    produce({ message, ackWaitSec, asyncProduce, headers, msgId }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: MsgHeaders;
+        msgId?: string;
     }): Promise<void>;
     private _validateMessage;
     destroy(): Promise<void>;
