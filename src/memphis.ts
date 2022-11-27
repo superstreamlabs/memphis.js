@@ -42,22 +42,24 @@ const storageTypes: IStorageTypes = {
 
 const MemphisError = (error: Error): Error => {
     if (error?.message) {
-        error.message = error.message.replace("NatsError", "memphis");
-        error.message = error.message.replace("Nats", "memphis");
-        error.message = error.message.replace("nats", "memphis");
+        error.message = error.message.replace('NatsError', 'memphis');
+        error.message = error.message.replace('Nats', 'memphis');
+        error.message = error.message.replace('nats', 'memphis');
     }
     if (error?.stack) {
-        error.stack = error.stack.replace("NatsError", "memphis");
-        error.stack = error.stack.replace("Nats:", "memphis");
-        error.stack = error.stack.replace("nats:", "memphis");
+        error.stack = error.stack.replace('NatsError', 'memphis');
+        error.stack = error.stack.replace('Nats:', 'memphis');
+        error.stack = error.stack.replace('nats:', 'memphis');
     }
     if (error?.name) {
-        error.name = error.name.replace("NatsError", "MemphisError");
-        error.name = error.name.replace("Nats", "MemphisError");
-        error.name = error.name.replace("nats", "MemphisError");
+        error.name = error.name.replace('NatsError', 'MemphisError');
+        error.name = error.name.replace('Nats', 'MemphisError');
+        error.name = error.name.replace('nats', 'MemphisError');
     }
     return error;
-}
+};
+
+const schemaVFailAlertType = 'schema_validation_fail_alert';
 
 export class Memphis {
     private isConnectionActive: boolean;
@@ -234,6 +236,16 @@ export class Memphis {
                 }
             }
         }
+    }
+
+    public sendNotification(title: string, msg: string, failedMsg: any, type: string) {
+        let buf = this.JSONC.encode({
+            title: title,
+            msg: msg,
+            type: type,
+            code: failedMsg
+        });
+        this.brokerManager.publish('$memphis_notifications', buf);
     }
 
     private _normalizeHost(host: string): string {
@@ -500,19 +512,38 @@ class Producer {
                                 meassageDescriptor.decode(msg);
                                 return msg;
                             } catch (ex) {
-                                if (ex.message.includes('index out of range'))
-                                    throw MemphisError(new Error('Schema validation has failed: Invalid message format, expecting protobuf'));
+                                if (ex.message.includes('index out of range')) {
+                                    ex = new Error('Invalid message format, expecting protobuf');
+                                }
+                                this.connection.sendNotification(
+                                    'Schema validation has failed',
+                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
+                                    String.fromCharCode.apply(null, msg),
+                                    schemaVFailAlertType
+                                );
                                 throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                             }
                         } else if (msg instanceof Object) {
                             let errMsg = meassageDescriptor.verify(msg);
                             if (errMsg) {
+                                this.connection.sendNotification(
+                                    'Schema validation has failed',
+                                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${errMsg}`,
+                                    JSON.stringify(msg),
+                                    schemaVFailAlertType
+                                );
                                 throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
                             }
                             const protoMsg = meassageDescriptor.create(msg);
                             const messageToSend = meassageDescriptor.encode(protoMsg).finish();
                             return messageToSend;
                         } else {
+                            this.connection.sendNotification(
+                                'Schema validation has failed',
+                                `\nStation: ${this.stationName}\nProducer: ${this.producerName}\nError: Unsupported message type`,
+                                JSON.stringify(msg),
+                                schemaVFailAlertType
+                            );
                             throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
                         }
                     }
@@ -770,12 +801,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
