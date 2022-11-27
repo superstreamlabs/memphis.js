@@ -132,8 +132,7 @@ const station = await memphis.station({
     retentionValue: 604800, // defaults to 604800
     storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
     replicas: 1, // defaults to 1
-    dedupEnabled: false, // defaults to false
-    dedupWindowMs: 0 // defaults to 0
+    idempotencyWindowMs: 0 // defaults to 120000
 });
 ```
 
@@ -155,8 +154,7 @@ class stationModule {
                         retentionValue: 604800, // defaults to 604800
                         storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
                         replicas: 1, // defaults to 1
-                        dedupEnabled: false, // defaults to false
-                        dedupWindowMs: 0, // defaults to 0
+                        idempotencyWindowMs: 0, // defaults to 120000
                   });
         })();
     }
@@ -282,6 +280,17 @@ await producer.produce({
     message: '<bytes array>', // Uint8Arrays / You can send object in case your station is schema validated
     ackWaitSec: 15, // defaults to 15
     asyncProduce: true // defaults to false
+});
+```
+
+### Message ID
+Stations are idempotent by default for 2 minutes (can be configured), Idempotency achieved by adding a message id
+
+```js
+await producer.produce({
+    message: '<bytes array>/object', // Uint8Arrays / You can send object in case your station is schema validated
+    ackWaitSec: 15, // defaults to 15
+    msgId: "fdfd" // defaults to null
 });
 ```
 
