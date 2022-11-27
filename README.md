@@ -257,7 +257,7 @@ class ProducerModule {
 
 ```js
 await producer.produce({
-    message: '<bytes array>/object', // Uint8Arrays / object in case your station is schema validated (protobuf and json schema)
+    message: '<bytes array>', // Uint8Arrays / Yo can send object in case your station is schema validated
     ackWaitSec: 15 // defaults to 15
 });
 ```
@@ -268,7 +268,7 @@ await producer.produce({
 const headers = memphis.headers()
 headers.add('<key>', '<value>');
 await producer.produce({
-    message: '<bytes array>/object', // Uint8Arrays / object in case your station is schema validated (protobuf and json schema)
+    message: '<bytes array>', // Uint8Arrays / Yo can send object in case your station is schema validated
     headers: headers // defults to empty
 });
 ```
@@ -279,7 +279,7 @@ Meaning your application won't wait for broker acknowledgement - use only in cas
 
 ```js
 await producer.produce({
-    message: '<bytes array>/object', // Uint8Arrays / object in case your station is schema validated (protobuf and json schema)
+    message: '<bytes array>', // Uint8Arrays / Yo can send object in case your station is schema validated
     ackWaitSec: 15, // defaults to 15
     asyncProduce: true // defaults to false
 });
