@@ -239,7 +239,7 @@ export class Memphis {
     }
 
     public sendNotification(title: string, msg: string, failedMsg: any, type: string) {
-        let buf = this.JSONC.encode({
+        const buf = this.JSONC.encode({
             title: title,
             msg: msg,
             type: type,

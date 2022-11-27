@@ -44,6 +44,7 @@ export declare class Memphis {
     }): Promise<Memphis>;
     private _scemaUpdatesListener;
     private _listenForSchemaUpdates;
+    sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     private _generateConnectionID;
     station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs }: {
