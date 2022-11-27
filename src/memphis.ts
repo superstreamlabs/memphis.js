@@ -59,6 +59,8 @@ const MemphisError = (error: Error): Error => {
     return error;
 };
 
+const schemaVFailAlertType = 'schema_validation_fail_alert';
+
 export class Memphis {
     private isConnectionActive: boolean;
     public connectionId: string;
@@ -236,10 +238,11 @@ export class Memphis {
         }
     }
 
-    public sendNotification(title: string, msg: string, failedMsg: any) {
+    public sendNotification(title: string, msg: string, failedMsg: any, type: string) {
         let buf = this.JSONC.encode({
             title: title,
             msg: msg,
+            type: type,
             code: failedMsg
         });
         this.brokerManager.publish('$memphis_notifications', buf);
@@ -515,7 +518,8 @@ class Producer {
                                 this.connection.sendNotification(
                                     'Schema validation has failed',
                                     `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
-                                    String.fromCharCode.apply(null, msg)
+                                    String.fromCharCode.apply(null, msg),
+                                    schemaVFailAlertType
                                 );
                                 throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                             }
@@ -525,7 +529,8 @@ class Producer {
                                 this.connection.sendNotification(
                                     'Schema validation has failed',
                                     `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${errMsg}`,
-                                    JSON.stringify(msg)
+                                    JSON.stringify(msg),
+                                    schemaVFailAlertType
                                 );
                                 throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
                             }
@@ -536,7 +541,8 @@ class Producer {
                             this.connection.sendNotification(
                                 'Schema validation has failed',
                                 `\nStation: ${this.stationName}\nProducer: ${this.producerName}\nError: Unsupported message type`,
-                                JSON.stringify(msg)
+                                JSON.stringify(msg),
+                                schemaVFailAlertType
                             );
                             throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
                         }
