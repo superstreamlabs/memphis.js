@@ -253,8 +253,7 @@ export class Memphis {
      * @param {Number} retentionValue - number which represents the retention based on the retentionType, default is 604800.
      * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.DISK.
      * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
-     * @param {Boolean} dedupEnabled - whether to allow dedup mecanism, dedup happens based on message ID, default is false.
-     * @param {Number} dedupWindowMs - time frame in which dedup track messages, default is 0.
+     * @param {Number} idempotencyWindowMs - time frame in which idempotent messages will be tracked, happens based on message ID Defaults to 120000.
      */
     async station({
         name,
@@ -262,16 +261,14 @@ export class Memphis {
         retentionValue = 604800,
         storageType = storageTypes.DISK,
         replicas = 1,
-        dedupEnabled = false,
-        dedupWindowMs = 0
+        idempotencyWindowMs = 120000
     }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
         replicas?: number;
-        dedupEnabled?: boolean;
-        dedupWindowMs?: number;
+        idempotencyWindowMs?: number;
     }): Promise<Station> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -281,8 +278,7 @@ export class Memphis {
                 retention_value: retentionValue,
                 storage_type: storageType,
                 replicas: replicas,
-                dedup_enabled: dedupEnabled,
-                dedup_window_in_ms: dedupWindowMs
+                idempotency_window_in_ms: idempotencyWindowMs
             };
             let data = this.JSONC.encode(createStationReq);
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
@@ -458,17 +454,21 @@ class Producer {
         message,
         ackWaitSec = 15,
         asyncProduce = false,
-        headers = new MsgHeaders()
+        headers = new MsgHeaders(),
+        msgId = null
     }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: MsgHeaders;
+        msgId?: string
     }): Promise<void> {
         try {
             let messageToSend = this._validateMessage(message);
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
+            if (msgId)
+                headers.headers.set('msg-id', msgId);
             if (asyncProduce)
                 this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
                     headers: headers.headers,
