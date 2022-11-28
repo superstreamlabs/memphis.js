@@ -846,7 +846,7 @@ class Message {
         else {
             let buf = this.connection.JSONC.encode({
                 id: this.message.headers.get('$memphis_pm_id'),
-                cgName: this.cgName
+                cg_name: this.cgName
             });
 
             this.connection.brokerManager.publish('$memphis_pm_acks', buf);
