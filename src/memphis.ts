@@ -195,12 +195,14 @@ export class Memphis {
         });
     }
 
-    private async _compileProtobufSchema(stationName: string, schemaUpdateData: Object) {
-        let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_${schemaUpdateData['active_version']['version_number']}.proto`;
-        fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
+    private async _compileProtobufSchema(stationName: string) {
+        let stationSchemaData = this.stationSchemaDataMap.get(stationName);
+        
+        let protoPathName = `${__dirname}/${stationSchemaData['schema_name']}_${stationSchemaData['active_version']['version_number']}.proto`;
+        fs.writeFileSync(protoPathName, stationSchemaData['active_version']['schema_content']);
         let root = await protobuf.load(protoPathName);
         fs.unlinkSync(protoPathName);
-        let meassageDescriptor = root.lookupType(`${schemaUpdateData['active_version']['message_struct_name']}`);
+        let meassageDescriptor = root.lookupType(`${stationSchemaData['active_version']['message_struct_name']}`);
         this.meassageDescriptors.set(stationName, meassageDescriptor);
     }
 
@@ -216,7 +218,7 @@ export class Memphis {
                     this.stationSchemaDataMap.set(internalStationName, schemaUpdateData);
                     switch (schemaUpdateData['type']) {
                         case 'protobuf':
-                            this._compileProtobufSchema(internalStationName, schemaUpdateData);
+                            this._compileProtobufSchema(internalStationName);
                         case 'json':
                             const jsonSchema = this._compileJsonSchema(internalStationName);
                             this.jsonSchemas.set(internalStationName, jsonSchema);
@@ -282,7 +284,7 @@ export class Memphis {
                 try {
                     switch (data['init']['type']) {
                         case 'protobuf':
-                            this._compileProtobufSchema(stationName, data);
+                            this._compileProtobufSchema(stationName);
                         case 'json':
                             const jsonSchema = this._compileJsonSchema(stationName);
                             this.jsonSchemas.set(stationName, jsonSchema);
