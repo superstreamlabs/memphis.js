@@ -31,6 +31,7 @@ export declare class Memphis {
     schemaUpdatesSubs: Map<string, broker.Subscription>;
     producersPerStation: Map<string, number>;
     meassageDescriptors: Map<string, protobuf.Type>;
+    jsonSchemas: Map<string, Function>;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
         host: string;
@@ -42,7 +43,9 @@ export declare class Memphis {
         reconnectIntervalMs?: number;
         timeoutMs?: number;
     }): Promise<Memphis>;
+    private _compileProtobufSchema;
     private _scemaUpdatesListener;
+    private _compileJsonSchema;
     private _listenForSchemaUpdates;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
@@ -92,6 +95,8 @@ declare class Producer {
         headers?: MsgHeaders;
         msgId?: string;
     }): Promise<void>;
+    private _validateJsonMessage;
+    private _validateProtobufMessage;
     private _validateMessage;
     destroy(): Promise<void>;
 }
