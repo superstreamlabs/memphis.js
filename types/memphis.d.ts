@@ -122,7 +122,9 @@ declare class Consumer {
 }
 declare class Message {
     private message;
-    constructor(message: broker.JsMsg);
+    private connection;
+    private cgName;
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string);
     ack(): void;
     getData(): Uint8Array;
     getHeaders(): Map<string, string[]>;
