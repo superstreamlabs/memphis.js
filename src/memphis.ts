@@ -619,35 +619,17 @@ class Producer {
                     if (ex.message.includes('index out of range')) {
                         ex = new Error('Invalid message format, expecting protobuf');
                     }
-                    // this.connection.sendNotification(
-                    //     'Schema validation has failed',
-                    //     `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
-                    //     String.fromCharCode.apply(null, msg),
-                    //     schemaVFailAlertType
-                    // );
                     throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                 }
             } else if (msg instanceof Object) {
                 let errMsg = meassageDescriptor.verify(msg);
                 if (errMsg) {
-                    // this.connection.sendNotification(
-                    //     'Schema validation has failed',
-                    //     `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${errMsg}`,
-                    //     JSON.stringify(msg),
-                    //     schemaVFailAlertType
-                    // );
                     throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
                 }
                 const protoMsg = meassageDescriptor.create(msg);
                 const messageToSend = meassageDescriptor.encode(protoMsg).finish();
                 return messageToSend;
             } else {
-                // this.connection.sendNotification(
-                //     'Schema validation has failed',
-                //     `\nStation: ${this.stationName}\nProducer: ${this.producerName}\nError: Unsupported message type`,
-                //     JSON.stringify(msg),
-                //     schemaVFailAlertType
-                // );
                 throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
             }
         }
