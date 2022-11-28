@@ -829,11 +829,11 @@ function generateNameSuffix(): string {
 class Message {
     private message: broker.JsMsg;
     private connection: Memphis;
-    private cg_name: string;
-    constructor(message: broker.JsMsg, connection: Memphis, cg_name: string) {
+    private cgName: string;
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string) {
         this.message = message;
         this.connection = connection;
-        this.cg_name = cg_name;
+        this.cgName = cgName;
     }
 
     /**
@@ -846,10 +846,10 @@ class Message {
         else {
             let buf = this.connection.JSONC.encode({
                 id: this.message.headers.get('$memphis_pm_id'),
-                cg_name: this.cg_name
+                cgName: this.cgName
             });
 
-            this.connection.brokerManager.publish('$memphis_pm_resend_ack', buf);
+            this.connection.brokerManager.publish('$memphis_pm_acks', buf);
         }
     }
 
