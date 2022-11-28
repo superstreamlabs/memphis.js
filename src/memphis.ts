@@ -782,7 +782,7 @@ class Consumer {
 
     private async _handleAsyncIterableSubscriber(iter: any) {
         for await (const m of iter) {
-            this.eventEmitter.emit('message', new Message(m));
+            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup));
         }
     }
 
@@ -828,9 +828,12 @@ function generateNameSuffix(): string {
 }
 class Message {
     private message: broker.JsMsg;
-
-    constructor(message: broker.JsMsg) {
+    private connection: Memphis;
+    private cg_name: string;
+    constructor(message: broker.JsMsg, connection: Memphis, cg_name: string) {
         this.message = message;
+        this.connection = connection;
+        this.cg_name = cg_name;
     }
 
     /**
@@ -840,6 +843,14 @@ class Message {
         if (this.message.ack)
             // for dlq events which are unackable (core NATS messages)
             this.message.ack();
+        else {
+            let buf = this.connection.JSONC.encode({
+                id: this.message.headers.get('$memphis_pm_id'),
+                cg_name: this.cg_name
+            });
+
+            this.connection.brokerManager.publish('$memphis_pm_resend_ack', buf);
+        }
     }
 
     /**
