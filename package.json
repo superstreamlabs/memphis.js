@@ -36,6 +36,8 @@
         "@nestjs/core": "^9.0.0",
         "@nestjs/microservices": "^9.1.4",
         "@nestjs/platform-express": "^9.0.0",
+        "ajv": "^8.11.2",
+        "ajv-draft-04": "^1.0.0",
         "axios": "^0.26.1",
         "dotenv": "^16.0.1",
         "nats": "^2.6.1",
