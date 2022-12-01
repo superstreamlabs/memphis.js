@@ -587,7 +587,8 @@ class Producer {
                 msgToSend = msg;
                 const valid = validate(msgObj);
                 if (!valid) {
-                    throw MemphisError(new Error(`Schema validation has failed: ${validate['errors'][0].message}`));
+                    const errorMsg = `${validate['errors'][0].schemaPath} ${validate['errors'][0].message}`
+                    throw MemphisError(new Error(`Schema validation has failed: ${errorMsg}`));
                 }
                 return msgToSend;
             } else if (Object.prototype.toString.call(msg) == '[object Object]') {
@@ -597,7 +598,8 @@ class Producer {
                 msgToSend = enc.encode(msgString);
                 const valid = validate(msgObj);
                 if (!valid) {
-                    throw MemphisError(new Error(`Schema validation has failed: ${validate['errors'][0].message}`));
+                    const errorMsg = `${validate['errors'][0].schemaPath} ${validate['errors'][0].message}`
+                    throw MemphisError(new Error(`Schema validation has failed: ${errorMsg}`));
                 }
                 return msgToSend;
             } else {
@@ -914,12 +916,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
-interface MsgHeadersType extends MsgHeaders {}
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
