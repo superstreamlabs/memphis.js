@@ -576,6 +576,17 @@ class Producer {
         }
     }
 
+    private _parseJsonValidationErrors(errors: any): any {
+        const errorsArray = [];
+        for (const error of errors) {
+            if (error.instancePath)
+                errorsArray.push(`${error.schemaPath} ${error.message}`)
+            else
+                errorsArray.push(error.message)
+        }
+        return errorsArray.join(', ')
+    }
+
     private _validateJsonMessage(msg: any): any {
         try {
             let validate = this.connection.jsonSchemas.get(this.internal_station);
@@ -587,8 +598,7 @@ class Producer {
                 msgToSend = msg;
                 const valid = validate(msgObj);
                 if (!valid) {
-                    const errorMsg = `${validate['errors'][0].schemaPath} ${validate['errors'][0].message}`
-                    throw MemphisError(new Error(`Schema validation has failed: ${errorMsg}`));
+                    throw MemphisError(new Error(`Schema validation has failed: ${this._parseJsonValidationErrors(validate['errors'])}`));
                 }
                 return msgToSend;
             } else if (Object.prototype.toString.call(msg) == '[object Object]') {
@@ -598,8 +608,7 @@ class Producer {
                 msgToSend = enc.encode(msgString);
                 const valid = validate(msgObj);
                 if (!valid) {
-                    const errorMsg = `${validate['errors'][0].schemaPath} ${validate['errors'][0].message}`
-                    throw MemphisError(new Error(`Schema validation has failed: ${errorMsg}`));
+                    throw MemphisError(new Error(`Schema validation has failed: ${this._parseJsonValidationErrors(validate['errors'])}`));
                 }
                 return msgToSend;
             } else {

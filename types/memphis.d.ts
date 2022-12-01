@@ -95,6 +95,7 @@ declare class Producer {
         headers?: MsgHeaders;
         msgId?: string;
     }): Promise<void>;
+    private _parseJsonValidationErrors;
     private _validateJsonMessage;
     private _validateProtobufMessage;
     private _validateMessage;
