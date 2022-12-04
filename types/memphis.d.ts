@@ -31,6 +31,7 @@ export declare class Memphis {
     schemaUpdatesSubs: Map<string, broker.Subscription>;
     producersPerStation: Map<string, number>;
     meassageDescriptors: Map<string, protobuf.Type>;
+    jsonSchemas: Map<string, Function>;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
         host: string;
@@ -42,18 +43,20 @@ export declare class Memphis {
         reconnectIntervalMs?: number;
         timeoutMs?: number;
     }): Promise<Memphis>;
+    private _compileProtobufSchema;
     private _scemaUpdatesListener;
+    private _compileJsonSchema;
     private _listenForSchemaUpdates;
+    sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     private _generateConnectionID;
-    station({ name, retentionType, retentionValue, storageType, replicas, dedupEnabled, dedupWindowMs }: {
+    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
         replicas?: number;
-        dedupEnabled?: boolean;
-        dedupWindowMs?: number;
+        idempotencyWindowMs?: number;
     }): Promise<Station>;
     producer({ stationName, producerName, genUniqueSuffix }: {
         stationName: string;
@@ -85,12 +88,16 @@ declare class Producer {
     private stationName;
     private internal_station;
     constructor(connection: Memphis, producerName: string, stationName: string);
-    produce({ message, ackWaitSec, asyncProduce, headers }: {
+    produce({ message, ackWaitSec, asyncProduce, headers, msgId }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: MsgHeaders;
+        msgId?: string;
     }): Promise<void>;
+    private _parseJsonValidationErrors;
+    private _validateJsonMessage;
+    private _validateProtobufMessage;
     private _validateMessage;
     destroy(): Promise<void>;
 }
@@ -116,7 +123,9 @@ declare class Consumer {
 }
 declare class Message {
     private message;
-    constructor(message: broker.JsMsg);
+    private connection;
+    private cgName;
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string);
     ack(): void;
     getData(): Uint8Array;
     getHeaders(): Map<string, string[]>;

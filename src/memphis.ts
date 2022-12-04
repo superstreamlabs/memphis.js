@@ -17,6 +17,11 @@ import * as broker from 'nats';
 import { headers, MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
 import * as fs from 'fs';
+import Ajv from 'ajv';
+import jsonSchemaDraft04 from 'ajv-draft-04';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
+import Ajv2020 from 'ajv/dist/2020';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -42,22 +47,24 @@ const storageTypes: IStorageTypes = {
 
 const MemphisError = (error: Error): Error => {
     if (error?.message) {
-        error.message = error.message.replace("NatsError", "memphis");
-        error.message = error.message.replace("Nats", "memphis");
-        error.message = error.message.replace("nats", "memphis");
+        error.message = error.message.replace('NatsError', 'memphis');
+        error.message = error.message.replace('Nats', 'memphis');
+        error.message = error.message.replace('nats', 'memphis');
     }
     if (error?.stack) {
-        error.stack = error.stack.replace("NatsError", "memphis");
-        error.stack = error.stack.replace("Nats:", "memphis");
-        error.stack = error.stack.replace("nats:", "memphis");
+        error.stack = error.stack.replace('NatsError', 'memphis');
+        error.stack = error.stack.replace('Nats:', 'memphis');
+        error.stack = error.stack.replace('nats:', 'memphis');
     }
     if (error?.name) {
-        error.name = error.name.replace("NatsError", "MemphisError");
-        error.name = error.name.replace("Nats", "MemphisError");
-        error.name = error.name.replace("nats", "MemphisError");
+        error.name = error.name.replace('NatsError', 'MemphisError');
+        error.name = error.name.replace('Nats', 'MemphisError');
+        error.name = error.name.replace('nats', 'MemphisError');
     }
     return error;
-}
+};
+
+const schemaVFailAlertType = 'schema_validation_fail_alert';
 
 export class Memphis {
     private isConnectionActive: boolean;
@@ -80,6 +87,7 @@ export class Memphis {
     public schemaUpdatesSubs: Map<string, broker.Subscription>;
     public producersPerStation: Map<string, number>;
     public meassageDescriptors: Map<string, protobuf.Type>;
+    public jsonSchemas: Map<string, Function>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -102,6 +110,7 @@ export class Memphis {
         this.schemaUpdatesSubs = new Map();
         this.producersPerStation = new Map();
         this.meassageDescriptors = new Map();
+        this.jsonSchemas = new Map();
     }
 
     /**
@@ -186,54 +195,119 @@ export class Memphis {
         });
     }
 
+    private async _compileProtobufSchema(stationName: string) {
+        let stationSchemaData = this.stationSchemaDataMap.get(stationName);
+
+        let protoPathName = `${__dirname}/${stationSchemaData['schema_name']}_${stationSchemaData['active_version']['version_number']}.proto`;
+        fs.writeFileSync(protoPathName, stationSchemaData['active_version']['schema_content']);
+        let root = await protobuf.load(protoPathName);
+        fs.unlinkSync(protoPathName);
+        let meassageDescriptor = root.lookupType(`${stationSchemaData['active_version']['message_struct_name']}`);
+        this.meassageDescriptors.set(stationName, meassageDescriptor);
+    }
+
     private async _scemaUpdatesListener(stationName: string, schemaUpdateData: Object): Promise<void> {
         try {
-            const subName = stationName.replace(/\./g, '#').toLowerCase();
-            let schemaUpdateSubscription = this.schemaUpdatesSubs.has(subName);
+            const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+            let schemaUpdateSubscription = this.schemaUpdatesSubs.has(internalStationName);
             if (schemaUpdateSubscription) {
-                this.producersPerStation.set(subName, this.producersPerStation.get(subName) + 1);
+                this.producersPerStation.set(internalStationName, this.producersPerStation.get(internalStationName) + 1);
             } else {
                 let shouldDrop = schemaUpdateData['schema_name'] === '';
                 if (!shouldDrop) {
-                    let protoPathName = `${__dirname}/${schemaUpdateData['schema_name']}_${schemaUpdateData['active_version']['version_number']}.proto`;
-                    this.stationSchemaDataMap.set(subName, schemaUpdateData);
-                    fs.writeFileSync(protoPathName, schemaUpdateData['active_version']['schema_content']);
-                    let root = await protobuf.load(protoPathName);
-                    fs.unlinkSync(protoPathName);
-                    let meassageDescriptor = root.lookupType(`${schemaUpdateData['active_version']['message_struct_name']}`);
-                    this.meassageDescriptors.set(subName, meassageDescriptor);
+                    this.stationSchemaDataMap.set(internalStationName, schemaUpdateData);
+                    switch (schemaUpdateData['type']) {
+                        case 'protobuf':
+                            this._compileProtobufSchema(internalStationName);
+                            break;
+                        case 'json':
+                            const jsonSchema = this._compileJsonSchema(internalStationName);
+                            this.jsonSchemas.set(internalStationName, jsonSchema);
+                            break;
+                    }
                 }
-                const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${subName}`);
-                this.producersPerStation.set(subName, 1);
-                this.schemaUpdatesSubs.set(subName, sub);
-                this._listenForSchemaUpdates(sub, subName);
+                const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${internalStationName}`);
+                this.producersPerStation.set(internalStationName, 1);
+                this.schemaUpdatesSubs.set(internalStationName, sub);
+                this._listenForSchemaUpdates(sub, internalStationName);
             }
         } catch (err) {
             throw MemphisError(err);
         }
     }
 
-    private async _listenForSchemaUpdates(sub: any, subName: string): Promise<void> {
+    private _compileJsonSchema(stationName: string): any {
+        const ajv = new Ajv();
+        let stationSchemaData = this.stationSchemaDataMap.get(stationName);
+        const schema = stationSchemaData['active_version']['schema_content'];
+        const schemaObj = JSON.parse(schema);
+        let validate: any;
+        try {
+            validate = ajv.compile(schemaObj);
+            return validate;
+        } catch (error) {
+            try {
+                ajv.addMetaSchema(draft7MetaSchema);
+                validate = ajv.compile(schemaObj);
+                return validate;
+            } catch (error) {
+                try {
+                    const ajv = new jsonSchemaDraft04();
+                    validate = ajv.compile(schemaObj);
+                    return validate;
+                } catch (error) {
+                    try {
+                        const ajv = new Ajv2020();
+                        validate = ajv.compile(schemaObj);
+                        return validate;
+                    } catch (error) {
+                        try {
+                            ajv.addMetaSchema(draft6MetaSchema);
+                            return validate;
+                        } catch (error) {
+                            throw MemphisError(new Error('invalid json schema'));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private async _listenForSchemaUpdates(sub: any, stationName: string): Promise<void> {
         for await (const m of sub) {
             let data = this.JSONC.decode(m._rdata);
             let shouldDrop = data['init']['schema_name'] === '';
             if (shouldDrop) {
-                this.stationSchemaDataMap.delete(subName);
-                this.meassageDescriptors.delete(subName);
+                this.stationSchemaDataMap.delete(stationName);
+                this.meassageDescriptors.delete(stationName);
+                this.jsonSchemas.delete(stationName);
             } else {
-                this.stationSchemaDataMap.set(subName, data.init);
+                this.stationSchemaDataMap.set(stationName, data.init);
                 try {
-                    let protoPathName = `${__dirname}/${data['init']['schema_name']}_${data['init']['active_version']['version_number']}.proto`;
-                    fs.writeFileSync(protoPathName, data['init']['active_version']['schema_content']);
-                    let root = await protobuf.load(protoPathName);
-                    fs.unlinkSync(protoPathName);
-                    let meassageDescriptor = root.lookupType(`${data['init']['active_version']['message_struct_name']}`);
-                    this.meassageDescriptors.set(subName, meassageDescriptor);
+                    switch (data['init']['type']) {
+                        case 'protobuf':
+                            this._compileProtobufSchema(stationName);
+                            break;
+                        case 'json':
+                            const jsonSchema = this._compileJsonSchema(stationName);
+                            this.jsonSchemas.set(stationName, jsonSchema);
+                            break;
+                    }
                 } catch (err) {
                     throw MemphisError(err);
                 }
             }
         }
+    }
+
+    public sendNotification(title: string, msg: string, failedMsg: any, type: string) {
+        const buf = this.JSONC.encode({
+            title: title,
+            msg: msg,
+            type: type,
+            code: failedMsg
+        });
+        this.brokerManager.publish('$memphis_notifications', buf);
     }
 
     private _normalizeHost(host: string): string {
@@ -253,8 +327,7 @@ export class Memphis {
      * @param {Number} retentionValue - number which represents the retention based on the retentionType, default is 604800.
      * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.DISK.
      * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
-     * @param {Boolean} dedupEnabled - whether to allow dedup mecanism, dedup happens based on message ID, default is false.
-     * @param {Number} dedupWindowMs - time frame in which dedup track messages, default is 0.
+     * @param {Number} idempotencyWindowMs - time frame in which idempotent messages will be tracked, happens based on message ID Defaults to 120000.
      */
     async station({
         name,
@@ -262,16 +335,14 @@ export class Memphis {
         retentionValue = 604800,
         storageType = storageTypes.DISK,
         replicas = 1,
-        dedupEnabled = false,
-        dedupWindowMs = 0
+        idempotencyWindowMs = 120000
     }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
         replicas?: number;
-        dedupEnabled?: boolean;
-        dedupWindowMs?: number;
+        idempotencyWindowMs?: number;
     }): Promise<Station> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -281,8 +352,7 @@ export class Memphis {
                 retention_value: retentionValue,
                 storage_type: storageType,
                 replicas: replicas,
-                dedup_enabled: dedupEnabled,
-                dedup_window_in_ms: dedupWindowMs
+                idempotency_window_in_ms: idempotencyWindowMs
             };
             let data = this.JSONC.encode(createStationReq);
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
@@ -406,6 +476,7 @@ export class Memphis {
             this.schemaUpdatesSubs.delete(key);
             this.producersPerStation.delete(key);
             this.meassageDescriptors.delete(key);
+            this.jsonSchemas.delete(key);
         }
         setTimeout(() => {
             this.brokerManager && this.brokerManager.close();
@@ -458,17 +529,20 @@ class Producer {
         message,
         ackWaitSec = 15,
         asyncProduce = false,
-        headers = new MsgHeaders()
+        headers = new MsgHeaders(),
+        msgId = null
     }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: MsgHeaders;
+        msgId?: string;
     }): Promise<void> {
         try {
             let messageToSend = this._validateMessage(message);
             headers.headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.headers.set('$memphis_producedBy', this.producerName);
+            if (msgId) headers.headers.set('msg-id', msgId);
             if (asyncProduce)
                 this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
                     headers: headers.headers,
@@ -484,7 +558,91 @@ class Producer {
                 throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer are still exist'));
             }
             if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
+            if (ex.message.includes('Schema validation has failed')) {
+                let failedMsg = '';
+                if (message instanceof Uint8Array) {
+                    failedMsg = String.fromCharCode.apply(null, message);
+                } else {
+                    failedMsg = JSON.stringify(message);
+                }
+                this.connection.sendNotification(
+                    'Schema validation has failed',
+                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
+                    failedMsg,
+                    schemaVFailAlertType
+                );
+            }
             throw MemphisError(ex);
+        }
+    }
+
+    private _parseJsonValidationErrors(errors: any): any {
+        const errorsArray = [];
+        for (const error of errors) {
+            if (error.instancePath)
+                errorsArray.push(`${error.schemaPath} ${error.message}`)
+            else
+                errorsArray.push(error.message)
+        }
+        return errorsArray.join(', ')
+    }
+
+    private _validateJsonMessage(msg: any): any {
+        try {
+            let validate = this.connection.jsonSchemas.get(this.internal_station);
+            let msgObj: Object;
+            let msgToSend = new Uint8Array();
+            const isBuffer = Buffer.isBuffer(msg);
+            if (isBuffer) {
+                msgObj = JSON.parse(msg.toString());
+                msgToSend = msg;
+                const valid = validate(msgObj);
+                if (!valid) {
+                    throw MemphisError(new Error(`Schema validation has failed: ${this._parseJsonValidationErrors(validate['errors'])}`));
+                }
+                return msgToSend;
+            } else if (Object.prototype.toString.call(msg) == '[object Object]') {
+                msgObj = msg;
+                let enc = new TextEncoder();
+                const msgString = JSON.stringify(msg);
+                msgToSend = enc.encode(msgString);
+                const valid = validate(msgObj);
+                if (!valid) {
+                    throw MemphisError(new Error(`Schema validation has failed: ${this._parseJsonValidationErrors(validate['errors'])}`));
+                }
+                return msgToSend;
+            } else {
+                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+            }
+        } catch (ex) {
+            throw MemphisError(new Error(ex.message));
+        }
+    }
+
+    private _validateProtobufMessage(msg: any): any {
+        let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+        if (meassageDescriptor) {
+            if (msg instanceof Uint8Array) {
+                try {
+                    meassageDescriptor.decode(msg);
+                    return msg;
+                } catch (ex) {
+                    if (ex.message.includes('index out of range')) {
+                        ex = new Error('Invalid message format, expecting protobuf');
+                    }
+                    throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
+                }
+            } else if (msg instanceof Object) {
+                let errMsg = meassageDescriptor.verify(msg);
+                if (errMsg) {
+                    throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
+                }
+                const protoMsg = meassageDescriptor.create(msg);
+                const messageToSend = meassageDescriptor.encode(protoMsg).finish();
+                return messageToSend;
+            } else {
+                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+            }
         }
     }
 
@@ -493,34 +651,18 @@ class Producer {
         if (stationSchemaData) {
             switch (stationSchemaData['type']) {
                 case 'protobuf':
-                    let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
-                    if (meassageDescriptor) {
-                        if (msg instanceof Uint8Array) {
-                            try {
-                                meassageDescriptor.decode(msg);
-                                return msg;
-                            } catch (ex) {
-                                if (ex.message.includes('index out of range'))
-                                    throw MemphisError(new Error('Schema validation has failed: Invalid message format, expecting protobuf'));
-                                throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
-                            }
-                        } else if (msg instanceof Object) {
-                            let errMsg = meassageDescriptor.verify(msg);
-                            if (errMsg) {
-                                throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
-                            }
-                            const protoMsg = meassageDescriptor.create(msg);
-                            const messageToSend = meassageDescriptor.encode(protoMsg).finish();
-                            return messageToSend;
-                        } else {
-                            throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
-                        }
-                    }
+                    return this._validateProtobufMessage(msg);
+                case 'json':
+                    return this._validateJsonMessage(msg);
                 default:
                     return msg;
             }
         } else {
-            return msg;
+            if (!Buffer.isBuffer(msg)) {
+                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+            } else {
+                return msg;
+            }
         }
     }
 
@@ -539,15 +681,16 @@ class Producer {
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
-            const subName = this.stationName.replace(/\./g, '#').toLowerCase();
-            let prodNumber = this.connection.producersPerStation.get(subName) - 1;
-            this.connection.producersPerStation.set(subName, prodNumber);
+            const stationName = this.stationName.replace(/\./g, '#').toLowerCase();
+            let prodNumber = this.connection.producersPerStation.get(stationName) - 1;
+            this.connection.producersPerStation.set(stationName, prodNumber);
             if (prodNumber === 0) {
-                let sub = this.connection.schemaUpdatesSubs.get(subName);
+                let sub = this.connection.schemaUpdatesSubs.get(stationName);
                 if (sub) sub.unsubscribe();
-                this.connection.stationSchemaDataMap.delete(subName);
-                this.connection.schemaUpdatesSubs.delete(subName);
-                this.connection.meassageDescriptors.delete(subName);
+                this.connection.stationSchemaDataMap.delete(stationName);
+                this.connection.schemaUpdatesSubs.delete(stationName);
+                this.connection.meassageDescriptors.delete(stationName);
+                this.connection.jsonSchemas.delete(stationName);
             }
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
@@ -650,7 +793,7 @@ class Consumer {
 
     private async _handleAsyncIterableSubscriber(iter: any) {
         for await (const m of iter) {
-            this.eventEmitter.emit('message', new Message(m));
+            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup));
         }
     }
 
@@ -696,9 +839,12 @@ function generateNameSuffix(): string {
 }
 class Message {
     private message: broker.JsMsg;
-
-    constructor(message: broker.JsMsg) {
+    private connection: Memphis;
+    private cgName: string;
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string) {
         this.message = message;
+        this.connection = connection;
+        this.cgName = cgName;
     }
 
     /**
@@ -708,6 +854,14 @@ class Message {
         if (this.message.ack)
             // for dlq events which are unackable (core NATS messages)
             this.message.ack();
+        else {
+            let buf = this.connection.JSONC.encode({
+                id: this.message.headers.get('$memphis_pm_id'),
+                cg_name: this.cgName
+            });
+
+            this.connection.brokerManager.publish('$memphis_pm_acks', buf);
+        }
     }
 
     /**
@@ -748,13 +902,14 @@ class Station {
             let removeStationReq = {
                 station_name: this.name
             };
-            const subName = this.name.replace(/\./g, '#').toLowerCase();
-            let sub = this.connection.schemaUpdatesSubs.get(subName);
+            const stationName = this.name.replace(/\./g, '#').toLowerCase();
+            let sub = this.connection.schemaUpdatesSubs.get(stationName);
             if (sub) sub.unsubscribe();
-            this.connection.stationSchemaDataMap.delete(subName);
-            this.connection.schemaUpdatesSubs.delete(subName);
-            this.connection.producersPerStation.delete(subName);
-            this.connection.meassageDescriptors.delete(subName);
+            this.connection.stationSchemaDataMap.delete(stationName);
+            this.connection.schemaUpdatesSubs.delete(stationName);
+            this.connection.producersPerStation.delete(stationName);
+            this.connection.meassageDescriptors.delete(stationName);
+            this.connection.jsonSchemas.delete(stationName);
             let data = this.connection.JSONC.encode(removeStationReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_station_destructions', data);
             errMsg = errMsg.data.toString();
