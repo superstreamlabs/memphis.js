@@ -331,6 +331,7 @@ export class Memphis {
      */
     async station({
         name,
+        schemaName = '',
         retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS,
         retentionValue = 604800,
         storageType = storageTypes.DISK,
@@ -338,6 +339,7 @@ export class Memphis {
         idempotencyWindowMs = 120000
     }: {
         name: string;
+        schemaName: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
@@ -348,6 +350,7 @@ export class Memphis {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
             let createStationReq = {
                 name: name,
+                schema_name: schemaName,
                 retention_type: retentionType,
                 retention_value: retentionValue,
                 storage_type: storageType,
@@ -579,12 +582,10 @@ class Producer {
     private _parseJsonValidationErrors(errors: any): any {
         const errorsArray = [];
         for (const error of errors) {
-            if (error.instancePath)
-                errorsArray.push(`${error.schemaPath} ${error.message}`)
-            else
-                errorsArray.push(error.message)
+            if (error.instancePath) errorsArray.push(`${error.schemaPath} ${error.message}`);
+            else errorsArray.push(error.message);
         }
-        return errorsArray.join(', ')
+        return errorsArray.join(', ');
     }
 
     private _validateJsonMessage(msg: any): any {
@@ -887,7 +888,7 @@ class Message {
 
 class Station {
     private connection: Memphis;
-    private name: string;
+    public name: string;
 
     constructor(connection: Memphis, name: string) {
         this.connection = connection;
@@ -925,12 +926,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
