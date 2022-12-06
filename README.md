@@ -166,12 +166,6 @@ class stationModule {
 }
 ```
 
-### Attaching a Schema to Existing Station
-
-```js
-await memphisConnection.attachSchema({ name: '<schema-name>', stationName: '<station-name>' });
-```
-
 ### Retention types
 
 Memphis currently supports the following types of retention:
@@ -216,6 +210,12 @@ Destroying a station will remove all its resources (producers/consumers)
 
 ```js
 await station.destroy();
+```
+
+### Attaching a Schema to Existing Station
+
+```js
+await memphisConnection.attachSchema({ name: '<schema-name>', stationName: '<station-name>' });
 ```
 
 ### Produce and Consume messages
