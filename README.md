@@ -218,6 +218,12 @@ await station.destroy();
 await memphisConnection.attachSchema({ name: '<schema-name>', stationName: '<station-name>' });
 ```
 
+### Detaching a Schema from Station
+
+```js
+await memphisConnection.detachSchema({ stationName: '<station-name>' });
+```
+
 ### Produce and Consume messages
 
 The most common client operations are `produce` to send messages and `consume` to

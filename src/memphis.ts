@@ -380,12 +380,36 @@ export class Memphis {
     async attachSchema({ name, stationName }: { name: string; stationName: string }): Promise<void> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
-            let useSchemaReq = {
+            if (name === '') {
+                throw new Error('attachSchema error: name can not be empty');
+            }
+            let attachSchemaReq = {
                 name: name,
                 station_name: stationName
             };
-            let data = this.JSONC.encode(useSchemaReq);
+            let data = this.JSONC.encode(attachSchemaReq);
             let errMsg = await this.brokerManager.request('$memphis_schema_attachments', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw MemphisError(new Error(errMsg));
+            }
+        } catch (ex) {
+            throw MemphisError(ex);
+        }
+    }
+
+    /**
+     * Detaches a schema from station.
+     * @param {String} stationName - station name to attach schema to.
+     */
+    async detachSchema({ stationName }: { stationName: string }): Promise<void> {
+        try {
+            if (!this.isConnectionActive) throw new Error('Connection is dead');
+            let detachSchemaReq = {
+                station_name: stationName
+            };
+            let data = this.JSONC.encode(detachSchemaReq);
+            let errMsg = await this.brokerManager.request('$memphis_schema_detachments', data);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
