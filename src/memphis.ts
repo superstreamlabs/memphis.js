@@ -373,7 +373,7 @@ export class Memphis {
     }
 
     /**
-     * Attaches a shema to existing station.
+     * Attaches a schema to existing station.
      * @param {String} name - schema name.
      * @param {String} stationName - station name to attach schema to.
      */

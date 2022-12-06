@@ -15,9 +15,8 @@
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br>
 
-  
-  <a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>
-  
+<a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>
+
 </div>
 
 <div align="center">
@@ -127,9 +126,12 @@ memphisConnection.close();
 
 ### Creating a Station
 
+_If a station already exists, the returned station will be returned, the new configuration will not apply_
+
 ```js
 const station = await memphis.station({
     name: '<station-name>',
+    schemaName: '<schema-name>',
     retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
     retentionValue: 604800, // defaults to 604800
     storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
@@ -152,6 +154,7 @@ class stationModule {
         (async function () {
                   const station = await this.memphis.station({
                         name: "<station-name>",
+                        schemaName: "<schema-name>",
                         retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
                         retentionValue: 604800, // defaults to 604800
                         storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
@@ -161,6 +164,12 @@ class stationModule {
         })();
     }
 }
+```
+
+### Attaching a Schema to Existing Station
+
+```js
+await memphisConnection.attachSchema({ name: '<schema-name>', stationName: '<station-name>' });
 ```
 
 ### Retention types
@@ -265,7 +274,7 @@ await producer.produce({
 ### Add Header
 
 ```js
-const headers = memphis.headers()
+const headers = memphis.headers();
 headers.add('<key>', '<value>');
 await producer.produce({
     message: '<bytes array>', // Uint8Arrays / You can send object in case your station is schema validated
@@ -286,13 +295,14 @@ await producer.produce({
 ```
 
 ### Message ID
+
 Stations are idempotent by default for 2 minutes (can be configured), Idempotency achieved by adding a message id
 
 ```js
 await producer.produce({
     message: '<bytes array>/object', // Uint8Arrays / You can send object in case your station is schema validated
     ackWaitSec: 15, // defaults to 15
-    msgId: "fdfd" // defaults to null
+    msgId: 'fdfd' // defaults to null
 });
 ```
 
@@ -377,12 +387,12 @@ Acknowledge a message indicates the Memphis server to not re-send the same messa
 message.ack();
 ```
 
+### Get headers
 
-### Get headers 
 Get headers per message
 
 ```js
-headers = message.getHeaders()
+headers = message.getHeaders();
 ```
 
 ### Catching async errors
