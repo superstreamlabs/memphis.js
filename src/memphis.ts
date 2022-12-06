@@ -380,8 +380,8 @@ export class Memphis {
     async attachSchema({ name, stationName }: { name: string; stationName: string }): Promise<void> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
-            if (name === '') {
-                throw new Error('attachSchema error: name can not be empty');
+            if (name === '' || stationName === '') {
+                throw new Error('attachSchema error: Please provide all parameters');
             }
             let attachSchemaReq = {
                 name: name,
@@ -405,6 +405,9 @@ export class Memphis {
     async detachSchema({ stationName }: { stationName: string }): Promise<void> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
+            if (stationName === '') {
+                throw new Error('attachSchema error: Please provide station name');
+            }
             let detachSchemaReq = {
                 station_name: stationName
             };
