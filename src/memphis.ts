@@ -373,6 +373,29 @@ export class Memphis {
     }
 
     /**
+     * Attaches a shema to existing station.
+     * @param {String} name - schema name.
+     * @param {String} stationName - station name to attach schema to.
+     */
+    async attachSchema({ name, stationName }: { name: string; stationName: string }): Promise<void> {
+        try {
+            if (!this.isConnectionActive) throw new Error('Connection is dead');
+            let useSchemaReq = {
+                name: name,
+                station_name: stationName
+            };
+            let data = this.JSONC.encode(useSchemaReq);
+            let errMsg = await this.brokerManager.request('$memphis_schema_attachments', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw MemphisError(new Error(errMsg));
+            }
+        } catch (ex) {
+            throw MemphisError(ex);
+        }
+    }
+
+    /**
      * Creates a producer.
      * @param {String} stationName - station name to produce messages into.
      * @param {String} producerName - name for the producer.
