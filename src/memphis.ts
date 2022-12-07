@@ -328,6 +328,7 @@ export class Memphis {
      * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.DISK.
      * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
      * @param {Number} idempotencyWindowMs - time frame in which idempotent messages will be tracked, happens based on message ID Defaults to 120000.
+     * @param {String} schemaName - schema name.
      */
     async station({
         name,
@@ -335,7 +336,8 @@ export class Memphis {
         retentionValue = 604800,
         storageType = storageTypes.DISK,
         replicas = 1,
-        idempotencyWindowMs = 120000
+        idempotencyWindowMs = 120000,
+        schemaName = ''
     }: {
         name: string;
         retentionType?: string;
@@ -343,6 +345,7 @@ export class Memphis {
         storageType?: string;
         replicas?: number;
         idempotencyWindowMs?: number;
+        schemaName: string;
     }): Promise<Station> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -352,7 +355,8 @@ export class Memphis {
                 retention_value: retentionValue,
                 storage_type: storageType,
                 replicas: replicas,
-                idempotency_window_in_ms: idempotencyWindowMs
+                idempotency_window_in_ms: idempotencyWindowMs,
+                schema_name: schemaName
             };
             let data = this.JSONC.encode(createStationReq);
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
@@ -365,6 +369,56 @@ export class Memphis {
             if (ex.message?.includes('already exists')) {
                 return new Station(this, name.toLowerCase());
             }
+            throw MemphisError(ex);
+        }
+    }
+
+    /**
+     * Attaches a schema to an existing station.
+     * @param {String} name - schema name.
+     * @param {String} stationName - station name to attach schema to.
+     */
+    async attachSchema({ name, stationName }: { name: string; stationName: string }): Promise<void> {
+        try {
+            if (!this.isConnectionActive) throw new Error('Connection is dead');
+            if (name === '' || stationName === '') {
+                throw new Error('name and station name can not be empty');
+            }
+            let attachSchemaReq = {
+                name: name,
+                station_name: stationName
+            };
+            let data = this.JSONC.encode(attachSchemaReq);
+            let errMsg = await this.brokerManager.request('$memphis_schema_attachments', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw MemphisError(new Error(errMsg));
+            }
+        } catch (ex) {
+            throw MemphisError(ex);
+        }
+    }
+
+    /**
+     * Detaches a schema from station.
+     * @param {String} stationName - station name to attach schema to.
+     */
+    async detachSchema({ stationName }: { stationName: string }): Promise<void> {
+        try {
+            if (!this.isConnectionActive) throw new Error('Connection is dead');
+            if (stationName === '') {
+                throw new Error('station name is missing');
+            }
+            let detachSchemaReq = {
+                station_name: stationName
+            };
+            let data = this.JSONC.encode(detachSchemaReq);
+            let errMsg = await this.brokerManager.request('$memphis_schema_detachments', data);
+            errMsg = errMsg.data.toString();
+            if (errMsg != '') {
+                throw MemphisError(new Error(errMsg));
+            }
+        } catch (ex) {
             throw MemphisError(ex);
         }
     }
@@ -579,12 +633,10 @@ class Producer {
     private _parseJsonValidationErrors(errors: any): any {
         const errorsArray = [];
         for (const error of errors) {
-            if (error.instancePath)
-                errorsArray.push(`${error.schemaPath} ${error.message}`)
-            else
-                errorsArray.push(error.message)
+            if (error.instancePath) errorsArray.push(`${error.schemaPath} ${error.message}`);
+            else errorsArray.push(error.message);
         }
-        return errorsArray.join(', ')
+        return errorsArray.join(', ');
     }
 
     private _validateJsonMessage(msg: any): any {
@@ -887,7 +939,7 @@ class Message {
 
 class Station {
     private connection: Memphis;
-    private name: string;
+    public name: string;
 
     constructor(connection: Memphis, name: string) {
         this.connection = connection;
@@ -925,12 +977,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
