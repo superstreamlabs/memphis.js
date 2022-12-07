@@ -212,7 +212,7 @@ Destroying a station will remove all its resources (producers/consumers)
 await station.destroy();
 ```
 
-### Attaching a Schema to Existing Station
+### Attaching a Schema to an Existing Station
 
 ```js
 await memphisConnection.attachSchema({ name: '<schema-name>', stationName: '<station-name>' });
