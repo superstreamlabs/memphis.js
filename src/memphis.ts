@@ -328,34 +328,35 @@ export class Memphis {
      * @param {Memphis.storageTypes} storageType - persistance storage for messages of the station, default is storageTypes.DISK.
      * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
      * @param {Number} idempotencyWindowMs - time frame in which idempotent messages will be tracked, happens based on message ID Defaults to 120000.
+     * @param {String} schemaName - schema name.
      */
     async station({
         name,
-        schemaName = '',
         retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS,
         retentionValue = 604800,
         storageType = storageTypes.DISK,
         replicas = 1,
-        idempotencyWindowMs = 120000
+        idempotencyWindowMs = 120000,
+        schemaName = ''
     }: {
         name: string;
-        schemaName: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
         replicas?: number;
         idempotencyWindowMs?: number;
+        schemaName: string;
     }): Promise<Station> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
             let createStationReq = {
                 name: name,
-                schema_name: schemaName,
                 retention_type: retentionType,
                 retention_value: retentionValue,
                 storage_type: storageType,
                 replicas: replicas,
-                idempotency_window_in_ms: idempotencyWindowMs
+                idempotency_window_in_ms: idempotencyWindowMs,
+                schema_name: schemaName
             };
             let data = this.JSONC.encode(createStationReq);
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
@@ -373,7 +374,7 @@ export class Memphis {
     }
 
     /**
-     * Attaches a schema to existing station.
+     * Attaches a schema to an existing station.
      * @param {String} name - schema name.
      * @param {String} stationName - station name to attach schema to.
      */
@@ -381,7 +382,7 @@ export class Memphis {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
             if (name === '' || stationName === '') {
-                throw new Error('attachSchema error: Please provide all parameters');
+                throw new Error('name and station name can not be empty');
             }
             let attachSchemaReq = {
                 name: name,
@@ -406,7 +407,7 @@ export class Memphis {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
             if (stationName === '') {
-                throw new Error('attachSchema error: Please provide station name');
+                throw new Error('station name is missing');
             }
             let detachSchemaReq = {
                 station_name: stationName
