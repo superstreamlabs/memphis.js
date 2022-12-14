@@ -136,7 +136,9 @@ const station = await memphis.station({
     retentionValue: 604800, // defaults to 604800
     storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
     replicas: 1, // defaults to 1
-    idempotencyWindowMs: 0 // defaults to 120000
+    idempotencyWindowMs: 0, // defaults to 120000
+    sendPoisonMsgToDls: true, // defaults to true
+    sendSchemaFailedMsgToDls: true // defaults to true
 });
 ```
 
@@ -160,6 +162,8 @@ class stationModule {
                         storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
                         replicas: 1, // defaults to 1
                         idempotencyWindowMs: 0, // defaults to 120000
+                        sendPoisonMsgToDls: true, // defaults to true
+                        sendSchemaFailedMsgToDls: true // defaults to true
                   });
         })();
     }
