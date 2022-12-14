@@ -22,6 +22,7 @@ import jsonSchemaDraft04 from 'ajv-draft-04';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import Ajv2020 from 'ajv/dist/2020';
+import { buildSchema as buildGraphQlSchema, GraphQLSchema, parse as parseGraphQl, validate as validateGraphQl } from 'graphql';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -88,6 +89,7 @@ export class Memphis {
     public producersPerStation: Map<string, number>;
     public meassageDescriptors: Map<string, protobuf.Type>;
     public jsonSchemas: Map<string, Function>;
+    public graphqlSchemas: Map<string, GraphQLSchema>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -111,6 +113,7 @@ export class Memphis {
         this.producersPerStation = new Map();
         this.meassageDescriptors = new Map();
         this.jsonSchemas = new Map();
+        this.graphqlSchemas = new Map();
     }
 
     /**
@@ -223,6 +226,10 @@ export class Memphis {
                             const jsonSchema = this._compileJsonSchema(internalStationName);
                             this.jsonSchemas.set(internalStationName, jsonSchema);
                             break;
+                        case 'graphql':
+                            const graphQlSchema = this._compileGraphQl(stationName);
+                            this.graphqlSchemas.set(internalStationName, graphQlSchema);
+                            break;
                     }
                 }
                 const sub = this.brokerManager.subscribe(`$memphis_schema_updates_${internalStationName}`);
@@ -272,6 +279,13 @@ export class Memphis {
         }
     }
 
+    private _compileGraphQl(stationName: string): GraphQLSchema {
+        let stationSchemaData = this.stationSchemaDataMap.get(stationName);
+        const schemaContent = stationSchemaData['active_version']['schema_content'];
+        const graphQlSchema = buildGraphQlSchema(schemaContent);
+        return graphQlSchema;
+    }
+
     private async _listenForSchemaUpdates(sub: any, stationName: string): Promise<void> {
         for await (const m of sub) {
             let data = this.JSONC.decode(m._rdata);
@@ -290,6 +304,10 @@ export class Memphis {
                         case 'json':
                             const jsonSchema = this._compileJsonSchema(stationName);
                             this.jsonSchemas.set(stationName, jsonSchema);
+                            break;
+                        case 'graphql':
+                            const graphQlSchema = this._compileGraphQl(stationName);
+                            this.graphqlSchemas.set(stationName, graphQlSchema);
                             break;
                     }
                 } catch (err) {
@@ -705,6 +723,35 @@ class Producer {
         }
     }
 
+    private _validateGraphqlMessage(msg: any): any {
+        try {
+            let msgToSend: Uint8Array;
+            let message: any;
+            if (msg instanceof Uint8Array) {
+                const msgString = new TextDecoder().decode(msg);
+                msgToSend = msg;
+                message = parseGraphQl(msgString);
+            } else if (typeof msg == 'string') {
+                message = parseGraphQl(msg);
+                msgToSend = new TextEncoder().encode(msg);
+            } else if (msg.kind == 'Document') {
+                message = msg;
+                const msgStr = msg.loc.source.body.toString();
+                msgToSend = new TextEncoder().encode(msgStr);
+            } else {
+                throw MemphisError(new Error('Unsupported message type'));
+            }
+            const schema = this.connection.graphqlSchemas.get(this.stationName);
+            const validate_res = validateGraphQl(schema, message);
+            if (validate_res.length > 0) {
+                throw MemphisError(new Error('Schema validation has failed: ' + validate_res));
+            }
+            return msgToSend;
+        } catch (e) {
+            throw MemphisError(new Error('Schema validation has failed: ' + e));
+        }
+    }
+
     private _validateMessage(msg: any): any {
         let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
         if (stationSchemaData) {
@@ -713,6 +760,8 @@ class Producer {
                     return this._validateProtobufMessage(msg);
                 case 'json':
                     return this._validateJsonMessage(msg);
+                case 'graphql':
+                    return this._validateGraphqlMessage(msg);
                 default:
                     return msg;
             }
