@@ -50,14 +50,24 @@ export declare class Memphis {
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     private _generateConnectionID;
-    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs }: {
+    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
         storageType?: string;
         replicas?: number;
         idempotencyWindowMs?: number;
+        schemaName?: string;
+        sendPoisonMsgToDls?: boolean;
+        sendSchemaFailedMsgToDls?: boolean;
     }): Promise<Station>;
+    attachSchema({ name, stationName }: {
+        name: string;
+        stationName: string;
+    }): Promise<void>;
+    detachSchema({ stationName }: {
+        stationName: string;
+    }): Promise<void>;
     producer({ stationName, producerName, genUniqueSuffix }: {
         stationName: string;
         producerName: string;
@@ -132,7 +142,7 @@ declare class Message {
 }
 declare class Station {
     private connection;
-    private name;
+    name: string;
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
