@@ -272,7 +272,7 @@ class ProducerModule {
 
 ```js
 await producer.produce({
-    message: '<bytes array>/object/string/DocumentNode graphql', // Uint8Arrays / You can send object/string/DocumentNode graphql in case your station is schema validated
+    message: '<bytes array>/protobuf class/object/string/DocumentNode graphql', // Uint8Arrays/protobuf class (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
     ackWaitSec: 15 // defaults to 15
 });
 ```
@@ -283,7 +283,7 @@ await producer.produce({
 const headers = memphis.headers();
 headers.add('<key>', '<value>');
 await producer.produce({
-    message: '<bytes array>/object/string/DocumentNode graphql', // Uint8Arrays / You can send object/string/DocumentNode graphql in case your station is schema validated
+    message: '<bytes array>/protobuf class/object/string/DocumentNode graphql', // Uint8Arrays/protobuf class (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
     headers: headers // defults to empty
 });
 ```
@@ -294,7 +294,7 @@ Meaning your application won't wait for broker acknowledgement - use only in cas
 
 ```js
 await producer.produce({
-    message: '<bytes array>/object/string/DocumentNode graphql', // Uint8Arrays / You can send object/string/DocumentNode graphql in case your station is schema validated
+    message: '<bytes array>/protobuf class/object/string/DocumentNode graphql', // Uint8Arrays/protobuf class (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
     ackWaitSec: 15, // defaults to 15
     asyncProduce: true // defaults to false
 });
@@ -306,7 +306,7 @@ Stations are idempotent by default for 2 minutes (can be configured), Idempotenc
 
 ```js
 await producer.produce({
-    message: '<bytes array>/object', // Uint8Arrays / You can send object in case your station is schema validated
+    message: '<bytes array>/protobuf class/object/string/DocumentNode graphql', // Uint8Arrays/protobuf class (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
     ackWaitSec: 15, // defaults to 15
     msgId: 'fdfd' // defaults to null
 });

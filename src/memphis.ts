@@ -228,10 +228,8 @@ export class Memphis {
                             this.jsonSchemas.set(internalStationName, jsonSchema);
                             break;
                         case 'graphql':
-                            let stationSchemaData = this.stationSchemaDataMap.get(internalStationName);
-                            const schemaContent = stationSchemaData['active_version']['schema_content'];
-                            const schema = buildGraphQlSchema(schemaContent);
-                            this.graphqlSchemas.set(internalStationName, schema);
+                            const graphQlSchema = this._compileGraphQl(stationName);
+                            this.graphqlSchemas.set(internalStationName, graphQlSchema);
                             break;
                     }
                 }
@@ -282,6 +280,13 @@ export class Memphis {
         }
     }
 
+    private _compileGraphQl(stationName: string): GraphQLSchema {
+        let stationSchemaData = this.stationSchemaDataMap.get(stationName);
+        const schemaContent = stationSchemaData['active_version']['schema_content'];
+        const graphQlSchema = buildGraphQlSchema(schemaContent);
+        return graphQlSchema;
+    }
+
     private async _listenForSchemaUpdates(sub: any, stationName: string): Promise<void> {
         for await (const m of sub) {
             let data = this.JSONC.decode(m._rdata);
@@ -302,10 +307,8 @@ export class Memphis {
                             this.jsonSchemas.set(stationName, jsonSchema);
                             break;
                         case 'graphql':
-                            let stationSchemaData = this.stationSchemaDataMap.get(stationName);
-                            const schemaContent = stationSchemaData['active_version']['schema_content'];
-                            const schema = buildGraphQlSchema(schemaContent);
-                            this.graphqlSchemas.set(stationName, schema);
+                            const graphQlSchema = this._compileGraphQl(stationName);
+                            this.graphqlSchemas.set(stationName, graphQlSchema);
                             break;
                     }
                 } catch (err) {
