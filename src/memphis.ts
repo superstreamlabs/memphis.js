@@ -338,8 +338,8 @@ export class Memphis {
         replicas = 1,
         idempotencyWindowMs = 120000,
         schemaName = '',
-        dlsPoisonMessages = true,
-        dlsSchemaFail = true
+        sendPoisonMsgToDls = true,
+        sendSchemaFailedMsgToDls = true
     }: {
         name: string;
         retentionType?: string;
@@ -348,8 +348,8 @@ export class Memphis {
         replicas?: number;
         idempotencyWindowMs?: number;
         schemaName?: string;
-        dlsPoisonMessages?: boolean;
-        dlsSchemaFail?: boolean;
+        sendPoisonMsgToDls?: boolean;
+        sendSchemaFailedMsgToDls?: boolean;
     }): Promise<Station> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -362,8 +362,8 @@ export class Memphis {
                 idempotency_window_in_ms: idempotencyWindowMs,
                 schema_name: schemaName,
                 dls_configuration: {
-                    poison: dlsPoisonMessages,
-                    Schemaverse: dlsSchemaFail
+                    poison: sendPoisonMsgToDls,
+                    Schemaverse: sendSchemaFailedMsgToDls
                 }
             };
             let data = this.JSONC.encode(createStationReq);
