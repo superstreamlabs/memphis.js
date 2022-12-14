@@ -336,7 +336,9 @@ export class Memphis {
         storageType = storageTypes.DISK,
         replicas = 1,
         idempotencyWindowMs = 120000,
-        schemaName = ''
+        schemaName = '',
+        sendPoisonMsgToDls = true,
+        sendSchemaFailedMsgToDls = true
     }: {
         name: string;
         retentionType?: string;
@@ -344,7 +346,9 @@ export class Memphis {
         storageType?: string;
         replicas?: number;
         idempotencyWindowMs?: number;
-        schemaName: string;
+        schemaName?: string;
+        sendPoisonMsgToDls?: boolean;
+        sendSchemaFailedMsgToDls?: boolean;
     }): Promise<Station> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -355,7 +359,11 @@ export class Memphis {
                 storage_type: storageType,
                 replicas: replicas,
                 idempotency_window_in_ms: idempotencyWindowMs,
-                schema_name: schemaName
+                schema_name: schemaName,
+                dls_configuration: {
+                    poison: sendPoisonMsgToDls,
+                    Schemaverse: sendSchemaFailedMsgToDls
+                }
             };
             let data = this.JSONC.encode(createStationReq);
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
