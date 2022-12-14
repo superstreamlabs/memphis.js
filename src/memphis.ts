@@ -163,8 +163,7 @@ export class Memphis {
                     reconnectTimeWait: this.reconnectIntervalMs,
                     timeout: this.timeoutMs,
                     token: this.connectionToken,
-                    name: conId_username,
-                    maxPingOut: 1
+                    name: conId_username
                 });
                 this.brokerConnection = this.brokerManager.jetstream();
                 this.brokerStats = await this.brokerManager.jetstreamManager();
