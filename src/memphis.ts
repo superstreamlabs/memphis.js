@@ -199,7 +199,6 @@ export class Memphis {
 
     private async _compileProtobufSchema(stationName: string) {
         let stationSchemaData = this.stationSchemaDataMap.get(stationName);
-
         let protoPathName = `${__dirname}/${stationSchemaData['schema_name']}_${stationSchemaData['active_version']['version_number']}.proto`;
         fs.writeFileSync(protoPathName, stationSchemaData['active_version']['schema_content']);
         let root = await protobuf.load(protoPathName);
@@ -220,7 +219,7 @@ export class Memphis {
                     this.stationSchemaDataMap.set(internalStationName, schemaUpdateData);
                     switch (schemaUpdateData['type']) {
                         case 'protobuf':
-                            this._compileProtobufSchema(internalStationName);
+                            await this._compileProtobufSchema(internalStationName);
                             break;
                         case 'json':
                             const jsonSchema = this._compileJsonSchema(internalStationName);
@@ -299,7 +298,7 @@ export class Memphis {
                 try {
                     switch (data['init']['type']) {
                         case 'protobuf':
-                            this._compileProtobufSchema(stationName);
+                            await this._compileProtobufSchema(stationName);
                             break;
                         case 'json':
                             const jsonSchema = this._compileJsonSchema(stationName);
@@ -704,7 +703,7 @@ class Producer {
                     meassageDescriptor.decode(msg);
                     return msg;
                 } catch (ex) {
-                    if (ex.message.includes('index out of range')) {
+                    if (ex.message.includes('index out of range') || ex.message.includes('invalid wire type')) {
                         ex = new Error('Invalid message format, expecting protobuf');
                     }
                     throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));

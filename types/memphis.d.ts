@@ -1,6 +1,7 @@
 import * as broker from 'nats';
 import { MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
+import { GraphQLSchema } from 'graphql';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -32,6 +33,7 @@ export declare class Memphis {
     producersPerStation: Map<string, number>;
     meassageDescriptors: Map<string, protobuf.Type>;
     jsonSchemas: Map<string, Function>;
+    graphqlSchemas: Map<string, GraphQLSchema>;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
         host: string;
@@ -46,6 +48,7 @@ export declare class Memphis {
     private _compileProtobufSchema;
     private _scemaUpdatesListener;
     private _compileJsonSchema;
+    private _compileGraphQl;
     private _listenForSchemaUpdates;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
@@ -108,6 +111,7 @@ declare class Producer {
     private _parseJsonValidationErrors;
     private _validateJsonMessage;
     private _validateProtobufMessage;
+    private _validateGraphqlMessage;
     private _validateMessage;
     destroy(): Promise<void>;
 }
