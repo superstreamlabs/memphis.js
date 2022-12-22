@@ -886,7 +886,7 @@ class Consumer {
                         } else clearInterval(this.pingConsumerInvterval);
                     }, this.pingConsumerInvtervalMs);
 
-                    const sub = this.connection.brokerManager.subscribe(`$memphis_dlq_${subject}_${consumerGroup}`, {
+                    const sub = this.connection.brokerManager.subscribe(`$memphis_dls_${subject}_${consumerGroup}`, {
                         queue: `$memphis_${subject}_${consumerGroup}`
                     });
                     this._handleAsyncIterableSubscriber(psub);
@@ -959,7 +959,7 @@ class Message {
      */
     ack() {
         if (this.message.ack)
-            // for dlq events which are unackable (core NATS messages)
+            // for dls events which are unackable (core NATS messages)
             this.message.ack();
         else {
             let buf = this.connection.JSONC.encode({
