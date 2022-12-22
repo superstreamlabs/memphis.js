@@ -633,7 +633,7 @@ class Producer {
                 });
         } catch (ex: any) {
             if (ex.code === '503') {
-                throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer are still exist'));
+                throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
             }
             if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
             if (ex.message.includes('Schema validation has failed')) {
@@ -886,7 +886,7 @@ class Consumer {
                         } else clearInterval(this.pingConsumerInvterval);
                     }, this.pingConsumerInvtervalMs);
 
-                    const sub = this.connection.brokerManager.subscribe(`$memphis_dlq_${subject}_${consumerGroup}`, {
+                    const sub = this.connection.brokerManager.subscribe(`$memphis_dls_${subject}_${consumerGroup}`, {
                         queue: `$memphis_${subject}_${consumerGroup}`
                     });
                     this._handleAsyncIterableSubscriber(psub);
@@ -959,12 +959,12 @@ class Message {
      */
     ack() {
         if (this.message.ack)
-            // for dlq events which are unackable (core NATS messages)
+            // for dls events which are unackable (core NATS messages)
             this.message.ack();
         else {
             let buf = this.connection.JSONC.encode({
                 id: this.message.headers.get('$memphis_pm_id'),
-                cg_name: this.cgName
+                sequence: this.message.headers.get('$memphis_pm_sequence')
             });
 
             this.connection.brokerManager.publish('$memphis_pm_acks', buf);
