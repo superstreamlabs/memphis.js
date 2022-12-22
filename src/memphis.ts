@@ -633,7 +633,7 @@ class Producer {
                 });
         } catch (ex: any) {
             if (ex.code === '503') {
-                throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer are still exist'));
+                throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
             }
             if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
             if (ex.message.includes('Schema validation has failed')) {
