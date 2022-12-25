@@ -323,7 +323,7 @@ export class Memphis {
 
     private async _configurationsListener(): Promise<void> {
         try {
-            const sub = this.brokerManager.subscribe(`$memphis_configurations_updates`);
+            const sub = this.brokerManager.subscribe(`$memphis_sdk_configurations_updates`);
             for await (const m of sub) {
                 let data = this.JSONC.decode(m._rdata);
                 switch (data['type']) {
