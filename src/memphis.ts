@@ -361,10 +361,6 @@ export class Memphis {
         return [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
     }
 
-    public getDlsMsgId(stationName: string, producerName: string, unixTime: string): string {
-        return stationName + '~' + producerName + '~0~' + unixTime;
-    }
-
     /**
      * Creates a station.
      * @param {String} name - station name.
@@ -417,8 +413,7 @@ export class Memphis {
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
-            let station = new Station(this, name);
-            return station;
+            return new Station(this, name);
         } catch (ex) {
             if (ex.message?.includes('already exists')) {
                 return new Station(this, name.toLowerCase());
@@ -677,7 +672,7 @@ class Producer {
                 }
                 if (this.connection.stationSchemaverseToDlsMap.get(this.internal_station)) {
                     const unixTime = Date.now();
-                    const id = this.connection.getDlsMsgId(this.internal_station, this.producerName, unixTime.toString());
+                    const id = this._getDlsMsgId(this.internal_station, this.producerName, unixTime.toString());
                     const buf = this.connection.JSONC.encode({
                         _id: id,
                         station_name: this.internal_station,
@@ -822,6 +817,10 @@ class Producer {
                 return msg;
             }
         }
+    }
+
+    private _getDlsMsgId(stationName: string, producerName: string, unixTime: string): string {
+        return stationName + '~' + producerName + '~0~' + unixTime;
     }
 
     /**
