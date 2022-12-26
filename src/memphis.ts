@@ -742,7 +742,7 @@ class Producer {
                 throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
             }
         } catch (ex) {
-            throw MemphisError(new Error(ex.message));
+            throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
         }
     }
 
@@ -755,7 +755,7 @@ class Producer {
                     return msg;
                 } catch (ex) {
                     if (ex.message.includes('index out of range') || ex.message.includes('invalid wire type')) {
-                        ex = new Error('Invalid message format, expecting protobuf');
+                        ex = new Error('Schema validation has failed: Invalid message format, expecting protobuf');
                     }
                     throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                 }
