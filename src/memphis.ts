@@ -90,6 +90,8 @@ export class Memphis {
     public meassageDescriptors: Map<string, protobuf.Type>;
     public jsonSchemas: Map<string, Function>;
     public graphqlSchemas: Map<string, GraphQLSchema>;
+    public clusterConfigurations: Map<string, boolean>;
+    public stationSchemaverseToDlsMap: Map<string, boolean>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -114,6 +116,8 @@ export class Memphis {
         this.meassageDescriptors = new Map();
         this.jsonSchemas = new Map();
         this.graphqlSchemas = new Map();
+        this.clusterConfigurations = new Map();
+        this.stationSchemaverseToDlsMap = new Map();
     }
 
     /**
@@ -171,6 +175,7 @@ export class Memphis {
                 this.brokerConnection = this.brokerManager.jetstream();
                 this.brokerStats = await this.brokerManager.jetstreamManager();
                 this.isConnectionActive = true;
+                this._configurationsListener();
                 (async () => {
                     for await (const s of this.brokerManager.status()) {
                         switch (s.type) {
@@ -313,6 +318,26 @@ export class Memphis {
                     throw MemphisError(err);
                 }
             }
+        }
+    }
+
+    private async _configurationsListener(): Promise<void> {
+        try {
+            const sub = this.brokerManager.subscribe(`$memphis_sdk_configurations_updates`);
+            for await (const m of sub) {
+                let data = this.JSONC.decode(m._rdata);
+                switch (data['type']) {
+                    case 'send_notification':
+                        this.clusterConfigurations.set(data['type'], data['update']);
+                        break;
+                    case 'schemaverse_to_dls':
+                        this.stationSchemaverseToDlsMap.set(data['station_name'], data['update']);
+                    default:
+                        break;
+                }
+            }
+        } catch (err) {
+            throw MemphisError(err);
         }
     }
 
@@ -471,7 +496,9 @@ export class Memphis {
             if (createRes.error != '') {
                 throw MemphisError(new Error(createRes.error));
             }
-
+            let internal_station = stationName.replace(/\./g, '#').toLowerCase();
+            this.stationSchemaverseToDlsMap.set(internal_station, createRes.schemaverse_to_dls);
+            this.clusterConfigurations.set('send_notification', createRes.send_notification);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
             return new Producer(this, producerName, stationName);
         } catch (ex) {
@@ -643,12 +670,31 @@ class Producer {
                 } else {
                     failedMsg = JSON.stringify(message);
                 }
-                this.connection.sendNotification(
-                    'Schema validation has failed',
-                    `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
-                    failedMsg,
-                    schemaVFailAlertType
-                );
+                if (this.connection.stationSchemaverseToDlsMap.get(this.internal_station)) {
+                    const unixTime = Date.now();
+                    const id = this._getDlsMsgId(this.internal_station, this.producerName, unixTime.toString());
+                    const buf = this.connection.JSONC.encode({
+                        _id: id,
+                        station_name: this.internal_station,
+                        producer: {
+                            name: this.producerName,
+                            connection_id: this.connection.connectionId
+                        },
+                        creation_unix: unixTime,
+                        message: {
+                            data: failedMsg
+                        }
+                    });
+                    await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf, { headers: headers.headers });
+                    if (this.connection.clusterConfigurations.get('send_notification')) {
+                        this.connection.sendNotification(
+                            'Schema validation has failed',
+                            `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
+                            failedMsg,
+                            schemaVFailAlertType
+                        );
+                    }
+                }
             }
             throw MemphisError(ex);
         }
@@ -691,7 +737,7 @@ class Producer {
                 throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
             }
         } catch (ex) {
-            throw MemphisError(new Error(ex.message));
+            throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
         }
     }
 
@@ -704,7 +750,7 @@ class Producer {
                     return msg;
                 } catch (ex) {
                     if (ex.message.includes('index out of range') || ex.message.includes('invalid wire type')) {
-                        ex = new Error('Invalid message format, expecting protobuf');
+                        ex = new Error('Schema validation has failed: Invalid message format, expecting protobuf');
                     }
                     throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                 }
@@ -771,6 +817,10 @@ class Producer {
                 return msg;
             }
         }
+    }
+
+    private _getDlsMsgId(stationName: string, producerName: string, unixTime: string): string {
+        return stationName + '~' + producerName + '~0~' + unixTime;
     }
 
     /**
