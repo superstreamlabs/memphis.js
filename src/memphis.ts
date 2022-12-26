@@ -503,6 +503,7 @@ export class Memphis {
             }
             let internal_station = stationName.replace(/\./g, '#').toLowerCase();
             this.stationSchemaverseToDlsMap.set(internal_station, createRes.schemaverse_to_dls);
+            this.clusterConfigurations.set('send_notification', createRes.send_notification);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
             return new Producer(this, producerName, stationName);
         } catch (ex) {
