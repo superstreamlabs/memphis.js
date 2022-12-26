@@ -34,6 +34,8 @@ export declare class Memphis {
     meassageDescriptors: Map<string, protobuf.Type>;
     jsonSchemas: Map<string, Function>;
     graphqlSchemas: Map<string, GraphQLSchema>;
+    clusterConfigurations: Map<string, boolean>;
+    stationSchemaverseToDlsMap: Map<string, boolean>;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
         host: string;
@@ -50,6 +52,7 @@ export declare class Memphis {
     private _compileJsonSchema;
     private _compileGraphQl;
     private _listenForSchemaUpdates;
+    private _configurationsListener;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     private _generateConnectionID;
@@ -113,6 +116,7 @@ declare class Producer {
     private _validateProtobufMessage;
     private _validateGraphqlMessage;
     private _validateMessage;
+    private _getDlsMsgId;
     destroy(): Promise<void>;
 }
 declare class Consumer {
