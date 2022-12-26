@@ -361,6 +361,10 @@ export class Memphis {
         return [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
     }
 
+    public getDlsMsgId(stationName: string, producerName: string, unixTime: string): string {
+        return stationName + '~' + producerName + '~0~' + unixTime;
+    }
+
     /**
      * Creates a station.
      * @param {String} name - station name.
@@ -497,7 +501,8 @@ export class Memphis {
             if (createRes.error != '') {
                 throw MemphisError(new Error(createRes.error));
             }
-
+            let internal_station = stationName.replace(/\./g, '#').toLowerCase();
+            this.stationSchemaverseToDlsMap.set(internal_station, createRes.schemaverse_to_dls);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
             return new Producer(this, producerName, stationName);
         } catch (ex) {
@@ -670,8 +675,8 @@ class Producer {
                     failedMsg = JSON.stringify(message);
                 }
                 if (this.connection.stationSchemaverseToDlsMap.get(this.internal_station)) {
-                    const unixTime = Date.now().toString();
-                    const id = this.internal_station + '~' + this.producerName + '~0~' + unixTime;
+                    const unixTime = Date.now();
+                    const id = this.connection.getDlsMsgId(this.internal_station, this.producerName, unixTime.toString());
                     const buf = this.connection.JSONC.encode({
                         _id: id,
                         station_name: this.internal_station,
@@ -684,7 +689,7 @@ class Producer {
                             data: failedMsg
                         }
                     });
-                    await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf);
+                    await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf, { headers: headers.headers });
                     if (this.connection.clusterConfigurations.get('send_notification')) {
                         this.connection.sendNotification(
                             'Schema validation has failed',
