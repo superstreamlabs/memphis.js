@@ -231,7 +231,7 @@ export class Memphis {
                             this.jsonSchemas.set(internalStationName, jsonSchema);
                             break;
                         case 'graphql':
-                            const graphQlSchema = this._compileGraphQl(stationName);
+                            const graphQlSchema = this._compileGraphQl(internalStationName);
                             this.graphqlSchemas.set(internalStationName, graphQlSchema);
                             break;
                     }
@@ -796,14 +796,17 @@ class Producer {
             } else {
                 throw MemphisError(new Error('Unsupported message type'));
             }
-            const schema = this.connection.graphqlSchemas.get(this.stationName);
-            const validate_res = validateGraphQl(schema, message);
-            if (validate_res.length > 0) {
-                throw MemphisError(new Error('Schema validation has failed: ' + validate_res));
+            const schema = this.connection.graphqlSchemas.get(this.internal_station);
+            const validateRes = validateGraphQl(schema, message);
+            if (validateRes.length > 0) {
+                throw MemphisError(new Error('Schema validation has failed: ' + validateRes));
             }
             return msgToSend;
-        } catch (e) {
-            throw MemphisError(new Error('Schema validation has failed: ' + e));
+        } catch (ex) {
+            if (ex.message.includes('Syntax Error')) {
+                ex = new Error('Schema validation has failed: Invalid message format, expecting GraphQL');
+            }
+            throw MemphisError(new Error('Schema validation has failed: ' + ex));
         }
     }
 
