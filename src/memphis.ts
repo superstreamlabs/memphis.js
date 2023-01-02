@@ -241,8 +241,8 @@ export class Memphis {
                 this.schemaUpdatesSubs.set(internalStationName, sub);
                 this._listenForSchemaUpdates(sub, internalStationName);
             }
-        } catch (err) {
-            throw MemphisError(err);
+        } catch (ex) {
+            throw MemphisError(ex);
         }
     }
 
@@ -255,26 +255,26 @@ export class Memphis {
         try {
             validate = ajv.compile(schemaObj);
             return validate;
-        } catch (error) {
+        } catch (ex) {
             try {
                 ajv.addMetaSchema(draft7MetaSchema);
                 validate = ajv.compile(schemaObj);
                 return validate;
-            } catch (error) {
+            } catch (ex) {
                 try {
                     const ajv = new jsonSchemaDraft04();
                     validate = ajv.compile(schemaObj);
                     return validate;
-                } catch (error) {
+                } catch (ex) {
                     try {
                         const ajv = new Ajv2020();
                         validate = ajv.compile(schemaObj);
                         return validate;
-                    } catch (error) {
+                    } catch (ex) {
                         try {
                             ajv.addMetaSchema(draft6MetaSchema);
                             return validate;
-                        } catch (error) {
+                        } catch (ex) {
                             throw MemphisError(new Error('invalid json schema'));
                         }
                     }
@@ -314,8 +314,8 @@ export class Memphis {
                             this.graphqlSchemas.set(stationName, graphQlSchema);
                             break;
                     }
-                } catch (err) {
-                    throw MemphisError(err);
+                } catch (ex) {
+                    throw MemphisError(ex);
                 }
             }
         }
@@ -336,8 +336,8 @@ export class Memphis {
                         break;
                 }
             }
-        } catch (err) {
-            throw MemphisError(err);
+        } catch (ex) {
+            throw MemphisError(ex);
         }
     }
 
@@ -659,54 +659,7 @@ class Producer {
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
         } catch (ex: any) {
-            if (ex.code === '503') {
-                throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
-            }
-            if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
-            if (ex.message.includes('Schema validation has failed')) {
-                let failedMsg = '';
-                if (message instanceof Uint8Array) {
-                    failedMsg = String.fromCharCode.apply(null, message);
-                } else {
-                    failedMsg = JSON.stringify(message);
-                }
-                if (this.connection.stationSchemaverseToDlsMap.get(this.internal_station)) {
-                    const unixTime = Date.now();
-                    const id = this._getDlsMsgId(this.internal_station, this.producerName, unixTime.toString());
-                    let headersObject ={
-                        '$memphis_connectionId':this.connection.connectionId,
-                        '$memphis_producedBy':this.producerName
-                    }
-                    const keys = headers.headers.keys()
-                    keys.forEach(key => {
-                        const value = headers.headers.values(key)
-                        headersObject[key] = value[0]
-                    })
-                    const buf = this.connection.JSONC.encode({
-                        _id: id,
-                        station_name: this.internal_station,
-                        producer: {
-                            name: this.producerName,
-                            connection_id: this.connection.connectionId
-                        },
-                        creation_unix: unixTime,
-                        message: {
-                            data: failedMsg,
-                            headers: headersObject
-                        }
-                    });
-                    await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf);
-                    if (this.connection.clusterConfigurations.get('send_notification')) {
-                        this.connection.sendNotification(
-                            'Schema validation has failed',
-                            `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
-                            failedMsg,
-                            schemaVFailAlertType
-                        );
-                    }
-                }
-            }
-            throw MemphisError(ex);
+            await this._hanldeProduceError(ex, message, headers);
         }
     }
 
@@ -726,11 +679,15 @@ class Producer {
             let msgToSend = new Uint8Array();
             const isBuffer = Buffer.isBuffer(msg);
             if (isBuffer) {
-                msgObj = JSON.parse(msg.toString());
+                try {
+                    msgObj = JSON.parse(msg.toString());
+                } catch (ex) {
+                    throw MemphisError(new Error('Expecting Json format: ' + ex));
+                }
                 msgToSend = msg;
                 const valid = validate(msgObj);
                 if (!valid) {
-                    throw MemphisError(new Error(`Schema validation has failed: ${this._parseJsonValidationErrors(validate['errors'])}`));
+                    throw MemphisError(new Error(`${this._parseJsonValidationErrors(validate['errors'])}`));
                 }
                 return msgToSend;
             } else if (Object.prototype.toString.call(msg) == '[object Object]') {
@@ -740,11 +697,11 @@ class Producer {
                 msgToSend = enc.encode(msgString);
                 const valid = validate(msgObj);
                 if (!valid) {
-                    throw MemphisError(new Error(`Schema validation has failed: ${this._parseJsonValidationErrors(validate['errors'])}`));
+                    throw MemphisError(new Error(`${this._parseJsonValidationErrors(validate['errors'])}`));
                 }
                 return msgToSend;
             } else {
-                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+                throw MemphisError(new Error('Unsupported message type'));
             }
         } catch (ex) {
             throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
@@ -831,6 +788,57 @@ class Producer {
 
     private _getDlsMsgId(stationName: string, producerName: string, unixTime: string): string {
         return stationName + '~' + producerName + '~0~' + unixTime;
+    }
+
+    private async _hanldeProduceError(ex: any, message: any, headers?: MsgHeaders) {
+        if (ex.code === '503') {
+            throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
+        }
+        if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
+        if (ex.message.includes('Schema validation has failed')) {
+            let failedMsg = '';
+            if (message instanceof Uint8Array) {
+                failedMsg = String.fromCharCode.apply(null, message);
+            } else {
+                failedMsg = JSON.stringify(message);
+            }
+            if (this.connection.stationSchemaverseToDlsMap.get(this.internal_station)) {
+                const unixTime = Date.now();
+                const id = this._getDlsMsgId(this.internal_station, this.producerName, unixTime.toString());
+                let headersObject = {
+                    $memphis_connectionId: this.connection.connectionId,
+                    $memphis_producedBy: this.producerName
+                };
+                const keys = headers.headers.keys();
+                keys.forEach((key) => {
+                    const value = headers.headers.values(key);
+                    headersObject[key] = value[0];
+                });
+                const buf = this.connection.JSONC.encode({
+                    _id: id,
+                    station_name: this.internal_station,
+                    producer: {
+                        name: this.producerName,
+                        connection_id: this.connection.connectionId
+                    },
+                    creation_unix: unixTime,
+                    message: {
+                        data: failedMsg,
+                        headers: headersObject
+                    }
+                });
+                await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf);
+                if (this.connection.clusterConfigurations.get('send_notification')) {
+                    this.connection.sendNotification(
+                        'Schema validation has failed',
+                        `Station: ${this.stationName}\nProducer: ${this.producerName}\nError: ${ex.message}`,
+                        failedMsg,
+                        schemaVFailAlertType
+                    );
+                }
+            }
+        }
+        throw MemphisError(ex);
     }
 
     /**
