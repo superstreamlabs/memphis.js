@@ -117,6 +117,7 @@ declare class Producer {
     private _validateGraphqlMessage;
     private _validateMessage;
     private _getDlsMsgId;
+    private _hanldeProduceError;
     destroy(): Promise<void>;
 }
 declare class Consumer {
