@@ -65,6 +65,14 @@ const MemphisError = (error: Error): Error => {
     return error;
 };
 
+function stringToHex(str) {
+    var hex = '';
+    for (var i = 0; i < str.length; i++) {
+        hex += '' + str.charCodeAt(i).toString(16);
+    }
+    return hex;
+}
+
 const schemaVFailAlertType = 'schema_validation_fail_alert';
 
 export class Memphis {
@@ -826,7 +834,7 @@ class Producer {
                     },
                     creation_unix: unixTime,
                     message: {
-                        data: failedMsg,
+                        data: stringToHex(failedMsg),
                         headers: headersObject
                     }
                 });
@@ -1103,12 +1111,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
-interface MsgHeadersType extends MsgHeaders {}
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
