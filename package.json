@@ -1,6 +1,6 @@
 {
     "name": "memphis-dev",
-    "version": "0.4.7",
+    "version": "0.4.8",
     "description": "A powerful messaging platform for modern developers",
     "exports": {
         ".": "./lib/index.js",
@@ -41,7 +41,7 @@
         "axios": "^0.26.1",
         "dotenv": "^16.0.1",
         "graphql": "^16.6.0",
-        "nats": "^2.6.1",
+        "nats": "2.6.1",
         "prettier": "^2.7.1",
         "protobufjs": "^7.1.2",
         "reflect-metadata": "^0.1.13",
