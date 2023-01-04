@@ -148,7 +148,10 @@ export class Memphis {
         reconnect = true,
         maxReconnect = 3,
         reconnectIntervalMs = 5000,
-        timeoutMs = 15000
+        timeoutMs = 15000,
+        keyFile = '',
+        certFile = '',
+        caFile = ''
     }: {
         host: string;
         port?: number;
@@ -158,6 +161,9 @@ export class Memphis {
         maxReconnect?: number;
         reconnectIntervalMs?: number;
         timeoutMs?: number;
+        keyFile?: string;
+        certFile?: string;
+        caFile?: string;
     }): Promise<Memphis> {
         return new Promise(async (resolve, reject) => {
             this.host = this._normalizeHost(host);
@@ -171,15 +177,42 @@ export class Memphis {
 
             let conId_username = this.connectionId + '::' + username;
             try {
-                this.brokerManager = await broker.connect({
-                    servers: `${this.host}:${this.port}`,
-                    reconnect: this.reconnect,
-                    maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
-                    reconnectTimeWait: this.reconnectIntervalMs,
-                    timeout: this.timeoutMs,
-                    token: this.connectionToken,
-                    name: conId_username
-                });
+                if (keyFile !== '' || certFile !== '' || caFile !== '') {
+                    if (keyFile === '') {
+                        return reject(MemphisError(new Error('Must provide a key file')));
+                    }
+                    if (certFile === '') {
+                        return reject(MemphisError(new Error('Must provide a cert file')));
+                    }
+                    if (caFile === '') {
+                        return reject(MemphisError(new Error('Must provide a ca file')));
+                    }
+                    let tlsOptions = {
+                        keyFile: keyFile,
+                        certFile: certFile,
+                        caFile: caFile
+                    };
+                    this.brokerManager = await broker.connect({
+                        servers: `${this.host}:${this.port}`,
+                        reconnect: this.reconnect,
+                        maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
+                        reconnectTimeWait: this.reconnectIntervalMs,
+                        timeout: this.timeoutMs,
+                        token: this.connectionToken,
+                        name: conId_username,
+                        tls: tlsOptions
+                    });
+                } else {
+                    this.brokerManager = await broker.connect({
+                        servers: `${this.host}:${this.port}`,
+                        reconnect: this.reconnect,
+                        maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
+                        reconnectTimeWait: this.reconnectIntervalMs,
+                        timeout: this.timeoutMs,
+                        token: this.connectionToken,
+                        name: conId_username
+                    });
+                }
                 this.brokerConnection = this.brokerManager.jetstream();
                 this.brokerStats = await this.brokerManager.jetstreamManager();
                 this.isConnectionActive = true;
