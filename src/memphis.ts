@@ -174,18 +174,17 @@ export class Memphis {
             this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
             this.reconnectIntervalMs = reconnectIntervalMs;
             this.timeoutMs = timeoutMs;
-
             let conId_username = this.connectionId + '::' + username;
             try {
                 if (keyFile !== '' || certFile !== '' || caFile !== '') {
                     if (keyFile === '') {
-                        return reject(MemphisError(new Error('Must provide a key file')));
+                        return reject(MemphisError(new Error('Must provide a TLS key file')));
                     }
                     if (certFile === '') {
-                        return reject(MemphisError(new Error('Must provide a cert file')));
+                        return reject(MemphisError(new Error('Must provide a TLS cert file')));
                     }
                     if (caFile === '') {
-                        return reject(MemphisError(new Error('Must provide a ca file')));
+                        return reject(MemphisError(new Error('Must provide a TLS ca file')));
                     }
                     let tlsOptions = {
                         keyFile: keyFile,
@@ -1144,12 +1143,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
