@@ -525,6 +525,8 @@ export class Memphis {
      * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
      * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
      * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+     * @param {Number} startConsumeFromSequence - start consume from specific sequence.
+     * @param {Number} lastMessages - consume specific amount of messages from last.
      */
     async consumer({
         stationName,
@@ -535,7 +537,9 @@ export class Memphis {
         batchMaxTimeToWaitMs = 5000,
         maxAckTimeMs = 30000,
         maxMsgDeliveries = 10,
-        genUniqueSuffix = false
+        genUniqueSuffix = false,
+        startConsumeFromSequence = 0,
+        lastMessages = 0
     }: {
         stationName: string;
         consumerName: string;
@@ -546,12 +550,27 @@ export class Memphis {
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
         genUniqueSuffix?: boolean;
+        startConsumeFromSequence?: number;
+        lastMessages?: number;
     }): Promise<Consumer> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
             consumerName = genUniqueSuffix ? consumerName + '_' + generateNameSuffix() : consumerName;
             consumerGroup = consumerGroup || consumerName;
+
+            if (startConsumeFromSequence < 0) {
+                throw MemphisError(new Error('startConsumeFromSequence must be positive'));
+            }
+
+            if (lastMessages < 0) {
+                throw MemphisError(new Error('lastMessages must be positive'));
+            }
+
+            if (startConsumeFromSequence != 0 && lastMessages != 0) {
+                throw MemphisError(new Error("Consumer creation cant't contain more than one of the following options: startConsumeFromSequence or lastMessages"));
+            }
+
             let createConsumerReq = {
                 name: consumerName,
                 station_name: stationName,
@@ -559,7 +578,9 @@ export class Memphis {
                 consumer_type: 'application',
                 consumers_group: consumerGroup,
                 max_ack_time_ms: maxAckTimeMs,
-                max_msg_deliveries: maxMsgDeliveries
+                max_msg_deliveries: maxMsgDeliveries,
+                opt_start_sequence: startConsumeFromSequence,
+                last_messages: lastMessages
             };
             let data = this.JSONC.encode(createConsumerReq);
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
@@ -568,7 +589,18 @@ export class Memphis {
                 throw MemphisError(new Error(errMsg));
             }
 
-            return new Consumer(this, stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries);
+            return new Consumer(
+                this,
+                stationName,
+                consumerName,
+                consumerGroup,
+                pullIntervalMs,
+                batchSize,
+                batchMaxTimeToWaitMs,
+                maxAckTimeMs,
+                maxMsgDeliveries,
+                startConsumeFromSequence
+            );
         } catch (ex) {
             throw MemphisError(ex);
         }
@@ -901,6 +933,7 @@ class Consumer {
     private pullInterval: any;
     private pingConsumerInvtervalMs: number;
     private pingConsumerInvterval: any;
+    private startConsumeFromSequence: number;
 
     constructor(
         connection: Memphis,
@@ -911,7 +944,8 @@ class Consumer {
         batchSize: number,
         batchMaxTimeToWaitMs: number,
         maxAckTimeMs: number,
-        maxMsgDeliveries: number
+        maxMsgDeliveries: number,
+        startConsumeFromSequence: number
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -926,6 +960,7 @@ class Consumer {
         this.pullInterval = null;
         this.pingConsumerInvtervalMs = 30000;
         this.pingConsumerInvterval = null;
+        this.startConsumeFromSequence = startConsumeFromSequence;
     }
 
     /**
