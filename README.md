@@ -338,7 +338,9 @@ const consumer = await memphisConnection.consumer({
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 10, // defaults to 10
-    genUniqueSuffix: false
+    genUniqueSuffix: false,
+    startConsumeFromSequence:0, // start consume from specific sequence. defaults to 0
+    lastMessages:0 // consume specific amount of messages from last. defaults to 0
 });
 ```
 
