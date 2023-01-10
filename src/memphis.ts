@@ -586,7 +586,7 @@ export class Memphis {
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
             errMsg = errMsg.data.toString();
 
-            if (errMsg.includes('start sequence can not be updated') || errMsg.includes('deliver policy can not be updated')) {
+            if (errMsg.includes('can not be updated')) {
                 throw MemphisError(new Error("The consumer already exists with different configuration. You can't change the configuration to an existing consumer."));
             }
             if (errMsg != '') {
