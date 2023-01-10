@@ -579,16 +579,13 @@ export class Memphis {
                 consumers_group: consumerGroup,
                 max_ack_time_ms: maxAckTimeMs,
                 max_msg_deliveries: maxMsgDeliveries,
-                opt_start_sequence: startConsumeFromSequence,
+                start_consume_from_sequence: startConsumeFromSequence,
                 last_messages: lastMessages
             };
             let data = this.JSONC.encode(createConsumerReq);
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
             errMsg = errMsg.data.toString();
 
-            if (errMsg.includes('can not be updated')) {
-                throw MemphisError(new Error("The consumer already exists with different configuration. You can't change the configuration to an existing consumer."));
-            }
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
