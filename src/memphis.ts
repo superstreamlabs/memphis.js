@@ -525,8 +525,8 @@ export class Memphis {
      * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
      * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
      * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
-     * @param {Number} startConsumeFromSequence - start consume from specific sequence.
-     * @param {Number} lastMessages - consume specific amount of messages from last.
+     * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
+     * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
      */
     async consumer({
         stationName,
@@ -538,8 +538,8 @@ export class Memphis {
         maxAckTimeMs = 30000,
         maxMsgDeliveries = 10,
         genUniqueSuffix = false,
-        startConsumeFromSequence = 0,
-        lastMessages = 0
+        startConsumeFromSequence = 1,
+        lastMessages = -1
     }: {
         stationName: string;
         consumerName: string;
@@ -560,15 +560,11 @@ export class Memphis {
             consumerGroup = consumerGroup || consumerName;
 
             if (startConsumeFromSequence < 0) {
-                throw MemphisError(new Error('startConsumeFromSequence must be positive'));
+                throw MemphisError(new Error('startConsumeFromSequence has to be a positive number'));
             }
 
-            if (lastMessages < 0) {
-                throw MemphisError(new Error('lastMessages must be positive'));
-            }
-
-            if (startConsumeFromSequence != 0 && lastMessages != 0) {
-                throw MemphisError(new Error("Consumer creation cant't contain more than one of the following options: startConsumeFromSequence or lastMessages"));
+            if (startConsumeFromSequence > 1 && lastMessages > -1) {
+                throw MemphisError(new Error("Consumer creation options can't contain both startConsumeFromSequence and lastMessages"));
             }
 
             let createConsumerReq = {
@@ -600,7 +596,8 @@ export class Memphis {
                 batchMaxTimeToWaitMs,
                 maxAckTimeMs,
                 maxMsgDeliveries,
-                startConsumeFromSequence
+                startConsumeFromSequence,
+                lastMessages
             );
         } catch (ex) {
             throw MemphisError(ex);
@@ -935,6 +932,7 @@ class Consumer {
     private pingConsumerInvtervalMs: number;
     private pingConsumerInvterval: any;
     private startConsumeFromSequence: number;
+    private lastMessages: number;
 
     constructor(
         connection: Memphis,
@@ -946,7 +944,8 @@ class Consumer {
         batchMaxTimeToWaitMs: number,
         maxAckTimeMs: number,
         maxMsgDeliveries: number,
-        startConsumeFromSequence: number
+        startConsumeFromSequence: number,
+        lastMessages: number
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -962,6 +961,7 @@ class Consumer {
         this.pingConsumerInvtervalMs = 30000;
         this.pingConsumerInvterval = null;
         this.startConsumeFromSequence = startConsumeFromSequence;
+        this.lastMessages = lastMessages;
     }
 
     /**
