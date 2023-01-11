@@ -138,6 +138,9 @@ export class Memphis {
      * @param {Number} maxReconnect - The reconnect attempts.
      * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
      * @param {Number} timeoutMs - connection timeout in miliseconds.
+     * @param {string} keyFile - path to tls key file.
+     * @param {string} certFile - path to tls cert file.
+     * @param {string} caFile - path to tls ca file.
      */
 
     connect({
@@ -148,7 +151,10 @@ export class Memphis {
         reconnect = true,
         maxReconnect = 3,
         reconnectIntervalMs = 5000,
-        timeoutMs = 15000
+        timeoutMs = 15000,
+        keyFile = '',
+        certFile = '',
+        caFile = ''
     }: {
         host: string;
         port?: number;
@@ -158,6 +164,9 @@ export class Memphis {
         maxReconnect?: number;
         reconnectIntervalMs?: number;
         timeoutMs?: number;
+        keyFile?: string;
+        certFile?: string;
+        caFile?: string;
     }): Promise<Memphis> {
         return new Promise(async (resolve, reject) => {
             this.host = this._normalizeHost(host);
@@ -168,10 +177,9 @@ export class Memphis {
             this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
             this.reconnectIntervalMs = reconnectIntervalMs;
             this.timeoutMs = timeoutMs;
-
             let conId_username = this.connectionId + '::' + username;
             try {
-                this.brokerManager = await broker.connect({
+                let connectionOpts = {
                     servers: `${this.host}:${this.port}`,
                     reconnect: this.reconnect,
                     maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
@@ -179,7 +187,26 @@ export class Memphis {
                     timeout: this.timeoutMs,
                     token: this.connectionToken,
                     name: conId_username
-                });
+                };
+
+                if (keyFile !== '' || certFile !== '' || caFile !== '') {
+                    if (keyFile === '') {
+                        return reject(MemphisError(new Error('Must provide a TLS key file')));
+                    }
+                    if (certFile === '') {
+                        return reject(MemphisError(new Error('Must provide a TLS cert file')));
+                    }
+                    if (caFile === '') {
+                        return reject(MemphisError(new Error('Must provide a TLS ca file')));
+                    }
+                    let tlsOptions = {
+                        keyFile: keyFile,
+                        certFile: certFile,
+                        caFile: caFile
+                    };
+                    connectionOpts['tls'] = tlsOptions;
+                }
+                this.brokerManager = await broker.connect(connectionOpts);
                 this.brokerConnection = this.brokerManager.jetstream();
                 this.brokerStats = await this.brokerManager.jetstreamManager();
                 this.isConnectionActive = true;
@@ -1111,12 +1138,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
