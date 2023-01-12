@@ -559,8 +559,12 @@ export class Memphis {
             consumerName = genUniqueSuffix ? consumerName + '_' + generateNameSuffix() : consumerName;
             consumerGroup = consumerGroup || consumerName;
 
-            if (startConsumeFromSequence < 0) {
-                throw MemphisError(new Error('startConsumeFromSequence has to be a positive number'));
+            if (startConsumeFromSequence <= 0) {
+                throw MemphisError(new Error('startConsumeFromSequence has to be a positive number and start from 1'));
+            }
+
+            if (lastMessages < -1) {
+                throw MemphisError(new Error('LastMessages has to be start from -1'));
             }
 
             if (startConsumeFromSequence > 1 && lastMessages > -1) {
