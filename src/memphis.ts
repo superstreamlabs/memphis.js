@@ -580,7 +580,8 @@ export class Memphis {
                 max_ack_time_ms: maxAckTimeMs,
                 max_msg_deliveries: maxMsgDeliveries,
                 start_consume_from_sequence: startConsumeFromSequence,
-                last_messages: lastMessages
+                last_messages: lastMessages,
+                req_version: 1
             };
             let data = this.JSONC.encode(createConsumerReq);
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
