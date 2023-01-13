@@ -411,6 +411,14 @@ Get headers per message
 headers = message.getHeaders();
 ```
 
+### Get message sequence number
+
+Get message sequence number 
+
+```js
+sequenceNumber = message.getSequenceNumber();
+```
+
 ### Catching async errors
 
 ```js

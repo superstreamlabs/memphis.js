@@ -1110,6 +1110,13 @@ class Message {
         }
         return msgHeaders;
     }
+
+    /**
+     * Returns the message sequence number.
+     */
+    getSequenceNumber():number {
+        return this.message.seq
+    }
 }
 
 class Station {
