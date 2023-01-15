@@ -138,6 +138,9 @@ export class Memphis {
      * @param {Number} maxReconnect - The reconnect attempts.
      * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
      * @param {Number} timeoutMs - connection timeout in miliseconds.
+     * @param {string} keyFile - path to tls key file.
+     * @param {string} certFile - path to tls cert file.
+     * @param {string} caFile - path to tls ca file.
      */
 
     connect({
@@ -148,7 +151,10 @@ export class Memphis {
         reconnect = true,
         maxReconnect = 3,
         reconnectIntervalMs = 5000,
-        timeoutMs = 15000
+        timeoutMs = 15000,
+        keyFile = '',
+        certFile = '',
+        caFile = ''
     }: {
         host: string;
         port?: number;
@@ -158,6 +164,9 @@ export class Memphis {
         maxReconnect?: number;
         reconnectIntervalMs?: number;
         timeoutMs?: number;
+        keyFile?: string;
+        certFile?: string;
+        caFile?: string;
     }): Promise<Memphis> {
         return new Promise(async (resolve, reject) => {
             this.host = this._normalizeHost(host);
@@ -168,10 +177,9 @@ export class Memphis {
             this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
             this.reconnectIntervalMs = reconnectIntervalMs;
             this.timeoutMs = timeoutMs;
-
             let conId_username = this.connectionId + '::' + username;
             try {
-                this.brokerManager = await broker.connect({
+                let connectionOpts = {
                     servers: `${this.host}:${this.port}`,
                     reconnect: this.reconnect,
                     maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
@@ -179,7 +187,26 @@ export class Memphis {
                     timeout: this.timeoutMs,
                     token: this.connectionToken,
                     name: conId_username
-                });
+                };
+
+                if (keyFile !== '' || certFile !== '' || caFile !== '') {
+                    if (keyFile === '') {
+                        return reject(MemphisError(new Error('Must provide a TLS key file')));
+                    }
+                    if (certFile === '') {
+                        return reject(MemphisError(new Error('Must provide a TLS cert file')));
+                    }
+                    if (caFile === '') {
+                        return reject(MemphisError(new Error('Must provide a TLS ca file')));
+                    }
+                    let tlsOptions = {
+                        keyFile: keyFile,
+                        certFile: certFile,
+                        caFile: caFile
+                    };
+                    connectionOpts['tls'] = tlsOptions;
+                }
+                this.brokerManager = await broker.connect(connectionOpts);
                 this.brokerConnection = this.brokerManager.jetstream();
                 this.brokerStats = await this.brokerManager.jetstreamManager();
                 this.isConnectionActive = true;
@@ -413,7 +440,8 @@ export class Memphis {
                 dls_configuration: {
                     poison: sendPoisonMsgToDls,
                     Schemaverse: sendSchemaFailedMsgToDls
-                }
+                },
+                username: this.username
             };
             let data = this.JSONC.encode(createStationReq);
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
@@ -443,7 +471,8 @@ export class Memphis {
             }
             let attachSchemaReq = {
                 name: name,
-                station_name: stationName
+                station_name: stationName,
+                username: this.username
             };
             let data = this.JSONC.encode(attachSchemaReq);
             let errMsg = await this.brokerManager.request('$memphis_schema_attachments', data);
@@ -467,7 +496,8 @@ export class Memphis {
                 throw new Error('station name is missing');
             }
             let detachSchemaReq = {
-                station_name: stationName
+                station_name: stationName,
+                username: this.username
             };
             let data = this.JSONC.encode(detachSchemaReq);
             let errMsg = await this.brokerManager.request('$memphis_schema_detachments', data);
@@ -496,7 +526,8 @@ export class Memphis {
                 station_name: stationName,
                 connection_id: this.connectionId,
                 producer_type: 'application',
-                req_version: 1
+                req_version: 1,
+                username: this.username
             };
             let data = this.JSONC.encode(createProducerReq);
             let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
@@ -581,7 +612,8 @@ export class Memphis {
                 max_msg_deliveries: maxMsgDeliveries,
                 start_consume_from_sequence: startConsumeFromSequence,
                 last_messages: lastMessages,
-                req_version: 1
+                req_version: 1,
+                username: this.username
             };
             let data = this.JSONC.encode(createConsumerReq);
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
@@ -894,7 +926,8 @@ class Producer {
         try {
             let removeProducerReq = {
                 name: this.producerName,
-                station_name: this.stationName
+                station_name: this.stationName,
+                username: this.connection.username
             };
             let data = this.connection.JSONC.encode(removeProducerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
@@ -1044,7 +1077,8 @@ class Consumer {
         try {
             let removeConsumerReq = {
                 name: this.consumerName,
-                station_name: this.stationName
+                station_name: this.stationName,
+                username: this.connection.username
             };
             let data = this.connection.JSONC.encode(removeConsumerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
@@ -1134,7 +1168,8 @@ class Station {
     async destroy(): Promise<void> {
         try {
             let removeStationReq = {
-                station_name: this.name
+                station_name: this.name,
+                username: this.connection.username
             };
             const stationName = this.name.replace(/\./g, '#').toLowerCase();
             let sub = this.connection.schemaUpdatesSubs.get(stationName);

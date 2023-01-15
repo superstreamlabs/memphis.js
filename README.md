@@ -85,7 +85,11 @@ await memphis.connect({
             reconnect: true, // defaults to true
             maxReconnect: 3, // defaults to 3
             reconnectIntervalMs: 1500, // defaults to 1500
-            timeoutMs: 1500 // defaults to 1500
+            timeoutMs: 1500, // defaults to 1500
+            // for TLS connection:
+            keyFile: '<key-client.pem>',
+            certFile: '<cert-client.pem>',
+            caFile: '<rootCA.pem>'
       });
 ```
 
