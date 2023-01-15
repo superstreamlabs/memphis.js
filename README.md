@@ -342,7 +342,9 @@ const consumer = await memphisConnection.consumer({
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 10, // defaults to 10
-    genUniqueSuffix: false
+    genUniqueSuffix: false,
+    startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
+    lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
 });
 ```
 
@@ -411,6 +413,14 @@ Get headers per message
 
 ```js
 headers = message.getHeaders();
+```
+
+### Get message sequence number
+
+Get message sequence number 
+
+```js
+sequenceNumber = message.getSequenceNumber();
 ```
 
 ### Catching async errors
