@@ -618,7 +618,6 @@ export class Memphis {
             let data = this.JSONC.encode(createConsumerReq);
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
             errMsg = errMsg.data.toString();
-
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
