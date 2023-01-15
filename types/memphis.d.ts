@@ -37,7 +37,7 @@ export declare class Memphis {
     clusterConfigurations: Map<string, boolean>;
     stationSchemaverseToDlsMap: Map<string, boolean>;
     constructor();
-    connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs }: {
+    connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
         host: string;
         port?: number;
         username: string;
@@ -46,6 +46,9 @@ export declare class Memphis {
         maxReconnect?: number;
         reconnectIntervalMs?: number;
         timeoutMs?: number;
+        keyFile?: string;
+        certFile?: string;
+        caFile?: string;
     }): Promise<Memphis>;
     private _compileProtobufSchema;
     private _scemaUpdatesListener;
@@ -79,7 +82,7 @@ export declare class Memphis {
         producerName: string;
         genUniqueSuffix?: boolean;
     }): Promise<Producer>;
-    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix }: {
+    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix, startConsumeFromSequence, lastMessages }: {
         stationName: string;
         consumerName: string;
         consumerGroup?: string;
@@ -89,6 +92,8 @@ export declare class Memphis {
         maxAckTimeMs?: number;
         maxMsgDeliveries?: number;
         genUniqueSuffix?: boolean;
+        startConsumeFromSequence?: number;
+        lastMessages?: number;
     }): Promise<Consumer>;
     headers(): MsgHeaders;
     close(): void;
@@ -134,7 +139,9 @@ declare class Consumer {
     private pullInterval;
     private pingConsumerInvtervalMs;
     private pingConsumerInvterval;
-    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number);
+    private startConsumeFromSequence;
+    private lastMessages;
+    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number);
     on(event: String, cb: (...args: any[]) => void): void;
     private _handleAsyncIterableSubscriber;
     private _pingConsumer;
@@ -148,6 +155,7 @@ declare class Message {
     ack(): void;
     getData(): Uint8Array;
     getHeaders(): Map<string, string[]>;
+    getSequenceNumber(): number;
 }
 declare class Station {
     private connection;
