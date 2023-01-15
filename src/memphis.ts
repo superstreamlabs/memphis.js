@@ -440,7 +440,8 @@ export class Memphis {
                 dls_configuration: {
                     poison: sendPoisonMsgToDls,
                     Schemaverse: sendSchemaFailedMsgToDls
-                }
+                },
+                username: this.username
             };
             let data = this.JSONC.encode(createStationReq);
             let errMsg = await this.brokerManager.request('$memphis_station_creations', data);
@@ -470,7 +471,8 @@ export class Memphis {
             }
             let attachSchemaReq = {
                 name: name,
-                station_name: stationName
+                station_name: stationName,
+                username: this.username
             };
             let data = this.JSONC.encode(attachSchemaReq);
             let errMsg = await this.brokerManager.request('$memphis_schema_attachments', data);
@@ -494,7 +496,8 @@ export class Memphis {
                 throw new Error('station name is missing');
             }
             let detachSchemaReq = {
-                station_name: stationName
+                station_name: stationName,
+                username: this.username
             };
             let data = this.JSONC.encode(detachSchemaReq);
             let errMsg = await this.brokerManager.request('$memphis_schema_detachments', data);
@@ -523,7 +526,8 @@ export class Memphis {
                 station_name: stationName,
                 connection_id: this.connectionId,
                 producer_type: 'application',
-                req_version: 1
+                req_version: 1,
+                username: this.username
             };
             let data = this.JSONC.encode(createProducerReq);
             let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
@@ -586,7 +590,8 @@ export class Memphis {
                 consumer_type: 'application',
                 consumers_group: consumerGroup,
                 max_ack_time_ms: maxAckTimeMs,
-                max_msg_deliveries: maxMsgDeliveries
+                max_msg_deliveries: maxMsgDeliveries,
+                username: this.username
             };
             let data = this.JSONC.encode(createConsumerReq);
             let errMsg = await this.brokerManager.request('$memphis_consumer_creations', data);
@@ -886,7 +891,8 @@ class Producer {
         try {
             let removeProducerReq = {
                 name: this.producerName,
-                station_name: this.stationName
+                station_name: this.stationName,
+                username: this.connection.username
             };
             let data = this.connection.JSONC.encode(removeProducerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
@@ -1030,7 +1036,8 @@ class Consumer {
         try {
             let removeConsumerReq = {
                 name: this.consumerName,
-                station_name: this.stationName
+                station_name: this.stationName,
+                username: this.connection.username
             };
             let data = this.connection.JSONC.encode(removeConsumerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
@@ -1113,7 +1120,8 @@ class Station {
     async destroy(): Promise<void> {
         try {
             let removeStationReq = {
-                station_name: this.name
+                station_name: this.name,
+                username: this.connection.username
             };
             const stationName = this.name.replace(/\./g, '#').toLowerCase();
             let sub = this.connection.schemaUpdatesSubs.get(stationName);
@@ -1138,12 +1146,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
-interface MsgHeadersType extends MsgHeaders {}
+interface MemphisType extends Memphis { }
+interface StationType extends Station { }
+interface ProducerType extends Producer { }
+interface ConsumerType extends Consumer { }
+interface MessageType extends Message { }
+interface MsgHeadersType extends MsgHeaders { }
 
 const MemphisInstance: MemphisType = new Memphis();
 
