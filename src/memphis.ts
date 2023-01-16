@@ -1128,7 +1128,12 @@ class Message {
      * Returns the message payload.
      */
     getData(): Uint8Array {
-        return this.message.data;
+        const isBuffer = Buffer.isBuffer(this.message.data);
+        if (!isBuffer) {
+            return Buffer.from(this.message.data);
+        } else {
+            return this.message.data;
+        }
     }
 
     /**
@@ -1147,8 +1152,8 @@ class Message {
     /**
      * Returns the message sequence number.
      */
-    getSequenceNumber():number {
-        return this.message.seq
+    getSequenceNumber(): number {
+        return this.message.seq;
     }
 }
 
@@ -1193,12 +1198,12 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis { }
-interface StationType extends Station { }
-interface ProducerType extends Producer { }
-interface ConsumerType extends Consumer { }
-interface MessageType extends Message { }
-interface MsgHeadersType extends MsgHeaders { }
+interface MemphisType extends Memphis {}
+interface StationType extends Station {}
+interface ProducerType extends Producer {}
+interface ConsumerType extends Consumer {}
+interface MessageType extends Message {}
+interface MsgHeadersType extends MsgHeaders {}
 
 const MemphisInstance: MemphisType = new Memphis();
 
