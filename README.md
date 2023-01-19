@@ -37,10 +37,12 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
-**[Memphis{dev}](https://memphis.dev)** is an open-source real-time data processing platform<br>
-that provides end-to-end support for in-app streaming use cases using Memphis distributed message broker.<br>
-Memphis' platform requires zero ops, enables rapid development, extreme cost reduction, <br>
-eliminates coding barriers, and saves a great amount of dev time for data-oriented developers and data engineers.
+**[Memphis](https://memphis.dev)** is a next-generation message broker.<br>
+A simple, robust, and durable cloud-native message broker wrapped with<br>
+an entire ecosystem that enables fast and reliable development of next-generation event-driven use cases.<br><br>
+Memphis enables building modern applications that require large volumes of streamed and enriched data,<br>
+modern protocols, zero ops, rapid development, extreme cost reduction,<br>
+and a significantly lower amount of dev time for data-oriented developers and data engineers.
 
 ## Installation
 
