@@ -109,11 +109,12 @@ declare class Producer {
     private stationName;
     private internal_station;
     constructor(connection: Memphis, producerName: string, stationName: string);
+    _handleHeaders(headers: any): broker.MsgHdrs;
     produce({ message, ackWaitSec, asyncProduce, headers, msgId }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
-        headers?: MsgHeaders;
+        headers?: any;
         msgId?: string;
     }): Promise<void>;
     private _parseJsonValidationErrors;
@@ -154,7 +155,7 @@ declare class Message {
     constructor(message: broker.JsMsg, connection: Memphis, cgName: string);
     ack(): void;
     getData(): Uint8Array;
-    getHeaders(): Map<string, string[]>;
+    getHeaders(): Object;
     getSequenceNumber(): number;
 }
 declare class Station {

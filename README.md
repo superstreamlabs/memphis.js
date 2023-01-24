@@ -301,6 +301,14 @@ await producer.produce({
     headers: headers // defults to empty
 });
 ```
+or
+```js
+const headers = { key: "value" }
+await producer.produce({
+    message: '<bytes array>/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+    headers: headers
+});
+```
 
 ### Async produce
 
