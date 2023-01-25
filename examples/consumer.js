@@ -16,7 +16,7 @@ const memphis = require('memphis-dev');
             consumerGroup: ''
         });
 
-        consumer.on('message', (message) => {
+        consumer.on('message', (message, context) => {
             console.log(message.getData().toString());
             message.ack();
             const headers = message.getHeaders()
