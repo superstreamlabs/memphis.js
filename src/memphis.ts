@@ -720,7 +720,7 @@ class Producer {
 
     /**
      * Produces a message into a station.
-     * @param {any} message - message to send into the station (Uint8Arrays / object-in case your station is schema validated).
+     * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
      * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
      * @param {Any} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
@@ -878,8 +878,11 @@ class Producer {
                     return msg;
             }
         } else {
+            if (Object.prototype.toString.call(msg) == '[object Object]') {
+                return Buffer.from(JSON.stringify(msg));
+            }
             if (!Buffer.isBuffer(msg)) {
-                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+                throw MemphisError(new Error('Unsupported message type'));
             } else {
                 return msg;
             }
@@ -993,6 +996,7 @@ class Consumer {
     private pingConsumerInvterval: any;
     private startConsumeFromSequence: number;
     private lastMessages: number;
+    public context: object;
 
     constructor(
         connection: Memphis,
@@ -1022,6 +1026,16 @@ class Consumer {
         this.pingConsumerInvterval = null;
         this.startConsumeFromSequence = startConsumeFromSequence;
         this.lastMessages = lastMessages;
+        this.context = {};
+
+    }
+
+    /**
+     * Creates an event listener.
+     * @param {Object} context - context object that will be passed with each message.
+     */
+    setContext(context: Object): void {
+        this.context = context;
     }
 
     /**
@@ -1075,7 +1089,7 @@ class Consumer {
 
     private async _handleAsyncIterableSubscriber(iter: any) {
         for await (const m of iter) {
-            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup));
+            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup), this.context);
         }
     }
 
