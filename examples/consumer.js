@@ -16,13 +16,14 @@ const memphis = require('memphis-dev');
             consumerGroup: ''
         });
 
+        consumer.setContext({ key: "value" })
         consumer.on('message', (message, context) => {
             console.log(message.getData().toString());
             message.ack();
             const headers = message.getHeaders()
         });
 
-        consumer.on('error', (error) => {});
+        consumer.on('error', (error) => { });
     } catch (ex) {
         console.log(ex);
         if (memphisConnection) memphisConnection.close();
