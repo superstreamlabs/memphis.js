@@ -26,7 +26,7 @@ node ("small-ec2-fleet") {
       sh 'sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo'
       sh 'sudo yum install gh -y'
       sh 'sudo yum install jq -y'
-      sh(script:"""sed -i -r "s/version\": \"[0-9].[0-9].[0-9]/version\": \"\$(cat version.conf)/g" ./package.json""", returnStdout: true)
+      sh(script:"""sed -i -r "s/version\\": \\"[0-9].[0-9].[0-9]/version\\": \\"\$(cat version.conf)/g" ./package.json""", returnStdout: true)
       withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
         sh "git reset --hard origin/latest"
         sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b \$(cat version.conf)"
