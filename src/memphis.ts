@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
 
+import { Injectable } from '@nestjs/common';
+import Ajv from 'ajv';
+import jsonSchemaDraft04 from 'ajv-draft-04';
+import Ajv2020 from 'ajv/dist/2020';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import * as events from 'events';
+import * as fs from 'fs';
+import { buildSchema as buildGraphQlSchema, GraphQLSchema, parse as parseGraphQl, validate as validateGraphQl } from 'graphql';
 import * as broker from 'nats';
 import { headers, MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
-import * as fs from 'fs';
-import Ajv from 'ajv';
-import jsonSchemaDraft04 from 'ajv-draft-04';
-import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
-import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
-import Ajv2020 from 'ajv/dist/2020';
-import { buildSchema as buildGraphQlSchema, GraphQLSchema, parse as parseGraphQl, validate as validateGraphQl } from 'graphql';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -75,7 +76,7 @@ function stringToHex(str) {
 
 const schemaVFailAlertType = 'schema_validation_fail_alert';
 
-export class Memphis {
+class Memphis {
     private isConnectionActive: boolean;
     public connectionId: string;
     public host: string;
@@ -1198,15 +1199,8 @@ class Station {
     }
 }
 
-interface MemphisType extends Memphis {}
-interface StationType extends Station {}
-interface ProducerType extends Producer {}
-interface ConsumerType extends Consumer {}
-interface MessageType extends Message {}
-interface MsgHeadersType extends MsgHeaders {}
+@Injectable({})
+export class MemphisService extends Memphis { }
 
-const MemphisInstance: MemphisType = new Memphis();
-
-export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType, MsgHeadersType };
-
-export default MemphisInstance;
+export type { Memphis, Station, Producer, Consumer, Message, MsgHeaders };
+export const memphis = new Memphis();

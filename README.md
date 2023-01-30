@@ -52,25 +52,23 @@ $ npm install memphis-dev
 
 ## Importing
 
-for javascript, you can choose to use the import or required keyword
+For Javascript, you can choose to use the import or required keyword. This library exports a singleton instance of `memphis` with which you can consume and produce messages.
 
 ```js
-const memphis = require('memphis-dev');
+const { memphis } = require('memphis-dev');
 ```
 
-for Typescript, use the import keyword to aid for typechecking assistance
+For Typescript, use the import keyword. You can import `Memphis` to aid for typechecking assistance.
 
 ```js
-import memphis from 'memphis-dev';
-import type { Memphis } from 'memphis-dev/types';
+import { memphis, Memphis } from 'memphis-dev';
 ```
 
 To leverage Nestjs dependency injection feature
 
 ```js
 import { Module } from '@nestjs/common';
-import { MemphisModule, MemphisService } from 'memphis-dev/nest';
-import type { Memphis } from 'memphis-dev/types';
+import { Memphis, MemphisModule, MemphisService } from 'memphis-dev';
 ```
 
 ### Connecting to Memphis
@@ -353,7 +351,7 @@ const consumer = await memphisConnection.consumer({
 To set Up connection in nestjs
 
 ```js
-import { MemphisServer } from 'memphis-dev/nest'
+import { MemphisServer } from 'memphis-dev'
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -376,8 +374,7 @@ To Consume messages in nestjs
 
 ```js
 export class Controller {
-    import { consumeMessage } from 'memphis-dev/nest';
-    import { Message } from 'memphis-dev/types';
+    import { consumeMessage, Message } from 'memphis-dev';
 
     @consumeMessage({
         stationName: '<station-name>',

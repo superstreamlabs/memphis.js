@@ -3,20 +3,12 @@
     "version": "0.4.8",
     "description": "A powerful messaging platform for modern developers",
     "exports": {
-        ".": "./lib/index.js",
-        "./nest": "./lib/NestMemphis/index.js",
-        "./types": "./lib/types.js"
+        ".": "./lib/index.js"
     },
     "typesVersions": {
         "*": {
             "*": [
-                "types/index.d.ts"
-            ],
-            "nest": [
-                "types/NestMemphis/index.d.ts"
-            ],
-            "types": [
-                "types/types.d.ts"
+                "lib/index.d.ts"
             ]
         }
     },

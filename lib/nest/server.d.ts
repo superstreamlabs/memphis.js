@@ -1,5 +1,5 @@
 import { CustomTransportStrategy, Server } from '@nestjs/microservices';
-import { MemphisConnectionOptions } from './memphis.interface';
+import { MemphisConnectionOptions } from './interfaces';
 export declare class MemphisServer extends Server implements CustomTransportStrategy {
     private connection;
     private readonly options;
