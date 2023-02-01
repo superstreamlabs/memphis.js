@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { MemphisModule, MemphisService } from "memphis-dev/nest"
-import type { Memphis } from 'memphis-dev/types';
+import { Memphis, MemphisModule, MemphisService } from "memphis-dev"
+
 @Module({
     imports: [MemphisModule.register()],
 })

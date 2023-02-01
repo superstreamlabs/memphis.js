@@ -1,6 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { consumeMessage } from 'memphis-dev/nest';
-import type { Message } from 'memphis-dev/types';
+import { consumeMessage, Message } from 'memphis-dev';
 
 @Controller('auth')
 export class ExampleController {

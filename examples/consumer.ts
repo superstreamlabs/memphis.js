@@ -1,5 +1,4 @@
-import memphis from 'memphis-dev';
-import { Memphis, Message } from 'memphis-dev/types';
+import { memphis, Memphis, Message } from 'memphis-dev';
 
 (async function () {
     let memphisConnection: Memphis;
