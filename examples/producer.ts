@@ -18,7 +18,7 @@ import { memphis, Memphis } from 'memphis-dev';
             const headers = memphis.headers()
             headers.add('<key>', '<value>');
             await producer.produce({
-                message: Buffer.from("Message: Hello world"),
+                message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
                 headers: headers
             });
 

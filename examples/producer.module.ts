@@ -25,7 +25,7 @@ export class ProducerModule {
 
                 for (let index = 0; index < 100; index++) {
                     await producer.produce({
-                        message: Buffer.from(`Message #${index}: Hello world`)
+                        message: Buffer.from(`Message #${index}: Hello world`) // you can also send JS object - {}
                     });
                     console.log("Message sent");
                 }

@@ -109,11 +109,12 @@ declare class Producer {
     private stationName;
     private internal_station;
     constructor(connection: Memphis, producerName: string, stationName: string);
+    _handleHeaders(headers: any): broker.MsgHdrs;
     produce({ message, ackWaitSec, asyncProduce, headers, msgId }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
-        headers?: MsgHeaders;
+        headers?: any;
         msgId?: string;
     }): Promise<void>;
     private _parseJsonValidationErrors;
@@ -141,7 +142,9 @@ declare class Consumer {
     private pingConsumerInvterval;
     private startConsumeFromSequence;
     private lastMessages;
+    context: object;
     constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number);
+    setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
     private _handleAsyncIterableSubscriber;
     private _pingConsumer;
@@ -154,7 +157,7 @@ declare class Message {
     constructor(message: broker.JsMsg, connection: Memphis, cgName: string);
     ack(): void;
     getData(): Uint8Array;
-    getHeaders(): Map<string, string[]>;
+    getHeaders(): Object;
     getSequenceNumber(): number;
 }
 declare class Station {

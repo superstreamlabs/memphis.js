@@ -698,12 +698,33 @@ class Producer {
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
     }
 
+    _handleHeaders(headers: any): broker.MsgHdrs {
+        let type;
+        if (headers instanceof MsgHeaders) {
+            type = "memphisHeaders";
+        } else if (Object.prototype.toString.call(headers) === "[object Object]") {
+            type = "object";
+        } else {
+            throw MemphisError(new Error('headers has to be a Javascript object or an instance of MsgHeaders'));
+        }
+
+        switch (type) {
+            case "object":
+                const msgHeaders = this.connection.headers();
+                for (let key in headers)
+                    msgHeaders.add(key, headers[key]);
+                return msgHeaders.headers;
+            case "memphisHeaders":
+                return headers.headers;
+        }
+    }
+
     /**
      * Produces a message into a station.
-     * @param {any} message - message to send into the station (Uint8Arrays / object-in case your station is schema validated).
+     * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
      * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
-     * @param {MsgHeaders} headers - Message headers.
+     * @param {Any} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
      */
     async produce({
         message,
@@ -715,22 +736,24 @@ class Producer {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
-        headers?: MsgHeaders;
+        headers?: any;
         msgId?: string;
     }): Promise<void> {
         try {
             let messageToSend = this._validateMessage(message);
-            headers.headers.set('$memphis_connectionId', this.connection.connectionId);
-            headers.headers.set('$memphis_producedBy', this.producerName);
-            if (msgId) headers.headers.set('msg-id', msgId);
+            headers = this._handleHeaders(headers)
+            headers.set('$memphis_connectionId', this.connection.connectionId);
+            headers.set('$memphis_producedBy', this.producerName);
+            if (msgId) headers.set('msg-id', msgId);
+
             if (asyncProduce)
                 this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
-                    headers: headers.headers,
+                    headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
             else
                 await this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
-                    headers: headers.headers,
+                    headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
         } catch (ex: any) {
@@ -856,8 +879,11 @@ class Producer {
                     return msg;
             }
         } else {
+            if (Object.prototype.toString.call(msg) == '[object Object]') {
+                return Buffer.from(JSON.stringify(msg));
+            }
             if (!Buffer.isBuffer(msg)) {
-                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+                throw MemphisError(new Error('Unsupported message type'));
             } else {
                 return msg;
             }
@@ -971,6 +997,7 @@ class Consumer {
     private pingConsumerInvterval: any;
     private startConsumeFromSequence: number;
     private lastMessages: number;
+    public context: object;
 
     constructor(
         connection: Memphis,
@@ -1000,6 +1027,16 @@ class Consumer {
         this.pingConsumerInvterval = null;
         this.startConsumeFromSequence = startConsumeFromSequence;
         this.lastMessages = lastMessages;
+        this.context = {};
+
+    }
+
+    /**
+     * Creates an event listener.
+     * @param {Object} context - context object that will be passed with each message.
+     */
+    setContext(context: Object): void {
+        this.context = context;
     }
 
     /**
@@ -1053,7 +1090,7 @@ class Consumer {
 
     private async _handleAsyncIterableSubscriber(iter: any) {
         for await (const m of iter) {
-            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup));
+            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup), this.context);
         }
     }
 
@@ -1140,12 +1177,14 @@ class Message {
     /**
      * Returns the message headers.
      */
-    getHeaders(): Map<string, string[]> {
-        const msgHeaders = new Map<string, string[]>();
+    getHeaders(): Object {
+        const msgHeaders = {}
         const hdrs = this.message.headers['headers'];
 
         for (let [key, value] of hdrs) {
-            msgHeaders[key] = value;
+            if (key.startsWith("$memphis"))
+                continue;
+            msgHeaders[key] = value[0];
         }
         return msgHeaders;
     }

@@ -16,7 +16,8 @@ import { memphis, Memphis, Message } from 'memphis-dev';
             consumerGroup: ''
         });
 
-        consumer.on('message', (message: Message) => {
+        consumer.setContext({ key: "value" });
+        consumer.on('message', (message: Message, context: object) => {
             console.log(message.getData().toString());
             message.ack();
             const headers = message.getHeaders()
