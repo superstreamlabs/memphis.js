@@ -1,4 +1,4 @@
-import { MemphisService } from './nestMemphis.service';
+import { MemphisService } from '..';
 import { Module, DynamicModule } from '@nestjs/common';
 @Module({})
 export class MemphisModule {

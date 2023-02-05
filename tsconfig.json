@@ -8,7 +8,6 @@
         "allowSyntheticDefaultImports": true,
         "target": "es2017",
         "outDir": "./lib",
-        "declarationDir": "./types",
         "baseUrl": "./",
         "incremental": true,
         "skipLibCheck": true,

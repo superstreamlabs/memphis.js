@@ -1,7 +1,7 @@
+import { GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import { MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
-import { GraphQLSchema } from 'graphql';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -11,7 +11,7 @@ interface IStorageTypes {
     DISK: string;
     MEMORY: string;
 }
-export declare class Memphis {
+declare class Memphis {
     private isConnectionActive;
     connectionId: string;
     host: string;
@@ -166,18 +166,7 @@ declare class Station {
     constructor(connection: Memphis, name: string);
     destroy(): Promise<void>;
 }
-interface MemphisType extends Memphis {
+export declare class MemphisService extends Memphis {
 }
-interface StationType extends Station {
-}
-interface ProducerType extends Producer {
-}
-interface ConsumerType extends Consumer {
-}
-interface MessageType extends Message {
-}
-interface MsgHeadersType extends MsgHeaders {
-}
-declare const MemphisInstance: MemphisType;
-export type { MemphisType, StationType, ProducerType, ConsumerType, MessageType, MsgHeadersType };
-export default MemphisInstance;
+export type { Memphis, Station, Producer, Consumer, Message, MsgHeaders };
+export declare const memphis: Memphis;

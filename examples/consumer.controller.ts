@@ -1,6 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { consumeMessage } from 'memphis-dev/nest';
-import type { Message } from 'memphis-dev/types';
+import { consumeMessage, Message } from 'memphis-dev';
 
 @Controller('auth')
 export class ExampleController {
@@ -8,8 +7,8 @@ export class ExampleController {
         stationName: '<station-name>',
         consumerName: '<consumer-name>',
         consumerGroup: ''
-    })
-    async messageHandler(message: Message) {
+    }, {}) // {} for passing the consumerContext to consumer.setContext
+    async messageHandler(message: Message, context: object) {
         console.log(message.getData().toString());
         message.ack();
     }
