@@ -1,71 +1,50 @@
-![](https://memphis-public-files.s3.eu-central-1.amazonaws.com/Vector_page-0001.jpg)
-<br><br>
-![Github tag](https://img.shields.io/github/v/release/memphisdev/memphis.js) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Memphisdev/memphis-broker/commit-activity) [![GoReportCard example](https://goreportcard.com/badge/github.com/nanomsg/mangos)](https://goreportcard.com/report/github.com/nanomsg/mangos)
+<div align="center">
+  
+  ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/master/logo-white.png?raw=true#gh-dark-mode-only)
+  
+</div>
 
-Too many data sources and too many schemas? Looking for a messaging queue to scale your data-driven architecture? Require greater performance for your data streams? Your architecture is based on post-processing data, and you want to switch to real-time in minutes instead of months? Struggle to install, configure and update Kafka/RabbitMQ/and other MQs?
+<div align="center">
+  
+  ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/master/logo-black.png?raw=true#gh-light-mode-only)
+  
+</div>
 
-**Meet Memphis**
+<div align="center">
+<h4>Simple as RabbitMQ, Robust as Apache Kafka, and Perfect for microservices.</h4>
 
-**[Memphis](https://memphis.dev)** is a dev-first, cloud-native, event processing platform made out of devs' struggles with tools like Kafka, RabbitMQ, NATS, and others, allowing you to achieve all other message brokers' benefits in a fraction of the time.<br><br>
-**[Memphis](https://memphis.dev) delivers:**
-- The most simple to use Message Broker (With the same behaivour as NATS and Kafka)
-- State-of-the-art UI and CLI
-- No need for Kafka Connect, Kafka Streams, ksql. All the tools you need are under the same roof
-- An in-line data processing in any programming language
-- Out-of-the-box deep observability of every component
+<img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br>
 
-RabbitMQ has Queues, Kafka as Topics, **Memphis has Stations.**
-#### TL;DR
-**On Day 1 (For the DevOps heros out there) -**<br>
-Memphis platform provides the same old and loved behavior (Produce-Consume) of other data lakes and MQs, but removes completly the complexity barriers, messy documentation, ops, manual scale, orchestration and more.
+<a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>
 
-**On Day 2 (For the Developers) -**
-Developer lives with developing real-time, event-driven apps that are too complex.
-Consumers and Producers are filled with logic, data orchestration is needed between the different services, no GUI to understand metrics and flows, lack of monitoring, hard to implement SDKs, etc.
+</div>
 
-No More.
+<div align="center">
+  
+  <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/color/cncf-member-silver-color.svg#gh-light-mode-only">
+  
+</div>
+ 
+ <p align="center">
+  <a href="https://sandbox.memphis.dev/" target="_blank">Sandbox</a> - <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
+</p>
 
-In the coming versions, Memphis will answer the challenges above,<br>and recude 90% of dev work arround building a real-time / event-driven / data-driven apps.
+<p align="center">
+<a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
+<a href="https://github.com/memphisdev/memphis-broker/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> 
+<a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> 
+<a href="https://docs.memphis.dev/memphis/release-notes/releases/v0.4.2-beta"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"></a>
+<img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
+</p>
 
----
-
-**Purpose of this repo**<br>
-For Memphis node.js SDK
-
-**Table of Contents**
-
-- [Current SDKs](#current-sdks)
-- [Installation](#installation)
-- [Importing](#importing)
-  - [Connecting to Memphis](#connecting-to-memphis)
-  - [Disconnecting from Memphis](#disconnecting-from-memphis)
-  - [Creating a Factory](#creating-a-factory)
-  - [Destroying a Factory](#destroying-a-factory)
-  - [Creating a Station](#creating-a-station)
-  - [Retention types](#retention-types)
-  - [Storage types](#storage-types)
-  - [Destroying a Station](#destroying-a-station)
-  - [Produce and Consume messages](#produce-and-consume-messages)
-  - [Creating a Producer](#creating-a-producer)
-  - [Producing a message](#producing-a-message)
-  - [Destroying a Producer](#destroying-a-producer)
-  - [Creating a Consumer](#creating-a-consumer)
-  - [Processing messages](#processing-messages)
-  - [Acknowledge a message](#acknowledge-a-message)
-  - [Catching async errors](#catching-async-errors)
-  - [Destroying a Consumer](#destroying-a-consumer)
-- [Memphis Contributors](#memphis-contributors)
-- [Contribution guidelines](#contribution-guidelines)
-- [Documentation](#documentation)
-- [Contact](#contact)
-
-## Current SDKs
--   [memphis-js](https://github.com/Memphisdev/memphis.js 'Node.js')
--   [memphis-py](https://github.com/Memphisdev/memphis.py 'Python')
+**[Memphis](https://memphis.dev)** is a next-generation message broker.<br>
+A simple, robust, and durable cloud-native message broker wrapped with<br>
+an entire ecosystem that enables fast and reliable development of next-generation event-driven use cases.<br><br>
+Memphis enables building modern applications that require large volumes of streamed and enriched data,<br>
+modern protocols, zero ops, rapid development, extreme cost reduction,<br>
+and a significantly lower amount of dev time for data-oriented developers and data engineers.
 
 ## Installation
-
-First install [Memphis](https://memphis.dev) Then:
 
 ```sh
 $ npm install memphis-dev
@@ -73,8 +52,23 @@ $ npm install memphis-dev
 
 ## Importing
 
+For Javascript, you can choose to use the import or required keyword. This library exports a singleton instance of `memphis` with which you can consume and produce messages.
+
 ```js
-const memphis = require("memphis-dev");
+const { memphis } = require('memphis-dev');
+```
+
+For Typescript, use the import keyword. You can import `Memphis` to aid for typechecking assistance.
+
+```js
+import { memphis, Memphis } from 'memphis-dev';
+```
+
+To leverage Nestjs dependency injection feature
+
+```js
+import { Module } from '@nestjs/common';
+import { Memphis, MemphisModule, MemphisService } from 'memphis-dev';
 ```
 
 ### Connecting to Memphis
@@ -82,18 +76,50 @@ const memphis = require("memphis-dev");
 First, we need to connect with Memphis by using `memphis.connect`.
 
 ```js
+/* Javascript and typescript project */
 await memphis.connect({
             host: "<memphis-host>",
-            managementPort: <management-port>, // defaults to 5555
-            tcpPort: <tcp-port>, // defaults to 6666
-            dataPort: <data-port>, // defaults to 7766
+            port: <port>, // defaults to 6666
             username: "<username>", // (root/application type user)
             connectionToken: "<broker-token>", // you will get it on application type user creation
-            reconnect: true, // defaults to false
-            maxReconnect: 10, // defaults to 10
+            reconnect: true, // defaults to true
+            maxReconnect: 3, // defaults to 3
             reconnectIntervalMs: 1500, // defaults to 1500
-            timeoutMs: 1500 // defaults to 1500
+            timeoutMs: 1500, // defaults to 1500
+            // for TLS connection:
+            keyFile: '<key-client.pem>',
+            certFile: '<cert-client.pem>',
+            caFile: '<rootCA.pem>'
       });
+```
+
+Nest injection
+
+```js
+@Module({
+    imports: [MemphisModule.register()],
+})
+
+class ConsumerModule {
+    constructor(private memphis: MemphisService) {}
+
+    startConnection() {
+        (async function () {
+            let memphisConnection: Memphis;
+
+            try {
+               memphisConnection = await this.memphis.connect({
+                    host: "<memphis-host>",
+                    username: "<application type username>",
+                    connectionToken: "<broker-token>",
+                });
+            } catch (ex) {
+                console.log(ex);
+                memphisConnection.close();
+            }
+        })();
+    }
+}
 ```
 
 Once connected, the entire functionalities offered by Memphis are available.
@@ -103,38 +129,53 @@ Once connected, the entire functionalities offered by Memphis are available.
 To disconnect from Memphis, call `close()` on the memphis object.
 
 ```js
-memphis.close();
-```
-
-### Creating a Factory
-
-```js
-const factory = await memphis.factory({
-            name: "<factory-name>",
-            description: ""
-      });
-```
-
-### Destroying a Factory
-Destroying a factory will remove all its resources (stations/producers/consumers)
-
-```js
-await station.destroy();
+memphisConnection.close();
 ```
 
 ### Creating a Station
 
+_If a station already exists nothing happens, the new configuration will not be applied_
+
 ```js
 const station = await memphis.station({
-            name: "<station-name>",
-            factoryName: "<factory-name>",
-            retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
-            retentionValue: 604800, // defaults to 604800
-            storageType: memphis.storageTypes.FILE, // defaults to memphis.storageTypes.FILE
-            replicas: 1, // defaults to 1
-            dedupEnabled: false, // defaults to false
-            dedupWindowMs: 0 // defaults to 0
-      });
+    name: '<station-name>',
+    schemaName: '<schema-name>',
+    retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+    retentionValue: 604800, // defaults to 604800
+    storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
+    replicas: 1, // defaults to 1
+    idempotencyWindowMs: 0, // defaults to 120000
+    sendPoisonMsgToDls: true, // defaults to true
+    sendSchemaFailedMsgToDls: true // defaults to true
+});
+```
+
+Creating a station with Nestjs dependency injection
+
+```js
+@Module({
+    imports: [MemphisModule.register()],
+})
+
+class stationModule {
+    constructor(private memphis: MemphisService) { }
+
+    createStation() {
+        (async function () {
+                  const station = await this.memphis.station({
+                        name: "<station-name>",
+                        schemaName: "<schema-name>",
+                        retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+                        retentionValue: 604800, // defaults to 604800
+                        storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
+                        replicas: 1, // defaults to 1
+                        idempotencyWindowMs: 0, // defaults to 120000
+                        sendPoisonMsgToDls: true, // defaults to true
+                        sendSchemaFailedMsgToDls: true // defaults to true
+                  });
+        })();
+    }
+}
 ```
 
 ### Retention types
@@ -142,18 +183,21 @@ const station = await memphis.station({
 Memphis currently supports the following types of retention:
 
 ```js
-memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
+memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS;
 ```
+
 Means that every message persists for the value set in retention value field (in seconds)
 
 ```js
-memphis.retentionTypes.MESSAGES
+memphis.retentionTypes.MESSAGES;
 ```
+
 Means that after max amount of saved messages (set in retention value), the oldest messages will be deleted
 
 ```js
-memphis.retentionTypes.BYTES
+memphis.retentionTypes.BYTES;
 ```
+
 Means that after max amount of saved bytes (set in retention value), the oldest messages will be deleted
 
 ### Storage types
@@ -161,23 +205,35 @@ Means that after max amount of saved bytes (set in retention value), the oldest 
 Memphis currently supports the following types of messages storage:
 
 ```js
-memphis.storageTypes.FILE
+memphis.storageTypes.DISK;
 ```
-Means that messages persist on the file system
+
+Means that messages persist on disk
 
 ```js
-memphis.storageTypes.MEMORY
+memphis.storageTypes.MEMORY;
 ```
+
 Means that messages persist on the main memory
 
-
-
-
 ### Destroying a Station
+
 Destroying a station will remove all its resources (producers/consumers)
 
 ```js
 await station.destroy();
+```
+
+### Attaching a Schema to an Existing Station
+
+```js
+await memphisConnection.attachSchema({ name: '<schema-name>', stationName: '<station-name>' });
+```
+
+### Detaching a Schema from Station
+
+```js
+await memphisConnection.detachSchema({ stationName: '<station-name>' });
 ```
 
 ### Produce and Consume messages
@@ -196,18 +252,83 @@ of whether there are messages in flight for the client.
 ### Creating a Producer
 
 ```js
-const producer = await memphis.producer({
-            stationName: "<station-name>",
-            producerName: "<producer-name>"
-      });
+const producer = await memphisConnection.producer({
+    stationName: '<station-name>',
+    producerName: '<producer-name>',
+    genUniqueSuffix: false
+});
+```
+
+Creating producers with nestjs dependecy injection
+
+```js
+@Module({
+    imports: [MemphisModule.register()],
+})
+
+class ProducerModule {
+    constructor(private memphis: MemphisService) { }
+
+    createProducer() {
+        (async function () {
+                const producer = await memphisConnection.producer({
+                    stationName: "<station-name>",
+                    producerName: "<producer-name>"
+                });
+        })();
+    }
+}
 ```
 
 ### Producing a message
 
 ```js
 await producer.produce({
-            message: "<bytes array>", // Uint8Arrays
-            ackWaitSec: 15 // defaults to 15
+    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+    ackWaitSec: 15 // defaults to 15
+});
+```
+
+### Add Header
+
+```js
+const headers = memphis.headers();
+headers.add('<key>', '<value>');
+await producer.produce({
+    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+    headers: headers // defults to empty
+});
+```
+or
+```js
+const headers = { key: "value" }
+await producer.produce({
+    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+    headers: headers
+});
+```
+
+### Async produce
+
+Meaning your application won't wait for broker acknowledgement - use only in case you are tolerant for data loss
+
+```js
+await producer.produce({
+    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+    ackWaitSec: 15, // defaults to 15
+    asyncProduce: true // defaults to false
+});
+```
+
+### Message ID
+
+Stations are idempotent by default for 2 minutes (can be configured), Idempotency achieved by adding a message id
+
+```js
+await producer.produce({
+    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+    ackWaitSec: 15, // defaults to 15
+    msgId: 'fdfd' // defaults to null
 });
 ```
 
@@ -220,38 +341,106 @@ await producer.destroy();
 ### Creating a Consumer
 
 ```js
-const consumer = await memphis.consumer({
-            stationName: "<station-name>",
-            consumerName: "<consumer-name>",
-            consumerGroup: "<group-name>", // defaults to ""
-            pullIntervalMs: 1000, // defaults to 1000
-            batchSize: 10, // defaults to 10
-            batchMaxTimeToWaitMs: 5000, // defaults to 5000
-            maxAckTimeMs: 30000 // defaults to 30000
-      });
+const consumer = await memphisConnection.consumer({
+    stationName: '<station-name>',
+    consumerName: '<consumer-name>',
+    consumerGroup: '<group-name>', // defaults to the consumer name.
+    pullIntervalMs: 1000, // defaults to 1000
+    batchSize: 10, // defaults to 10
+    batchMaxTimeToWaitMs: 5000, // defaults to 5000
+    maxAckTimeMs: 30000, // defaults to 30000
+    maxMsgDeliveries: 10, // defaults to 10
+    genUniqueSuffix: false,
+    startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
+    lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
+});
+```
+
+To set Up connection in nestjs
+
+```js
+import { MemphisServer } from 'memphis-dev'
+
+async function bootstrap() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      strategy: new MemphisServer({
+        host: '<memphis-host>',
+        username: '<application type username>',
+        connectionToken: '<broker-token>'
+      }),
+    },
+  );
+
+  await app.listen();
+}
+bootstrap();
+```
+
+To Consume messages in nestjs
+
+```js
+export class Controller {
+    import { consumeMessage, Message } from 'memphis-dev';
+
+    @consumeMessage({
+        stationName: '<station-name>',
+        consumerName: '<consumer-name>',
+        consumerGroup: ''
+    })
+    async messageHandler(message: Message) {
+        console.log(message.getData().toString());
+        message.ack();
+    }
+}
+```
+
+### Passing context to message handlers
+
+```js
+consumer.setContext({key: "value"});
 ```
 
 ### Processing messages
 
 ```js
-consumer.on("message", message => {
-        // processing
-        console.log(message.getData())
-        message.ack();
+consumer.on('message', (message, context) => {
+    // processing
+    console.log(message.getData());
+    message.ack();
 });
 ```
 
 ### Acknowledge a message
+
 Acknowledge a message indicates the Memphis server to not re-send the same message again to the same consumer / consumers group
+
 ```js
-    message.ack();
+message.ack();
+```
+
+### Get headers
+
+Get headers per message
+
+```js
+headers = message.getHeaders();
+```
+
+### Get message sequence number
+
+Get message sequence number 
+
+```js
+sequenceNumber = message.getSequenceNumber();
 ```
 
 ### Catching async errors
 
 ```js
-consumer.on("error", error => {
-        // error handling
+consumer.on('error', (error) => {
+    // error handling
 });
 ```
 
@@ -260,22 +449,3 @@ consumer.on("error", error => {
 ```js
 await consumer.destroy();
 ```
-
-
-## Memphis Contributors
-<img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Itay+Katz.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
-
-## Contribution guidelines
-
-soon
-
-## Documentation
-
-- [Official documentation](https://docs.memphis.dev)
-
-## Contact 
-- [Slack](https://bit.ly/37uwCPd): Q&A, Help, Feature requests, and more
-- [Twitter](https://bit.ly/3xzkxTx): Follow us on Twitter!
-- [Discord](https://bit.ly/3OfnuhX): Join our Discord Server!
-- [Medium](https://bit.ly/3ryFDgS): Follow our Medium page!
-- [Youtube](https://bit.ly/38Y8rcq): Subscribe our youtube channel!

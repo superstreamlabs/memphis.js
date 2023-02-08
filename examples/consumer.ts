@@ -1,7 +1,7 @@
-const { memphis } = require('memphis-dev');
+import { memphis, Memphis, Message } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection;
+    let memphisConnection: Memphis;
 
     try {
         memphisConnection = await memphis.connect({
@@ -17,13 +17,15 @@ const { memphis } = require('memphis-dev');
         });
 
         consumer.setContext({ key: "value" });
-        consumer.on('message', (message, context) => {
+        consumer.on('message', (message: Message, context: object) => {
             console.log(message.getData().toString());
             message.ack();
             const headers = message.getHeaders()
         });
 
-        consumer.on('error', (error) => { });
+        consumer.on('error', (error) => {
+            console.log(error);
+        });
     } catch (ex) {
         console.log(ex);
         if (memphisConnection) memphisConnection.close();

@@ -1,7 +1,7 @@
-const { memphis } = require("memphis-dev");
+import { memphis, Memphis } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection
+    let memphisConnection: Memphis;
 
     try {
         memphisConnection = await memphis.connect({
@@ -15,12 +15,12 @@ const { memphis } = require("memphis-dev");
             producerName: '<producer-name>'
         });
 
-        const headers = memphis.headers()
-        headers.add('<key>', '<value>')
-        await producer.produce({
-            message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
-            headers: headers
-        });
+            const headers = memphis.headers()
+            headers.add('<key>', '<value>');
+            await producer.produce({
+                message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
+                headers: headers
+            });
 
         memphisConnection.close();
     } catch (ex) {
