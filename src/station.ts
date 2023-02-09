@@ -15,21 +15,21 @@ export class Station {
      */
     async destroy(): Promise<void> {
         try {
-            let removeStationReq = {
+            const removeStationReq = {
                 station_name: this.name,
                 username: this.connection.username
             };
             const stationName = this.name.replace(/\./g, '#').toLowerCase();
-            let sub = this.connection.schemaUpdatesSubs.get(stationName);
-            if (sub) sub.unsubscribe();
+            const sub = this.connection.schemaUpdatesSubs.get(stationName);
+            sub?.unsubscribe?.();
             this.connection.stationSchemaDataMap.delete(stationName);
             this.connection.schemaUpdatesSubs.delete(stationName);
             this.connection.producersPerStation.delete(stationName);
             this.connection.meassageDescriptors.delete(stationName);
             this.connection.jsonSchemas.delete(stationName);
-            let data = this.connection.JSONC.encode(removeStationReq);
-            let errMsg = await this.connection.brokerManager.request('$memphis_station_destructions', data);
-            errMsg = errMsg.data.toString();
+            const data = this.connection.JSONC.encode(removeStationReq);
+            const res = await this.connection.brokerManager.request('$memphis_station_destructions', data);
+            const errMsg = res.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
