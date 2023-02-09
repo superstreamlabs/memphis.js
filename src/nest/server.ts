@@ -1,6 +1,6 @@
 import { CustomTransportStrategy, Server } from '@nestjs/microservices';
 import { MemphisConnectionOptions } from './interfaces';
-import { memphis, Memphis, Consumer } from '../memphis';
+import { memphis, Memphis, Consumer } from '../';
 
 export class MemphisServer extends Server implements CustomTransportStrategy {
     private connection: Memphis;
@@ -20,24 +20,23 @@ export class MemphisServer extends Server implements CustomTransportStrategy {
             console.log(err);
             this.close();
         } finally {
-            callback();
+            // you never know if the cb doing async job
+            await callback();
         }
     }
 
-    public async close(): Promise<void> {
-        const connectCtx = this.connection;
-        if (connectCtx) connectCtx.close();
+    public close(): void {
+        this.connection?.close?.();
     }
 
     private async createConsumer(): Promise<void> {
         const channels = [...this.messageHandlers.keys()];
 
-        channels.forEach(async (option) => {
+        for (let option of channels) {
             const handler = this.messageHandlers.get(option);
             const consumer = await this.connection.consumer(JSON.parse(option));
             this.bindEventHandlers(consumer, handler);
-        });
-        //await Promise.all(channels.map((channel) => this.subscriber.listenTo(channel)));
+        }
     }
 
     private bindEventHandlers(consumer: Consumer, handler): void {
