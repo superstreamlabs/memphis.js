@@ -73,6 +73,7 @@ class Memphis {
     public graphqlSchemas: Map<string, GraphQLSchema>;
     public clusterConfigurations: Map<string, boolean>;
     public stationSchemaverseToDlsMap: Map<string, boolean>;
+    public producerMap: Map<string, Producer>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -99,6 +100,7 @@ class Memphis {
         this.graphqlSchemas = new Map();
         this.clusterConfigurations = new Map();
         this.stationSchemaverseToDlsMap = new Map();
+        this.producerMap = new Map();
     }
 
     /**
@@ -483,6 +485,44 @@ class Memphis {
     }
 
     /**
+     * Produce - produce a message without creating a new producer
+     * @param {String} stationName - station name to produce messages into.
+     * @param {String} producerName - name for the producer.
+     * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
+     * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
+     * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
+     * @param {Any} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
+     */
+    async produce({
+        stationName,
+        producerName,
+        message,
+        ackWaitSec = 15,
+        asyncProduce = false,
+        headers = new MsgHeaders(),
+        msgId = null
+    }: {
+        stationName: string;
+        producerName: string;
+        message: any;
+        ackWaitSec?: number;
+        asyncProduce?: boolean;
+        headers?: any;
+        msgId?: string;
+    }): Promise<void> {
+        try {
+            if (!this.producerMap.get(producerName)) {
+                console.log(message)
+                await this.producer({ stationName, producerName })
+            }
+            const producerInstance = this.producerMap.get(producerName)
+            await producerInstance.produce({ message, ackWaitSec, asyncProduce, headers, msgId })
+        } catch (ex: any) {
+            throw MemphisError(ex);
+        }
+    }
+
+    /**
      * Creates a producer.
      * @param {String} stationName - station name to produce messages into.
      * @param {String} producerName - name for the producer.
@@ -511,7 +551,9 @@ class Memphis {
             this.stationSchemaverseToDlsMap.set(internal_station, createRes.schemaverse_to_dls);
             this.clusterConfigurations.set('send_notification', createRes.send_notification);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
-            return new Producer(this, producerName, stationName);
+            const producerInstance = new Producer(this, producerName, stationName)
+            this.producerMap.set(producerName, producerInstance);
+            return producerInstance;
         } catch (ex) {
             throw MemphisError(ex);
         }
