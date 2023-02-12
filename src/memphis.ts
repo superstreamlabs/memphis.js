@@ -73,6 +73,7 @@ class Memphis {
     public graphqlSchemas: Map<string, GraphQLSchema>;
     public clusterConfigurations: Map<string, boolean>;
     public stationSchemaverseToDlsMap: Map<string, boolean>;
+    private producersMap: Map<string, Producer>
 
     constructor() {
         this.isConnectionActive = false;
@@ -99,6 +100,7 @@ class Memphis {
         this.graphqlSchemas = new Map();
         this.clusterConfigurations = new Map();
         this.stationSchemaverseToDlsMap = new Map();
+        this.producersMap = new Map<string, Producer>()
     }
 
     /**
@@ -492,8 +494,9 @@ class Memphis {
         try {
             if (!this.isConnectionActive) throw MemphisError(new Error('Connection is dead'));
 
+            const realName = producerName;
             producerName = genUniqueSuffix ? generateNameSuffix(`${producerName}_`) : producerName;
-            let createProducerReq = {
+            const createProducerReq = {
                 name: producerName,
                 station_name: stationName,
                 connection_id: this.connectionId,
@@ -501,17 +504,21 @@ class Memphis {
                 req_version: 1,
                 username: this.username
             };
-            let data = this.JSONC.encode(createProducerReq);
+            const data = this.JSONC.encode(createProducerReq);
             let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
             createRes = this.JSONC.decode(createRes.data);
             if (createRes.error != '') {
                 throw MemphisError(new Error(createRes.error));
             }
-            let internal_station = stationName.replace(/\./g, '#').toLowerCase();
+            const internal_station = stationName.replace(/\./g, '#').toLowerCase();
             this.stationSchemaverseToDlsMap.set(internal_station, createRes.schemaverse_to_dls);
             this.clusterConfigurations.set('send_notification', createRes.send_notification);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
-            return new Producer(this, producerName, stationName);
+            
+            const producer = new Producer(this, producerName, stationName, realName);
+            this.setCachedProducer(producer)
+
+            return producer
         } catch (ex) {
             throw MemphisError(ex);
         }
@@ -616,6 +623,51 @@ class Memphis {
         return new MsgHeaders();
     }
 
+    public async produce(
+        { stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean }, 
+        produceObject: { message: any; ackWaitSec?: number; asyncProduce?: boolean; headers?: any; msgId?: string; }): Promise<void> {
+        let producer: Producer;
+        if (!this.isConnectionActive) throw  MemphisError(new Error("Cant produce a message without being connected!"))
+
+        const producerMapKey: string = `${stationName}_${producerName}`;
+        producer = this.getCachedProducer(producerMapKey);
+        if (producer) return await producer.produce(produceObject);
+
+        producer = await this.producer({ stationName, producerName, genUniqueSuffix });
+        return await producer.produce(produceObject);
+    }
+
+    private getCachedProducer(key: string): Producer {
+        if (key === "" || key === null) return null;
+        return this.producersMap.get(key)
+    }
+
+    private setCachedProducer(producer: Producer): void {
+        if (!this.getCachedProducer(producer._getProducerKey()))
+        this.producersMap.set(producer._getProducerKey(), producer)
+    }
+
+    /**
+     * for internal usage
+     * @param producer - Producer
+     */
+    public _unSetCachedProducer(producer: Producer): void {
+        if (!this.getCachedProducer(producer._getProducerKey()))
+        this.producersMap.delete(producer._getProducerKey())
+    }
+
+    /**
+     * for internal usage
+     * @param producer - Producer
+     */
+    public _unSetCachedProducerStation(stationName: string): void {
+        this.producersMap.forEach((producer, key) => {
+            if (producer._getProducerStation() === stationName) {
+                this.producersMap.delete(key)
+            }
+        })
+    }
+
     /**
      * Close Memphis connection.
      */
@@ -632,6 +684,7 @@ class Memphis {
         setTimeout(() => {
             this.brokerManager?.close?.();
         }, 500);
+        this.producersMap = new Map<string, Producer>()
     }
 }
 
