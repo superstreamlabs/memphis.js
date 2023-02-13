@@ -623,19 +623,34 @@ class Memphis {
         return new MsgHeaders();
     }
 
-    public async produce(
-        { stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean },
-        produceObject: { message: any; ackWaitSec?: number; asyncProduce?: boolean; headers?: any; msgId?: string }
-    ): Promise<void> {
+    public async produce({
+        stationName,
+        producerName,
+        genUniqueSuffix = false,
+        message,
+        ackWaitSec,
+        asyncProduce,
+        headers,
+        msgId
+    }: {
+        stationName: string;
+        producerName: string;
+        genUniqueSuffix?: boolean;
+        message: any;
+        ackWaitSec?: number;
+        asyncProduce?: boolean;
+        headers?: any;
+        msgId?: string;
+    }): Promise<void> {
         let producer: Producer;
         if (!this.isConnectionActive) throw MemphisError(new Error('Cant produce a message without being connected!'));
         const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
         const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
         producer = this.getCachedProducer(producerMapKey);
-        if (producer) return await producer.produce(produceObject);
+        if (producer) return await producer.produce({ message, ackWaitSec, asyncProduce, headers, msgId });
 
         producer = await this.producer({ stationName, producerName, genUniqueSuffix });
-        return await producer.produce(produceObject);
+        return await producer.produce({ message, ackWaitSec, asyncProduce, headers, msgId });
     }
 
     private getCachedProducer(key: string): Producer {
