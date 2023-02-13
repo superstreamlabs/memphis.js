@@ -24,7 +24,7 @@ import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 
 import { Consumer, MsgHeaders, Producer, Station } from '.';
-import { MemphisError, generateNameSuffix } from './utils'
+import { MemphisError, generateNameSuffix } from './utils';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -226,7 +226,7 @@ class Memphis {
             let schemaUpdateSubscription = this.schemaUpdatesSubs.has(internalStationName);
             if (schemaUpdateSubscription) {
                 this.producersPerStation.set(internalStationName, this.producersPerStation.get(internalStationName) + 1);
-                return
+                return;
             }
             if (schemaUpdateData['schema_name'] !== '') {
                 this.stationSchemaDataMap.set(internalStationName, schemaUpdateData);
@@ -305,7 +305,7 @@ class Memphis {
                 this.stationSchemaDataMap.delete(stationName);
                 this.meassageDescriptors.delete(stationName);
                 this.jsonSchemas.delete(stationName);
-                return
+                return;
             }
             this.stationSchemaDataMap.set(stationName, data.init);
             try {
@@ -631,12 +631,20 @@ class Memphis {
         }
         setTimeout(() => {
             this.brokerManager?.close?.();
+            this.brokerManager = null;
         }, 500);
+    }
+
+    /**
+     * Check if Memphis is connected.
+     */
+    isConnected() {
+        return !this.brokerManager.isClosed();
     }
 }
 
 @Injectable({})
-export class MemphisService extends Memphis { }
+export class MemphisService extends Memphis {}
 
 export type { Memphis };
 export const memphis = new Memphis();

@@ -299,9 +299,11 @@ await producer.produce({
     headers: headers // defults to empty
 });
 ```
+
 or
+
 ```js
-const headers = { key: "value" }
+const headers = { key: 'value' };
 await producer.produce({
     message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
     headers: headers
@@ -399,7 +401,7 @@ export class Controller {
 ### Passing context to message handlers
 
 ```js
-consumer.setContext({key: "value"});
+consumer.setContext({ key: 'value' });
 ```
 
 ### Processing messages
@@ -430,7 +432,7 @@ headers = message.getHeaders();
 
 ### Get message sequence number
 
-Get message sequence number 
+Get message sequence number
 
 ```js
 sequenceNumber = message.getSequenceNumber();
@@ -448,4 +450,10 @@ consumer.on('error', (error) => {
 
 ```js
 await consumer.destroy();
+```
+
+### Check if broker is connected
+
+```js
+memphisConnection.isConnected();
 ```
