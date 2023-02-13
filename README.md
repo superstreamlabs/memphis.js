@@ -255,7 +255,7 @@ of whether there are messages in flight for the client.
 const producer = await memphisConnection.producer({
     stationName: '<station-name>',
     producerName: '<producer-name>',
-    genUniqueSuffix: false
+    genUniqueSuffix: false // defaults to false
 });
 ```
 
@@ -282,6 +282,28 @@ class ProducerModule {
 
 ### Producing a message
 
+Without creating a producer.
+In cases where extra performance is needed the recommended way is to create a producer first
+and produce messages by using the produce function of it
+
+```js
+await memphisConnection.produce(
+        {
+            stationName: '<station-name>',
+            producerName: '<producer-name>',
+            genUniqueSuffix: false // defaults to false
+        },
+        produceObject: {
+            message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+            ackWaitSec: 15, // defaults to 15
+            asyncProduce: true // defaults to false
+            headers: headers, // defults to empty
+            msgId: 'id' // defaults to null
+        }
+        );
+```
+
+Creating a producer first
 ```js
 await producer.produce({
     message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
@@ -330,7 +352,7 @@ Stations are idempotent by default for 2 minutes (can be configured), Idempotenc
 await producer.produce({
     message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
     ackWaitSec: 15, // defaults to 15
-    msgId: 'fdfd' // defaults to null
+    msgId: 'id' // defaults to null
 });
 ```
 
@@ -352,7 +374,7 @@ const consumer = await memphisConnection.consumer({
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 10, // defaults to 10
-    genUniqueSuffix: false,
+    genUniqueSuffix: false, // defaults to false
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
     lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
 });
