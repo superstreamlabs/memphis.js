@@ -33,6 +33,7 @@ export class Station {
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
+            this.connection._unSetCachedProducerStation(this.name)
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;

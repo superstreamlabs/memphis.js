@@ -12,12 +12,16 @@ export class Producer {
     private producerName: string;
     private stationName: string;
     private internal_station: string;
+    private realName: string
 
-    constructor(connection: Memphis, producerName: string, stationName: string) {
+    constructor(connection: Memphis, producerName: string, stationName: string, realName?: string) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
+        if (realName != null && realName != "") {
+            this.realName = realName
+        }
     }
 
     _handleHeaders(headers: any): broker.MsgHdrs {
@@ -294,11 +298,28 @@ export class Producer {
                 this.connection.meassageDescriptors.delete(stationName);
                 this.connection.jsonSchemas.delete(stationName);
             }
+            this.connection._unSetCachedProducer(this)
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;
             }
             throw MemphisError(ex);
         }
+    }
+
+    /**
+     * for internal propose
+     * @returns {string} producer key
+     */
+    public _getProducerKey(): string {
+        return `${this.stationName}_${this.realName}`;
+    }
+
+    /**
+     * for internal propose
+     * @returns {string} producer key
+     */
+    public _getProducerStation(): string {
+        return this.stationName;
     }
 }
