@@ -60,7 +60,7 @@ class Memphis {
     private reconnectIntervalMs: number;
     private timeoutMs: number;
     public brokerConnection: any;
-    public brokerManager: any;
+    public brokerManager: broker.NatsConnection;
     public brokerStats: any;
     public retentionTypes!: IRetentionTypes;
     public storageTypes!: IStorageTypes;
@@ -334,7 +334,7 @@ class Memphis {
         try {
             const sub = this.brokerManager.subscribe(`$memphis_sdk_configurations_updates`);
             for await (const m of sub) {
-                let data = this.JSONC.decode(m._rdata);
+                let data = this.JSONC.decode(m.data.toString());
                 switch (data['type']) {
                     case 'send_notification':
                         this.clusterConfigurations.set(data['type'], data['update']);
@@ -469,15 +469,15 @@ class Memphis {
             if (stationName === '') {
                 throw new Error('station name is missing');
             }
-            let detachSchemaReq = {
+            const detachSchemaReq = {
                 station_name: stationName,
                 username: this.username
             };
-            let data = this.JSONC.encode(detachSchemaReq);
-            let errMsg = await this.brokerManager.request('$memphis_schema_detachments', data);
-            errMsg = errMsg.data.toString();
-            if (errMsg != '') {
-                throw MemphisError(new Error(errMsg));
+            const data = this.JSONC.encode(detachSchemaReq);
+            const errMsg = await this.brokerManager.request('$memphis_schema_detachments', data);
+            const err = errMsg.data.toString();
+            if (err != '') {
+                throw MemphisError(new Error(err));
             }
         } catch (ex) {
             throw MemphisError(ex);
@@ -505,15 +505,15 @@ class Memphis {
                 username: this.username
             };
             const data = this.JSONC.encode(createProducerReq);
-            let createRes = await this.brokerManager.request('$memphis_producer_creations', data);
-            createRes = this.JSONC.decode(createRes.data);
-            if (createRes.error != '') {
-                throw MemphisError(new Error(createRes.error));
+            const createRes = await this.brokerManager.request('$memphis_producer_creations', data);
+            const res = this.JSONC.decode(createRes.data);
+            if (res.error != '') {
+                throw MemphisError(new Error(res.error));
             }
             const internal_station = stationName.replace(/\./g, '#').toLowerCase();
-            this.stationSchemaverseToDlsMap.set(internal_station, createRes.schemaverse_to_dls);
-            this.clusterConfigurations.set('send_notification', createRes.send_notification);
-            await this._scemaUpdatesListener(stationName, createRes.schema_update);
+            this.stationSchemaverseToDlsMap.set(internal_station, res.schemaverse_to_dls);
+            this.clusterConfigurations.set('send_notification', res.send_notification);
+            await this._scemaUpdatesListener(stationName, res.schema_update);
             
             const producer = new Producer(this, producerName, stationName, realName);
             this.setCachedProducer(producer)

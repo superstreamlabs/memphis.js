@@ -1,4 +1,5 @@
 import * as events from 'events';
+import * as broker from 'nats';
 
 import { Memphis } from './memphis'
 import { Message } from './message';
@@ -21,6 +22,8 @@ export class Consumer {
     private pingConsumerInvterval: any;
     private startConsumeFromSequence: number;
     private lastMessages: number;
+    private pullSubscriber: broker.JetStreamPullSubscription;
+    private subscription: broker.Subscription;
     public context: object;
 
     constructor(
@@ -80,13 +83,20 @@ export class Consumer {
                         durable_name: this.consumerGroup ? consumerGroup : consumerName
                     }
                 })
-                .then(async (psub: any) => {
+                .then(async (psub: broker.JetStreamPullSubscription) => {
+                    this.pullSubscriber = psub;
                     psub.pull({
                         batch: this.batchSize,
                         expires: this.batchMaxTimeToWaitMs
                     });
+
+                    const sub = this.connection.brokerManager.subscribe(`$memphis_dls_${subject}_${consumerGroup}`, {
+                        queue: `$memphis_${subject}_${consumerGroup}`
+                    });
+                    this.subscription = sub;
+
                     this.pullInterval = setInterval(() => {
-                        if (!this.connection.brokerManager.isClosed())
+                        if (!this.connection.brokerManager.isClosed() || !this.pullSubscriber || !this.subscription)
                             psub.pull({
                                 batch: this.batchSize,
                                 expires: this.batchMaxTimeToWaitMs
@@ -95,14 +105,11 @@ export class Consumer {
                     }, this.pullIntervalMs);
 
                     this.pingConsumerInvterval = setInterval(async () => {
-                        if (!this.connection.brokerManager.isClosed()) {
+                        if (!this.connection.brokerManager.isClosed() || !this.pullSubscriber || !this.subscription) {
                             this._pingConsumer();
                         } else clearInterval(this.pingConsumerInvterval);
                     }, this.pingConsumerInvtervalMs);
 
-                    const sub = this.connection.brokerManager.subscribe(`$memphis_dls_${subject}_${consumerGroup}`, {
-                        queue: `$memphis_${subject}_${consumerGroup}`
-                    });
                     this._handleAsyncIterableSubscriber(psub);
                     this._handleAsyncIterableSubscriber(sub);
                 })
@@ -130,6 +137,17 @@ export class Consumer {
         }
     }
 
+    public close(): void {
+        if (this.subscription) {
+            this.subscription.unsubscribe();
+            this.subscription = null;
+        }
+        if (this.pullSubscriber) {
+            this.pullSubscriber.unsubscribe();
+            this.pullSubscriber = null;
+        }
+    }
+
     /**
      * Destroy the consumer.
      */
@@ -141,9 +159,9 @@ export class Consumer {
                 station_name: this.stationName,
                 username: this.connection.username
             };
-            let data = this.connection.JSONC.encode(removeConsumerReq);
-            let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
-            errMsg = errMsg.data.toString();
+            const data = this.connection.JSONC.encode(removeConsumerReq);
+            const res = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
+            const errMsg = res.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }

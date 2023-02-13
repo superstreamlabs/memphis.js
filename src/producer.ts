@@ -208,6 +208,9 @@ export class Producer {
             if (Object.prototype.toString.call(msg) == '[object Object]') {
                 return Buffer.from(JSON.stringify(msg));
             }
+            if (Object.prototype.toString.call(msg) == '[object String]') {
+                return Buffer.from(msg);
+            }
             if (!Buffer.isBuffer(msg)) {
                 throw MemphisError(new Error('Unsupported message type'));
             } else {
@@ -281,9 +284,9 @@ export class Producer {
                 station_name: this.stationName,
                 username: this.connection.username
             };
-            let data = this.connection.JSONC.encode(removeProducerReq);
-            let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
-            errMsg = errMsg.data.toString();
+            const data = this.connection.JSONC.encode(removeProducerReq);
+            const res = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
+            const errMsg = res.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
