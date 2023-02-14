@@ -1,9 +1,8 @@
 import { parse as parseGraphQl, validate as validateGraphQl } from 'graphql';
 import * as broker from 'nats';
 
-
-import { Memphis, MsgHeaders } from ".";
-import { MemphisError, stringToHex } from "./utils";
+import { Memphis, MsgHeaders } from '.';
+import { MemphisError, stringToHex } from './utils';
 
 const schemaVFailAlertType = 'schema_validation_fail_alert';
 
@@ -12,35 +11,34 @@ export class Producer {
     private producerName: string;
     private stationName: string;
     private internal_station: string;
-    private realName: string
+    private realName: string;
 
     constructor(connection: Memphis, producerName: string, stationName: string, realName?: string) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
-        if (realName != null && realName != "") {
-            this.realName = realName
+        if (realName != null && realName != '') {
+            this.realName = realName.toLowerCase();
         }
     }
 
     _handleHeaders(headers: any): broker.MsgHdrs {
         let type;
         if (headers instanceof MsgHeaders) {
-            type = "memphisHeaders";
-        } else if (Object.prototype.toString.call(headers) === "[object Object]") {
-            type = "object";
+            type = 'memphisHeaders';
+        } else if (Object.prototype.toString.call(headers) === '[object Object]') {
+            type = 'object';
         } else {
             throw MemphisError(new Error('headers has to be a Javascript object or an instance of MsgHeaders'));
         }
 
         switch (type) {
-            case "object":
+            case 'object':
                 const msgHeaders = this.connection.headers();
-                for (let key in headers)
-                    msgHeaders.add(key, headers[key]);
+                for (let key in headers) msgHeaders.add(key, headers[key]);
                 return msgHeaders.headers;
-            case "memphisHeaders":
+            case 'memphisHeaders':
                 return headers.headers;
         }
     }
@@ -67,7 +65,7 @@ export class Producer {
     }): Promise<void> {
         try {
             let messageToSend = this._validateMessage(message);
-            headers = this._handleHeaders(headers)
+            headers = this._handleHeaders(headers);
             headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.set('$memphis_producedBy', this.producerName);
             if (msgId) headers.set('msg-id', msgId);
@@ -298,7 +296,7 @@ export class Producer {
                 this.connection.meassageDescriptors.delete(stationName);
                 this.connection.jsonSchemas.delete(stationName);
             }
-            this.connection._unSetCachedProducer(this)
+            this.connection._unSetCachedProducer(this);
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;
@@ -312,7 +310,8 @@ export class Producer {
      * @returns {string} producer key
      */
     public _getProducerKey(): string {
-        return `${this.stationName}_${this.realName}`;
+        const internalStationName = this.stationName.replace(/\./g, '#').toLowerCase();
+        return `${internalStationName}_${this.realName.toLowerCase()}`;
     }
 
     /**

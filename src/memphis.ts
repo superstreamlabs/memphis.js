@@ -24,7 +24,7 @@ import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 
 import { Consumer, MsgHeaders, Producer, Station } from '.';
-import { MemphisError, generateNameSuffix } from './utils'
+import { MemphisError, generateNameSuffix } from './utils';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -73,7 +73,7 @@ class Memphis {
     public graphqlSchemas: Map<string, GraphQLSchema>;
     public clusterConfigurations: Map<string, boolean>;
     public stationSchemaverseToDlsMap: Map<string, boolean>;
-    private producersMap: Map<string, Producer>
+    private producersMap: Map<string, Producer>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -100,7 +100,7 @@ class Memphis {
         this.graphqlSchemas = new Map();
         this.clusterConfigurations = new Map();
         this.stationSchemaverseToDlsMap = new Map();
-        this.producersMap = new Map<string, Producer>()
+        this.producersMap = new Map<string, Producer>();
     }
 
     /**
@@ -228,7 +228,7 @@ class Memphis {
             let schemaUpdateSubscription = this.schemaUpdatesSubs.has(internalStationName);
             if (schemaUpdateSubscription) {
                 this.producersPerStation.set(internalStationName, this.producersPerStation.get(internalStationName) + 1);
-                return
+                return;
             }
             if (schemaUpdateData['schema_name'] !== '') {
                 this.stationSchemaDataMap.set(internalStationName, schemaUpdateData);
@@ -307,7 +307,7 @@ class Memphis {
                 this.stationSchemaDataMap.delete(stationName);
                 this.meassageDescriptors.delete(stationName);
                 this.jsonSchemas.delete(stationName);
-                return
+                return;
             }
             this.stationSchemaDataMap.set(stationName, data.init);
             try {
@@ -494,7 +494,7 @@ class Memphis {
         try {
             if (!this.isConnectionActive) throw MemphisError(new Error('Connection is dead'));
 
-            const realName = producerName;
+            const realName = producerName.toLowerCase();
             producerName = genUniqueSuffix ? generateNameSuffix(`${producerName}_`) : producerName;
             const createProducerReq = {
                 name: producerName,
@@ -514,11 +514,11 @@ class Memphis {
             this.stationSchemaverseToDlsMap.set(internal_station, createRes.schemaverse_to_dls);
             this.clusterConfigurations.set('send_notification', createRes.send_notification);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
-            
-            const producer = new Producer(this, producerName, stationName, realName);
-            this.setCachedProducer(producer)
 
-            return producer
+            const producer = new Producer(this, producerName, stationName, realName);
+            this.setCachedProducer(producer);
+
+            return producer;
         } catch (ex) {
             throw MemphisError(ex);
         }
@@ -623,28 +623,43 @@ class Memphis {
         return new MsgHeaders();
     }
 
-    public async produce(
-        { stationName, producerName, genUniqueSuffix = false }: { stationName: string; producerName: string; genUniqueSuffix?: boolean }, 
-        produceObject: { message: any; ackWaitSec?: number; asyncProduce?: boolean; headers?: any; msgId?: string; }): Promise<void> {
+    public async produce({
+        stationName,
+        producerName,
+        genUniqueSuffix = false,
+        message,
+        ackWaitSec,
+        asyncProduce,
+        headers,
+        msgId
+    }: {
+        stationName: string;
+        producerName: string;
+        genUniqueSuffix?: boolean;
+        message: any;
+        ackWaitSec?: number;
+        asyncProduce?: boolean;
+        headers?: any;
+        msgId?: string;
+    }): Promise<void> {
         let producer: Producer;
-        if (!this.isConnectionActive) throw  MemphisError(new Error("Cant produce a message without being connected!"))
-
-        const producerMapKey: string = `${stationName}_${producerName}`;
+        if (!this.isConnectionActive) throw MemphisError(new Error('Cant produce a message without being connected!'));
+        const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+        const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
         producer = this.getCachedProducer(producerMapKey);
-        if (producer) return await producer.produce(produceObject);
+        if (producer) return await producer.produce({ message, ackWaitSec, asyncProduce, headers, msgId });
 
         producer = await this.producer({ stationName, producerName, genUniqueSuffix });
-        return await producer.produce(produceObject);
+        return await producer.produce({ message, ackWaitSec, asyncProduce, headers, msgId });
     }
 
     private getCachedProducer(key: string): Producer {
-        if (key === "" || key === null) return null;
-        return this.producersMap.get(key)
+        if (key === '' || key === null) return null;
+        return this.producersMap.get(key);
     }
 
     private setCachedProducer(producer: Producer): void {
-        if (!this.getCachedProducer(producer._getProducerKey()))
-        this.producersMap.set(producer._getProducerKey(), producer)
+        if (!this.getCachedProducer(producer._getProducerKey())) this.producersMap.set(producer._getProducerKey(), producer);
     }
 
     /**
@@ -652,8 +667,7 @@ class Memphis {
      * @param producer - Producer
      */
     public _unSetCachedProducer(producer: Producer): void {
-        if (!this.getCachedProducer(producer._getProducerKey()))
-        this.producersMap.delete(producer._getProducerKey())
+        if (!this.getCachedProducer(producer._getProducerKey())) this.producersMap.delete(producer._getProducerKey());
     }
 
     /**
@@ -663,9 +677,9 @@ class Memphis {
     public _unSetCachedProducerStation(stationName: string): void {
         this.producersMap.forEach((producer, key) => {
             if (producer._getProducerStation() === stationName) {
-                this.producersMap.delete(key)
+                this.producersMap.delete(key);
             }
-        })
+        });
     }
 
     /**
@@ -683,13 +697,21 @@ class Memphis {
         }
         setTimeout(() => {
             this.brokerManager?.close?.();
+            this.brokerManager = null;
         }, 500);
-        this.producersMap = new Map<string, Producer>()
+        this.producersMap = new Map<string, Producer>();
+    }
+
+    /**
+     * Check if Memphis is connected.
+     */
+    isConnected() {
+        return !this.brokerManager.isClosed();
     }
 }
 
 @Injectable({})
-export class MemphisService extends Memphis { }
+export class MemphisService extends Memphis {}
 
 export type { Memphis };
 export const memphis = new Memphis();
