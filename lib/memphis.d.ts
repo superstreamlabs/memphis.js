@@ -1,7 +1,7 @@
 import { GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
-import { MsgHdrs } from 'nats';
 import * as protobuf from 'protobufjs';
+import { Consumer, MsgHeaders, Producer, Station } from '.';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -36,6 +36,7 @@ declare class Memphis {
     graphqlSchemas: Map<string, GraphQLSchema>;
     clusterConfigurations: Map<string, boolean>;
     stationSchemaverseToDlsMap: Map<string, boolean>;
+    private producersMap;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
         host: string;
@@ -96,77 +97,24 @@ declare class Memphis {
         lastMessages?: number;
     }): Promise<Consumer>;
     headers(): MsgHeaders;
-    close(): void;
-}
-declare class MsgHeaders {
-    headers: MsgHdrs;
-    constructor();
-    add(key: string, value: string): void;
-}
-declare class Producer {
-    private connection;
-    private producerName;
-    private stationName;
-    private internal_station;
-    constructor(connection: Memphis, producerName: string, stationName: string);
-    _handleHeaders(headers: any): broker.MsgHdrs;
-    produce({ message, ackWaitSec, asyncProduce, headers, msgId }: {
+    produce({ stationName, producerName, genUniqueSuffix, message, ackWaitSec, asyncProduce, headers, msgId }: {
+        stationName: string;
+        producerName: string;
+        genUniqueSuffix?: boolean;
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: any;
         msgId?: string;
     }): Promise<void>;
-    private _parseJsonValidationErrors;
-    private _validateJsonMessage;
-    private _validateProtobufMessage;
-    private _validateGraphqlMessage;
-    private _validateMessage;
-    private _getDlsMsgId;
-    private _hanldeProduceError;
-    destroy(): Promise<void>;
-}
-declare class Consumer {
-    private connection;
-    private stationName;
-    private consumerName;
-    private consumerGroup;
-    private pullIntervalMs;
-    private batchSize;
-    private batchMaxTimeToWaitMs;
-    private maxAckTimeMs;
-    private maxMsgDeliveries;
-    private eventEmitter;
-    private pullInterval;
-    private pingConsumerInvtervalMs;
-    private pingConsumerInvterval;
-    private startConsumeFromSequence;
-    private lastMessages;
-    context: object;
-    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number);
-    setContext(context: Object): void;
-    on(event: String, cb: (...args: any[]) => void): void;
-    private _handleAsyncIterableSubscriber;
-    private _pingConsumer;
-    destroy(): Promise<void>;
-}
-declare class Message {
-    private message;
-    private connection;
-    private cgName;
-    constructor(message: broker.JsMsg, connection: Memphis, cgName: string);
-    ack(): void;
-    getData(): Uint8Array;
-    getHeaders(): Object;
-    getSequenceNumber(): number;
-}
-declare class Station {
-    private connection;
-    name: string;
-    constructor(connection: Memphis, name: string);
-    destroy(): Promise<void>;
+    private getCachedProducer;
+    private setCachedProducer;
+    _unSetCachedProducer(producer: Producer): void;
+    _unSetCachedProducerStation(stationName: string): void;
+    close(): void;
+    isConnected(): boolean;
 }
 export declare class MemphisService extends Memphis {
 }
-export type { Memphis, Station, Producer, Consumer, Message, MsgHeaders };
+export type { Memphis };
 export declare const memphis: Memphis;

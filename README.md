@@ -287,18 +287,16 @@ In cases where extra performance is needed the recommended way is to create a pr
 and produce messages by using the produce function of it
 
 ```js
-await memphisConnection.produce(
-        {
-            stationName: '<station-name>',
-            producerName: '<producer-name>',
-            genUniqueSuffix: false, // defaults to false
-            message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
-            ackWaitSec: 15, // defaults to 15
-            asyncProduce: true // defaults to false
-            headers: headers, // defults to empty
-            msgId: 'id' // defaults to null
-        }
-        );
+await memphisConnection.produce({
+        stationName: '<station-name>',
+        producerName: '<producer-name>',
+        genUniqueSuffix: false, // defaults to false
+        message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
+        ackWaitSec: 15, // defaults to 15
+        asyncProduce: true // defaults to false
+        headers: headers, // defults to empty
+        msgId: 'id' // defaults to null
+});
 ```
 
 Creating a producer first

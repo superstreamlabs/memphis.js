@@ -5,7 +5,7 @@ export declare class MemphisServer extends Server implements CustomTransportStra
     private readonly options;
     constructor(options: MemphisConnectionOptions);
     listen(callback: () => void): Promise<void>;
-    close(): Promise<void>;
+    close(): void;
     private createConsumer;
     private bindEventHandlers;
 }
