@@ -1,4 +1,5 @@
 import { EventPattern } from '@nestjs/microservices';
+import { memphis } from 'src';
 import { MemphisConsumerOption } from './interfaces';
 
 export const consumeMessage = (
@@ -6,4 +7,12 @@ export const consumeMessage = (
   context: object
 ) => {
   return EventPattern(consumer, context);
+};
+
+export const MemphisConsume = (
+  options: MemphisConsumerOption,
+  context: object = {}
+): MethodDecorator => {
+  return (_, __, descriptor: PropertyDescriptor) =>
+    memphis.setConsumeHandler(options, descriptor.value, context);
 };

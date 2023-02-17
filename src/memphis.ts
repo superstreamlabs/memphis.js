@@ -23,8 +23,10 @@ import { buildSchema as buildGraphQlSchema, GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 
-import { Consumer, MsgHeaders, Producer, Station } from '.';
-import { MemphisError, generateNameSuffix } from './utils';
+import {
+  Consumer, MemphisConsumerOption, MsgHeaders, Producer, Station
+} from '.';
+import { generateNameSuffix, MemphisError } from './utils';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -74,6 +76,11 @@ class Memphis {
     public clusterConfigurations: Map<string, boolean>;
     public stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap: Map<string, Producer>;
+    private consumeHandlers: {
+      options: MemphisConsumerOption,
+      context?: object,
+      handler: (...args: any) => void
+    }[];
 
     constructor() {
         this.isConnectionActive = false;
@@ -101,6 +108,7 @@ class Memphis {
         this.clusterConfigurations = new Map();
         this.stationSchemaverseToDlsMap = new Map();
         this.producersMap = new Map<string, Producer>();
+        this.consumeHandlers = [];
     }
 
     /**
@@ -186,6 +194,15 @@ class Memphis {
                 this.brokerStats = await this.brokerManager.jetstreamManager();
                 this.isConnectionActive = true;
                 this._configurationsListener();
+                 this.consumeHandlers.forEach(
+                   ({ options, handler, context }) => {
+                     this.consumer(options).then((c) => {
+                       c.setContext(context);
+                       c.on('message', handler);
+                       c.on('error', handler);
+                     });
+                   }
+                 );
                 (async () => {
                     for await (const s of this.brokerManager.status()) {
                         switch (s.type) {
@@ -707,6 +724,14 @@ class Memphis {
      */
     isConnected() {
         return !this.brokerManager.isClosed();
+    }
+
+    public setConsumeHandler(
+        options: MemphisConsumerOption,
+        handler: (...args: any) => void,
+        context: object
+    ): void {
+        this.consumeHandlers.push({ options, handler, context });
     }
 }
 

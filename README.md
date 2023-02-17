@@ -399,13 +399,13 @@ async function bootstrap() {
 bootstrap();
 ```
 
-To Consume messages in nestjs
+To consume messages in NestJS
 
 ```js
 export class Controller {
-    import { consumeMessage, Message } from 'memphis-dev';
+    import { MemphisConsume, Message } from 'memphis-dev';
 
-    @consumeMessage({
+    @MemphisConsume({
         stationName: '<station-name>',
         consumerName: '<consumer-name>',
         consumerGroup: ''

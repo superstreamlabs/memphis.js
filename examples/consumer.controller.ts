@@ -1,9 +1,9 @@
 import { Controller } from '@nestjs/common';
-import { consumeMessage, Message } from 'memphis-dev';
+import { MemphisConsume, Message } from 'memphis-dev';
 
 @Controller('auth')
 export class ExampleController {
-    @consumeMessage({
+    @MemphisConsume({
         stationName: '<station-name>',
         consumerName: '<consumer-name>',
         consumerGroup: ''

@@ -1,7 +1,7 @@
 import { GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
-import { Consumer, MsgHeaders, Producer, Station } from '.';
+import { Consumer, MemphisConsumerOption, MsgHeaders, Producer, Station } from '.';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -37,6 +37,7 @@ declare class Memphis {
     clusterConfigurations: Map<string, boolean>;
     stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap;
+    private consumeHandlers;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
         host: string;
@@ -113,6 +114,7 @@ declare class Memphis {
     _unSetCachedProducerStation(stationName: string): void;
     close(): void;
     isConnected(): boolean;
+    setConsumeHandler(options: MemphisConsumerOption, handler: (...args: any) => void, context: object): void;
 }
 export declare class MemphisService extends Memphis {
 }
