@@ -23,7 +23,7 @@ import { buildSchema as buildGraphQlSchema, GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 
-import { Consumer, MsgHeaders, Producer, Station } from '.';
+import { Consumer, MsgHeaders, Producer, Station, Message } from '.';
 import { MemphisError, generateNameSuffix } from './utils';
 
 interface IRetentionTypes {
@@ -74,6 +74,7 @@ class Memphis {
     public clusterConfigurations: Map<string, boolean>;
     public stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap: Map<string, Producer>;
+    private consumersMap: Map<string, Consumer>;
 
     constructor() {
         this.isConnectionActive = false;
@@ -101,6 +102,7 @@ class Memphis {
         this.clusterConfigurations = new Map();
         this.stationSchemaverseToDlsMap = new Map();
         this.producersMap = new Map<string, Producer>();
+        this.consumersMap = new Map<string, Consumer>();
     }
 
     /**
@@ -515,7 +517,7 @@ class Memphis {
             this.clusterConfigurations.set('send_notification', createRes.send_notification);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
 
-            const producer = new Producer(this, producerName, stationName, realName);
+            const producer = new Producer(this, producerName, stationName);
             this.setCachedProducer(producer);
 
             return producer;
@@ -601,7 +603,7 @@ class Memphis {
                 throw MemphisError(new Error(errMsg));
             }
 
-            return new Consumer(
+            const consumer = new Consumer(
                 this,
                 stationName,
                 consumerName,
@@ -614,6 +616,9 @@ class Memphis {
                 startConsumeFromSequence,
                 lastMessages
             );
+            this.setCachedConsumer(consumer);
+
+            return consumer;
         } catch (ex) {
             throw MemphisError(ex);
         }
@@ -623,6 +628,17 @@ class Memphis {
         return new MsgHeaders();
     }
 
+    /**
+     * Produce a message.
+     * @param {String} stationName - station name to produce messages into.
+     * @param {String} producerName - name for the producer.
+     * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+     * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
+     * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
+     * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
+     * @param {Any} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
+     * @param {Any} msgId - Message ID - for idempotent message production
+     */
     public async produce({
         stationName,
         producerName,
@@ -651,6 +667,51 @@ class Memphis {
 
         producer = await this.producer({ stationName, producerName, genUniqueSuffix });
         return await producer.produce({ message, ackWaitSec, asyncProduce, headers, msgId });
+    }
+
+    /**
+     * Consume a batch of messages.
+     * @param {String} stationName - station name to consume messages from.
+     * @param {String} consumerName - name for the consumer.
+     * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
+     * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired consumer name.
+     * @param {Number} batchSize - pull batch size.
+     * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+     * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
+     * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
+     * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
+     */
+    public async fetchMessages({
+        stationName,
+        consumerName,
+        consumerGroup = '',
+        genUniqueSuffix = false,
+        batchSize = 10,
+        maxAckTimeMs = 30000,
+        maxMsgDeliveries = 10,
+        startConsumeFromSequence = 1,
+        lastMessages = -1
+    }: {
+        stationName: string;
+        consumerName: string;
+        consumerGroup?: string;
+        genUniqueSuffix?: boolean;
+        batchSize?: number;
+        maxAckTimeMs?: number;
+        maxMsgDeliveries?: number;
+        startConsumeFromSequence?: number;
+        lastMessages?: number;
+    }): Promise<Message[]> {
+        let consumer: Consumer;
+        if (!this.isConnectionActive) throw MemphisError(new Error('Cant fetch messages without being connected!'));
+        const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+        const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
+        consumer = this.getCachedConsumer(consumerMapKey);
+        if (consumer)
+            return await consumer.fetch();
+
+        consumer = await this.consumer({ stationName, consumerName, genUniqueSuffix, consumerGroup, batchSize, maxAckTimeMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages });
+        return await consumer.fetch();
     }
 
     private getCachedProducer(key: string): Producer {
@@ -682,6 +743,35 @@ class Memphis {
         });
     }
 
+    private getCachedConsumer(key: string): Consumer {
+        if (key === '' || key === null) return null;
+        return this.consumersMap.get(key);
+    }
+
+    private setCachedConsumer(consumer: Consumer): void {
+        if (!this.getCachedConsumer(consumer._getConsumerKey())) this.consumersMap.set(consumer._getConsumerKey(), consumer);
+    }
+
+    /**
+     * for internal usage
+     * @param consumer - Consumer
+     */
+    public _unSetCachedConsumer(consumer: Consumer): void {
+        if (!this.getCachedConsumer(consumer._getConsumerKey())) this.consumersMap.delete(consumer._getConsumerKey());
+    }
+
+    /**
+     * for internal usage
+     * @param consumer - Consumer
+     */
+    public _unSetCachedConsumerStation(stationName: string): void {
+        this.consumersMap.forEach((consumer, key) => {
+            if (consumer._getConsumerStation() === stationName) {
+                this.consumersMap.delete(key);
+            }
+        });
+    }
+
     /**
      * Close Memphis connection.
      */
@@ -700,6 +790,7 @@ class Memphis {
             this.brokerManager = null;
         }, 500);
         this.producersMap = new Map<string, Producer>();
+        this.consumersMap = new Map<string, Consumer>();
     }
 
     /**
@@ -711,7 +802,7 @@ class Memphis {
 }
 
 @Injectable({})
-export class MemphisService extends Memphis {}
+export class MemphisService extends Memphis { }
 
 export type { Memphis };
 export const memphis = new Memphis();

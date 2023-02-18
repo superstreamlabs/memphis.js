@@ -1,7 +1,7 @@
 import { GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
-import { Consumer, MsgHeaders, Producer, Station } from '.';
+import { Consumer, MsgHeaders, Producer, Station, Message } from '.';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -37,6 +37,7 @@ declare class Memphis {
     clusterConfigurations: Map<string, boolean>;
     stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap;
+    private consumersMap;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
         host: string;
@@ -107,10 +108,25 @@ declare class Memphis {
         headers?: any;
         msgId?: string;
     }): Promise<void>;
+    fetchMessages({ stationName, consumerName, consumerGroup, genUniqueSuffix, batchSize, maxAckTimeMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages }: {
+        stationName: string;
+        consumerName: string;
+        consumerGroup?: string;
+        genUniqueSuffix?: boolean;
+        batchSize?: number;
+        maxAckTimeMs?: number;
+        maxMsgDeliveries?: number;
+        startConsumeFromSequence?: number;
+        lastMessages?: number;
+    }): Promise<Message[]>;
     private getCachedProducer;
     private setCachedProducer;
     _unSetCachedProducer(producer: Producer): void;
     _unSetCachedProducerStation(stationName: string): void;
+    private getCachedConsumer;
+    private setCachedConsumer;
+    _unSetCachedConsumer(consumer: Consumer): void;
+    _unSetCachedConsumerStation(stationName: string): void;
     close(): void;
     isConnected(): boolean;
 }

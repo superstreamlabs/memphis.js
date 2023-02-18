@@ -13,14 +13,12 @@ export class Producer {
     private internal_station: string;
     private realName: string;
 
-    constructor(connection: Memphis, producerName: string, stationName: string, realName?: string) {
+    constructor(connection: Memphis, producerName: string, stationName: string) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
-        if (realName != null && realName != '') {
-            this.realName = realName.toLowerCase();
-        }
+        this.realName = producerName.toLowerCase();
     }
 
     _handleHeaders(headers: any): broker.MsgHdrs {
@@ -45,10 +43,11 @@ export class Producer {
 
     /**
      * Produces a message into a station.
-     * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
+     * @param {Any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
      * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
-     * @param {Any} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
+     * @param {Object} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
+     * @param {String} msgId - Message ID - for idempotent message production
      */
     async produce({
         message,
