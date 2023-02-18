@@ -194,15 +194,13 @@ class Memphis {
                 this.brokerStats = await this.brokerManager.jetstreamManager();
                 this.isConnectionActive = true;
                 this._configurationsListener();
-                 this.consumeHandlers.forEach(
-                   ({ options, handler, context }) => {
-                     this.consumer(options).then((c) => {
-                       c.setContext(context);
-                       c.on('message', handler);
-                       c.on('error', handler);
-                     });
-                   }
-                 );
+                for (const { options, handler, context } of 
+                    this.consumeHandlers) {
+                    const consumer = await this.consumer(options);
+                    consumer.setContext(context);
+                    consumer.on('message', handler);
+                    consumer.on('error', handler);
+                }
                 (async () => {
                     for await (const s of this.brokerManager.status()) {
                         switch (s.type) {
