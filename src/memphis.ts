@@ -726,7 +726,7 @@ class Memphis {
         return !this.brokerManager.isClosed();
     }
 
-    public setConsumeHandler(
+    public _setConsumeHandler(
         options: MemphisConsumerOption,
         handler: (...args: any) => void,
         context: object

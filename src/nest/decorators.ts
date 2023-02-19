@@ -14,5 +14,5 @@ export const MemphisConsume = (
   context: object = {}
 ): MethodDecorator => {
   return (_, __, descriptor: PropertyDescriptor) =>
-    memphis.setConsumeHandler(options, descriptor.value, context);
+    memphis._setConsumeHandler(options, descriptor.value, context);
 };

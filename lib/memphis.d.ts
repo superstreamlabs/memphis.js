@@ -118,7 +118,7 @@ declare class Memphis {
     _unSetCachedProducerStation(stationName: string): void;
     close(): void;
     isConnected(): boolean;
-    setConsumeHandler(options: MemphisConsumerOption, handler: (...args: any) => void, context: object): void;
+    _setConsumeHandler(options: MemphisConsumerOption, handler: (...args: any) => void, context: object): void;
 }
 export declare class MemphisService extends Memphis {
 }
