@@ -1,9 +1,13 @@
 import { Memphis } from './memphis';
+import { Message } from './message';
 export declare class Consumer {
     private connection;
     private stationName;
+    private internalStationName;
     private consumerName;
+    private internalConsumerName;
     private consumerGroup;
+    private internalConsumerGroupName;
     private pullIntervalMs;
     private batchSize;
     private batchMaxTimeToWaitMs;
@@ -16,10 +20,16 @@ export declare class Consumer {
     private startConsumeFromSequence;
     private lastMessages;
     context: object;
+    private realName;
+    private dlsMessages;
+    private dlsCurrentIndex;
     constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number);
     setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
+    fetch(): Promise<Message[]>;
     private _handleAsyncIterableSubscriber;
     private _pingConsumer;
     destroy(): Promise<void>;
+    _getConsumerKey(): string;
+    _getConsumerStation(): string;
 }

@@ -4,10 +4,12 @@ import { MemphisError } from "./utils";
 export class Station {
     private connection: Memphis;
     public name: string;
+    public internalName: string;
 
     constructor(connection: Memphis, name: string) {
         this.connection = connection;
         this.name = name.toLowerCase();
+        this.internalName = this.name.replace(/\./g, '#').toLowerCase();
     }
 
     /**
@@ -33,7 +35,8 @@ export class Station {
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
             }
-            this.connection._unSetCachedProducerStation(this.name)
+            this.connection._unSetCachedProducerStation(this.internalName)
+            this.connection._unSetCachedConsumerStation(this.internalName)
         } catch (ex) {
             if (ex.message?.includes('not exist')) {
                 return;

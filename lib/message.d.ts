@@ -7,6 +7,7 @@ export declare class Message {
     constructor(message: broker.JsMsg, connection: Memphis, cgName: string);
     ack(): void;
     getData(): Uint8Array;
+    getDataAsJson(): Object;
     getHeaders(): Object;
     getSequenceNumber(): number;
 }

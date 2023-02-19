@@ -377,6 +377,40 @@ const consumer = await memphisConnection.consumer({
 });
 ```
 
+### Passing context to message handlers
+
+```js
+consumer.setContext({ key: 'value' });
+```
+
+### Processing messages
+
+```js
+consumer.on('message', (message, context) => {
+    // processing
+    console.log(message.getData());
+    message.ack();
+});
+```
+
+### Fetch single batch of messages
+
+```js
+const msgs = await memphis.fetchMessages({
+    stationName: '<station-name>',
+    consumerName: '<consumer-name>',
+    consumerGroup: '<group-name>', // defaults to the consumer name.
+    pullIntervalMs: 1000, // defaults to 1000
+    batchSize: 10, // defaults to 10
+    batchMaxTimeToWaitMs: 5000, // defaults to 5000
+    maxAckTimeMs: 30000, // defaults to 30000
+    maxMsgDeliveries: 10, // defaults to 10
+    genUniqueSuffix: false, // defaults to false
+    startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
+    lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
+});
+```
+
 To set Up connection in nestjs
 
 ```js
@@ -417,28 +451,26 @@ export class Controller {
 }
 ```
 
-### Passing context to message handlers
-
-```js
-consumer.setContext({ key: 'value' });
-```
-
-### Processing messages
-
-```js
-consumer.on('message', (message, context) => {
-    // processing
-    console.log(message.getData());
-    message.ack();
-});
-```
-
 ### Acknowledge a message
 
 Acknowledge a message indicates the Memphis server to not re-send the same message again to the same consumer / consumers group
 
 ```js
 message.ack();
+```
+
+### Get message payload
+
+As Uint8Array
+
+```js
+msg = message.getData();
+```
+
+As Json
+
+```js
+msg = message.getDataAsJson();
 ```
 
 ### Get headers

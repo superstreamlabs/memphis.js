@@ -42,6 +42,21 @@ export class Message {
     }
 
     /**
+     * Returns the message payload as json or null in case of an invalid json.
+     */
+    getDataAsJson(): Object {
+        const isBuffer = Buffer.isBuffer(this.message.data);
+        let message;
+        if (!isBuffer) {
+            message = Buffer.from(this.message.data);
+        } else {
+            message = this.message.data;
+        }
+
+        return JSON.parse(message.toString());
+    }
+
+    /**
      * Returns the message headers.
      */
     getHeaders(): Object {

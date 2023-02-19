@@ -3,6 +3,7 @@ import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 import { Consumer } from './consumer';
 import { MsgHeaders } from './message-header';
+import { Message } from './message';
 import { MemphisConsumerOption } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
@@ -41,6 +42,7 @@ declare class Memphis {
     clusterConfigurations: Map<string, boolean>;
     stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap;
+    private consumersMap;
     private consumeHandlers;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
@@ -112,10 +114,25 @@ declare class Memphis {
         headers?: any;
         msgId?: string;
     }): Promise<void>;
+    fetchMessages({ stationName, consumerName, consumerGroup, genUniqueSuffix, batchSize, maxAckTimeMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages }: {
+        stationName: string;
+        consumerName: string;
+        consumerGroup?: string;
+        genUniqueSuffix?: boolean;
+        batchSize?: number;
+        maxAckTimeMs?: number;
+        maxMsgDeliveries?: number;
+        startConsumeFromSequence?: number;
+        lastMessages?: number;
+    }): Promise<Message[]>;
     private getCachedProducer;
     private setCachedProducer;
     _unSetCachedProducer(producer: Producer): void;
     _unSetCachedProducerStation(stationName: string): void;
+    private getCachedConsumer;
+    private setCachedConsumer;
+    _unSetCachedConsumer(consumer: Consumer): void;
+    _unSetCachedConsumerStation(stationName: string): void;
     close(): void;
     isConnected(): boolean;
     _setConsumeHandler(options: MemphisConsumerOption, handler: (...args: any) => void, context: object): void;
