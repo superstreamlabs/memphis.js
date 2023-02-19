@@ -391,7 +391,8 @@ class Memphis {
         idempotencyWindowMs = 120000,
         schemaName = '',
         sendPoisonMsgToDls = true,
-        sendSchemaFailedMsgToDls = true
+        sendSchemaFailedMsgToDls = true,
+        tieredStorageEnabled = false
     }: {
         name: string;
         retentionType?: string;
@@ -402,6 +403,7 @@ class Memphis {
         schemaName?: string;
         sendPoisonMsgToDls?: boolean;
         sendSchemaFailedMsgToDls?: boolean;
+        tieredStorageEnabled?: boolean;
     }): Promise<Station> {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -417,7 +419,8 @@ class Memphis {
                     poison: sendPoisonMsgToDls,
                     Schemaverse: sendSchemaFailedMsgToDls
                 },
-                username: this.username
+                username: this.username,
+                tiered_storage_enabled: tieredStorageEnabled
             };
             const data = this.JSONC.encode(createStationReq);
             const res = await this.brokerManager.request('$memphis_station_creations', data);
@@ -707,10 +710,19 @@ class Memphis {
         const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
         const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
         consumer = this.getCachedConsumer(consumerMapKey);
-        if (consumer)
-            return await consumer.fetch();
+        if (consumer) return await consumer.fetch();
 
-        consumer = await this.consumer({ stationName, consumerName, genUniqueSuffix, consumerGroup, batchSize, maxAckTimeMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages });
+        consumer = await this.consumer({
+            stationName,
+            consumerName,
+            genUniqueSuffix,
+            consumerGroup,
+            batchSize,
+            maxAckTimeMs,
+            maxMsgDeliveries,
+            startConsumeFromSequence,
+            lastMessages
+        });
         return await consumer.fetch();
     }
 
@@ -802,7 +814,7 @@ class Memphis {
 }
 
 @Injectable({})
-export class MemphisService extends Memphis { }
+export class MemphisService extends Memphis {}
 
 export type { Memphis };
 export const memphis = new Memphis();
