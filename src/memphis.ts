@@ -23,9 +23,11 @@ import { buildSchema as buildGraphQlSchema, GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 
-import {
-  Consumer, MemphisConsumerOption, MsgHeaders, Producer, Station
-} from '.';
+import { Consumer } from './consumer';
+import { MsgHeaders } from './message-header';
+import { MemphisConsumerOption } from './nest/interfaces';
+import { Producer } from './producer';
+import { Station } from './station';
 import { generateNameSuffix, MemphisError } from './utils';
 
 interface IRetentionTypes {
