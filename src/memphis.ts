@@ -716,6 +716,7 @@ class Memphis {
             this.brokerManager?.close?.();
             this.brokerManager = null;
         }, 500);
+        this.consumeHandlers = [];
         this.producersMap = new Map<string, Producer>();
     }
 
