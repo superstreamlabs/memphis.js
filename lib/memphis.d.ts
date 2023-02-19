@@ -2,9 +2,9 @@ import { GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 import { Consumer } from './consumer';
-import { MsgHeaders } from './message-header';
 import { Message } from './message';
-import { MemphisConsumerOption } from './nest/interfaces';
+import { MsgHeaders } from './message-header';
+import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 interface IRetentionTypes {
@@ -135,7 +135,7 @@ declare class Memphis {
     _unSetCachedConsumerStation(stationName: string): void;
     close(): void;
     isConnected(): boolean;
-    _setConsumeHandler(options: MemphisConsumerOption, handler: (...args: any) => void, context: object): void;
+    _setConsumeHandler(options: MemphisConsumerOptions, handler: (...args: any) => void, context: object): void;
 }
 export declare class MemphisService extends Memphis {
 }

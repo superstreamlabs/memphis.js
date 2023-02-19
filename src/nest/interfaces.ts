@@ -14,7 +14,7 @@ export interface MemphisPattern<TPattern = string> {
     pattern: TPattern;
 }
 
-export interface MemphisConsumerOption {
+export interface MemphisConsumerOptions {
     stationName: string;
     consumerName: string;
     consumerGroup?: string;

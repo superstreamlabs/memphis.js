@@ -1,16 +1,16 @@
 import { EventPattern } from '@nestjs/microservices';
 import { memphis } from 'src';
-import { MemphisConsumerOption } from './interfaces';
+import { MemphisConsumerOptions } from './interfaces';
 
 export const consumeMessage = (
-  consumer: MemphisConsumerOption,
+  consumer: MemphisConsumerOptions,
   context: object
 ) => {
   return EventPattern(consumer, context);
 };
 
 export const MemphisConsume = (
-  options: MemphisConsumerOption,
+  options: MemphisConsumerOptions,
   context: object = {}
 ): MethodDecorator => {
   return (_, __, descriptor: PropertyDescriptor) =>
