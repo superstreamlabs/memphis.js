@@ -1,7 +1,12 @@
 import { GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
-import { Consumer, MsgHeaders, Producer, Station, Message } from '.';
+import { Consumer } from './consumer';
+import { Message } from './message';
+import { MsgHeaders } from './message-header';
+import { MemphisConsumerOptions } from './nest/interfaces';
+import { Producer } from './producer';
+import { Station } from './station';
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
@@ -38,6 +43,7 @@ declare class Memphis {
     stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap;
     private consumersMap;
+    private consumeHandlers;
     constructor();
     connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
         host: string;
@@ -61,7 +67,7 @@ declare class Memphis {
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     private _generateConnectionID;
-    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled }: {
+    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
@@ -71,7 +77,6 @@ declare class Memphis {
         schemaName?: string;
         sendPoisonMsgToDls?: boolean;
         sendSchemaFailedMsgToDls?: boolean;
-        tieredStorageEnabled?: boolean;
     }): Promise<Station>;
     attachSchema({ name, stationName }: {
         name: string;
@@ -130,6 +135,7 @@ declare class Memphis {
     _unSetCachedConsumerStation(stationName: string): void;
     close(): void;
     isConnected(): boolean;
+    _setConsumeHandler(options: MemphisConsumerOptions, handler: (...args: any) => void, context: object): void;
 }
 export declare class MemphisService extends Memphis {
 }
