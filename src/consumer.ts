@@ -102,7 +102,7 @@ export class Consumer {
                         expires: this.batchMaxTimeToWaitMs
                     });
                     this.pullInterval = setInterval(() => {
-                        if (!this.connection.brokerManager.isClosed())
+                        if (this?.connection?.brokerManager && !this.connection.brokerManager.isClosed())
                             psub.pull({
                                 batch: this.batchSize,
                                 expires: this.batchMaxTimeToWaitMs
@@ -111,7 +111,7 @@ export class Consumer {
                     }, this.pullIntervalMs);
 
                     this.pingConsumerInvterval = setInterval(async () => {
-                        if (!this.connection.brokerManager.isClosed()) {
+                        if (this?.connection?.brokerManager && !this.connection.brokerManager.isClosed()) {
                             this._pingConsumer();
                         } else clearInterval(this.pingConsumerInvterval);
                     }, this.pingConsumerInvtervalMs);
