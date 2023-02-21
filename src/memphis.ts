@@ -795,6 +795,7 @@ class Memphis {
    * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired consumer name.
    * @param {Number} batchSize - pull batch size.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
+   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000. 
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
@@ -806,6 +807,7 @@ class Memphis {
     genUniqueSuffix = false,
     batchSize = 10,
     maxAckTimeMs = 30000,
+    batchMaxTimeToWaitMs = 5000,
     maxMsgDeliveries = 10,
     startConsumeFromSequence = 1,
     lastMessages = -1
@@ -816,6 +818,7 @@ class Memphis {
     genUniqueSuffix?: boolean;
     batchSize?: number;
     maxAckTimeMs?: number;
+    batchMaxTimeToWaitMs?: number;
     maxMsgDeliveries?: number;
     startConsumeFromSequence?: number;
     lastMessages?: number;
@@ -837,6 +840,7 @@ class Memphis {
       consumerGroup,
       batchSize,
       maxAckTimeMs,
+      batchMaxTimeToWaitMs,
       maxMsgDeliveries,
       startConsumeFromSequence,
       lastMessages
