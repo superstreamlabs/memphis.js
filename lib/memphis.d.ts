@@ -114,13 +114,14 @@ declare class Memphis {
         headers?: any;
         msgId?: string;
     }): Promise<void>;
-    fetchMessages({ stationName, consumerName, consumerGroup, genUniqueSuffix, batchSize, maxAckTimeMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages }: {
+    fetchMessages({ stationName, consumerName, consumerGroup, genUniqueSuffix, batchSize, maxAckTimeMs, batchMaxTimeToWaitMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages }: {
         stationName: string;
         consumerName: string;
         consumerGroup?: string;
         genUniqueSuffix?: boolean;
         batchSize?: number;
         maxAckTimeMs?: number;
+        batchMaxTimeToWaitMs?: number;
         maxMsgDeliveries?: number;
         startConsumeFromSequence?: number;
         lastMessages?: number;

@@ -63,8 +63,8 @@ export class Producer {
         msgId?: string;
     }): Promise<void> {
         try {
-            let messageToSend = this._validateMessage(message);
             headers = this._handleHeaders(headers);
+            let messageToSend = this._validateMessage(message);
             headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.set('$memphis_producedBy', this.producerName);
             if (msgId) headers.set('msg-id', msgId);
@@ -237,10 +237,10 @@ export class Producer {
                     $memphis_producedBy: this.producerName
                 };
                 const keys = headers.headers.keys();
-                keys.forEach((key) => {
-                    const value = headers.headers.values(key);
+                for (let key of keys) {
+                    const value = headers.headers.get(key);
                     headersObject[key] = value[0];
-                });
+                }
                 const buf = this.connection.JSONC.encode({
                     _id: id,
                     station_name: this.internal_station,
