@@ -205,6 +205,9 @@ export class Producer {
             if (Object.prototype.toString.call(msg) == '[object Object]') {
                 return Buffer.from(JSON.stringify(msg));
             }
+            if (Object.prototype.toString.call(msg) == '[object String]') {
+                return Buffer.from(msg);
+            }
             if (!Buffer.isBuffer(msg)) {
                 throw MemphisError(new Error('Unsupported message type'));
             } else {
