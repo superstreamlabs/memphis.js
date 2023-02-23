@@ -13,12 +13,12 @@ export class Producer {
     private internal_station: string;
     private realName: string;
 
-    constructor(connection: Memphis, producerName: string, stationName: string) {
+    constructor(connection: Memphis, producerName: string, stationName: string, realName: string) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
-        this.realName = producerName.toLowerCase();
+        this.realName = realName;
     }
 
     _handleHeaders(headers: any): broker.MsgHdrs {

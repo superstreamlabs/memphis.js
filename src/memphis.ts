@@ -604,7 +604,7 @@ class Memphis {
       );
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
 
-      const producer = new Producer(this, producerName, stationName);
+      const producer = new Producer(this, producerName, stationName, realName);
       this.setCachedProducer(producer);
 
       return producer;
@@ -655,6 +655,7 @@ class Memphis {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
 
+      const realName = consumerName.toLowerCase();
       consumerName = genUniqueSuffix
         ? generateNameSuffix(`${consumerName}_`)
         : consumerName;
@@ -712,7 +713,8 @@ class Memphis {
         maxAckTimeMs,
         maxMsgDeliveries,
         startConsumeFromSequence,
-        lastMessages
+        lastMessages,
+        realName
       );
       this.setCachedConsumer(consumer);
 
@@ -914,6 +916,7 @@ class Memphis {
    * Close Memphis connection.
    */
   close() {
+    this.isConnectionActive = false;
     for (let key of this.schemaUpdatesSubs.keys()) {
       const sub = this.schemaUpdatesSubs.get(key);
       sub?.unsubscribe?.();
@@ -925,7 +928,6 @@ class Memphis {
     }
     setTimeout(() => {
       this.brokerManager?.close?.();
-      this.brokerManager = null;
     }, 500);
     this.consumeHandlers = [];
     this.producersMap = new Map<string, Producer>();
@@ -949,7 +951,7 @@ class Memphis {
 }
 
 @Injectable({})
-export class MemphisService extends Memphis {}
+export class MemphisService extends Memphis { }
 
 export type { Memphis };
 export const memphis = new Memphis();
