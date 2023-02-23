@@ -40,7 +40,8 @@ export class Consumer {
         maxAckTimeMs: number,
         maxMsgDeliveries: number,
         startConsumeFromSequence: number,
-        lastMessages: number
+        lastMessages: number,
+        realName: string
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -61,7 +62,7 @@ export class Consumer {
         this.startConsumeFromSequence = startConsumeFromSequence;
         this.lastMessages = lastMessages;
         this.context = {};
-        this.realName = consumerName.toLowerCase();
+        this.realName = realName;
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
 
