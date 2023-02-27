@@ -1,9 +1,8 @@
 import * as events from 'events';
 
-import { Memphis } from './memphis'
+import { Memphis } from './memphis';
 import { Message } from './message';
-import { MemphisError } from './utils'
-
+import { MemphisError } from './utils';
 
 export class Consumer {
     private connection: Memphis;
@@ -86,9 +85,6 @@ export class Consumer {
      */
     on(event: String, cb: (...args: any[]) => void) {
         if (event === 'message') {
-            // const subject = this.stationName.replace(/\./g, '#').toLowerCase();
-            // const consumerGroup = this.consumerGroup.replace(/\./g, '#').toLowerCase();
-            // const consumerName = this.consumerName.replace(/\./g, '#').toLowerCase();
             this.connection.brokerConnection
                 .pullSubscribe(`${this.internalStationName}.final`, {
                     mack: true,
@@ -116,11 +112,7 @@ export class Consumer {
                         } else clearInterval(this.pingConsumerInvterval);
                     }, this.pingConsumerInvtervalMs);
 
-                    // const sub = this.connection.brokerManager.subscribe(`$memphis_dls_${subject}_${consumerGroup}`, {
-                    //     queue: `$memphis_${subject}_${consumerGroup}`
-                    // });
                     this._handleAsyncIterableSubscriber(psub, false);
-                    // this._handleAsyncIterableSubscriber(sub);
                 })
                 .catch((error: any) => this.eventEmitter.emit('error', MemphisError(error)));
         }
@@ -131,30 +123,31 @@ export class Consumer {
     /**
      * Fetch a batch of messages.
      */
-    public async fetch(): Promise<Message[]> {
+    public async fetch({ batchSize = 10 }: { batchSize?: number }): Promise<Message[]> {
         try {
+            this.batchSize = batchSize;
             let messages: Message[] = [];
             if (this.dlsMessages.length > 0) {
-                if (this.dlsMessages.length <= this.batchSize) {
+                if (this.dlsMessages.length <= batchSize) {
                     messages = this.dlsMessages;
                     this.dlsMessages = [];
                     this.dlsCurrentIndex = 0;
                 } else {
-                    messages = this.dlsMessages.splice(0, this.batchSize);
+                    messages = this.dlsMessages.splice(0, batchSize);
                     this.dlsCurrentIndex -= messages.length;
                 }
                 return messages;
             }
             const durableName = this.consumerGroup ? this.internalConsumerGroupName : this.internalConsumerName;
-            const batch = await this.connection.brokerConnection.fetch(this.internalStationName, durableName,
-                { batch: this.batchSize, expires: this.batchMaxTimeToWaitMs });
+            const batch = await this.connection.brokerConnection.fetch(this.internalStationName, durableName, {
+                batch: batchSize,
+                expires: this.batchMaxTimeToWaitMs
+            });
 
-            for await (const m of batch)
-                messages.push(new Message(m, this.connection, this.consumerGroup));
-
+            for await (const m of batch) messages.push(new Message(m, this.connection, this.consumerGroup));
             return messages;
         } catch (ex) {
-            throw MemphisError(ex)
+            throw MemphisError(ex);
         }
     }
 
