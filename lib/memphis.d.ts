@@ -67,7 +67,7 @@ declare class Memphis {
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     private _generateConnectionID;
-    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls }: {
+    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
@@ -77,6 +77,7 @@ declare class Memphis {
         schemaName?: string;
         sendPoisonMsgToDls?: boolean;
         sendSchemaFailedMsgToDls?: boolean;
+        tieredStorageEnabled?: boolean;
     }): Promise<Station>;
     attachSchema({ name, stationName }: {
         name: string;
