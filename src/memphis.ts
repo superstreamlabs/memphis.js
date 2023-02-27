@@ -443,7 +443,8 @@ class Memphis {
     idempotencyWindowMs = 120000,
     schemaName = '',
     sendPoisonMsgToDls = true,
-    sendSchemaFailedMsgToDls = true
+    sendSchemaFailedMsgToDls = true,
+    tieredStorageEnabled = false
   }: {
     name: string;
     retentionType?: string;
@@ -454,6 +455,7 @@ class Memphis {
     schemaName?: string;
     sendPoisonMsgToDls?: boolean;
     sendSchemaFailedMsgToDls?: boolean;
+    tieredStorageEnabled?: boolean;
   }): Promise<Station> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -469,7 +471,8 @@ class Memphis {
           poison: sendPoisonMsgToDls,
           Schemaverse: sendSchemaFailedMsgToDls
         },
-        username: this.username
+        username: this.username,
+        tiered_storage_enabled: tieredStorageEnabled
       };
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(
