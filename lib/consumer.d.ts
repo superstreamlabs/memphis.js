@@ -26,7 +26,9 @@ export declare class Consumer {
     constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string);
     setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
-    fetch(): Promise<Message[]>;
+    fetch({ batchSize }: {
+        batchSize?: number;
+    }): Promise<Message[]>;
     private _handleAsyncIterableSubscriber;
     private _pingConsumer;
     destroy(): Promise<void>;
