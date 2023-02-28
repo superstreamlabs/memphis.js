@@ -412,6 +412,14 @@ const msgs = await memphis.fetchMessages({
 });
 ```
 
+### Fetch single batch of messages after creating a consumer
+
+```js
+const msgs = await consumer.fetch({
+    batchSize: 10, // defaults to 10
+});
+```
+
 To set Up connection in nestjs
 
 ```js
