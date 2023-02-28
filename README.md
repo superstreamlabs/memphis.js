@@ -395,7 +395,7 @@ consumer.on('message', (message, context) => {
 });
 ```
 
-### Fetch single batch of messages
+### Fetch a single batch of messages
 
 ```js
 const msgs = await memphis.fetchMessages({
@@ -409,6 +409,14 @@ const msgs = await memphis.fetchMessages({
     genUniqueSuffix: false, // defaults to false
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
     lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
+});
+```
+
+### Fetch a single batch of messages after creating a consumer
+
+```js
+const msgs = await consumer.fetch({
+    batchSize: 10, // defaults to 10
 });
 ```
 

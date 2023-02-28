@@ -836,7 +836,7 @@ class Memphis {
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);
-    if (consumer) return await consumer.fetch();
+    if (consumer) return await consumer.fetch({batchSize});
 
     consumer = await this.consumer({
       stationName,
@@ -850,7 +850,7 @@ class Memphis {
       startConsumeFromSequence,
       lastMessages
     });
-    return await consumer.fetch();
+    return await consumer.fetch({batchSize});
   }
 
   private getCachedProducer(key: string): Producer {
