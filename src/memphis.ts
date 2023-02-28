@@ -23,8 +23,13 @@ import { buildSchema as buildGraphQlSchema, GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 
-import { Consumer, MsgHeaders, Producer, Station, Message } from '.';
-import { MemphisError, generateNameSuffix } from './utils';
+import { Consumer } from './consumer';
+import { Message } from './message';
+import { MsgHeaders } from './message-header';
+import { MemphisConsumerOptions } from './nest/interfaces';
+import { Producer } from './producer';
+import { Station } from './station';
+import { generateNameSuffix, MemphisError } from './utils';
 
 interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
@@ -75,6 +80,11 @@ class Memphis {
     public stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap: Map<string, Producer>;
     private consumersMap: Map<string, Consumer>;
+    private consumeHandlers: {
+        options: MemphisConsumerOptions;
+        context?: object;
+        handler: (...args: any) => void;
+    }[];
 
     constructor() {
         this.isConnectionActive = false;
@@ -103,6 +113,7 @@ class Memphis {
         this.stationSchemaverseToDlsMap = new Map();
         this.producersMap = new Map<string, Producer>();
         this.consumersMap = new Map<string, Consumer>();
+        this.consumeHandlers = [];
     }
 
     /**
@@ -188,6 +199,12 @@ class Memphis {
                 this.brokerStats = await this.brokerManager.jetstreamManager();
                 this.isConnectionActive = true;
                 this._configurationsListener();
+                for (const { options, handler, context } of this.consumeHandlers) {
+                    const consumer = await this.consumer(options);
+                    consumer.setContext(context);
+                    consumer.on('message', handler);
+                    consumer.on('error', handler);
+                }
                 (async () => {
                     for await (const s of this.brokerManager.status()) {
                         switch (s.type) {
@@ -520,7 +537,7 @@ class Memphis {
             this.clusterConfigurations.set('send_notification', createRes.send_notification);
             await this._scemaUpdatesListener(stationName, createRes.schema_update);
 
-            const producer = new Producer(this, producerName, stationName);
+            const producer = new Producer(this, producerName, stationName, realName);
             this.setCachedProducer(producer);
 
             return producer;
@@ -571,6 +588,7 @@ class Memphis {
         try {
             if (!this.isConnectionActive) throw new Error('Connection is dead');
 
+            const realName = consumerName.toLowerCase();
             consumerName = genUniqueSuffix ? generateNameSuffix(`${consumerName}_`) : consumerName;
             consumerGroup = consumerGroup || consumerName;
 
@@ -617,7 +635,8 @@ class Memphis {
                 maxAckTimeMs,
                 maxMsgDeliveries,
                 startConsumeFromSequence,
-                lastMessages
+                lastMessages,
+                realName
             );
             this.setCachedConsumer(consumer);
 
@@ -666,10 +685,27 @@ class Memphis {
         const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
         const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
         producer = this.getCachedProducer(producerMapKey);
-        if (producer) return await producer.produce({ message, ackWaitSec, asyncProduce, headers, msgId });
+        if (producer)
+            return await producer.produce({
+                message,
+                ackWaitSec,
+                asyncProduce,
+                headers,
+                msgId
+            });
 
-        producer = await this.producer({ stationName, producerName, genUniqueSuffix });
-        return await producer.produce({ message, ackWaitSec, asyncProduce, headers, msgId });
+        producer = await this.producer({
+            stationName,
+            producerName,
+            genUniqueSuffix
+        });
+        return await producer.produce({
+            message,
+            ackWaitSec,
+            asyncProduce,
+            headers,
+            msgId
+        });
     }
 
     /**
@@ -810,6 +846,10 @@ class Memphis {
      */
     isConnected() {
         return !this.brokerManager.isClosed();
+    }
+
+    public _setConsumeHandler(options: MemphisConsumerOptions, handler: (...args: any) => void, context: object): void {
+        this.consumeHandlers.push({ options, handler, context });
     }
 }
 

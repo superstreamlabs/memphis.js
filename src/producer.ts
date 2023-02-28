@@ -13,12 +13,12 @@ export class Producer {
     private internal_station: string;
     private realName: string;
 
-    constructor(connection: Memphis, producerName: string, stationName: string) {
+    constructor(connection: Memphis, producerName: string, stationName: string, realName: string) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
-        this.realName = producerName.toLowerCase();
+        this.realName = realName;
     }
 
     _handleHeaders(headers: any): broker.MsgHdrs {
@@ -63,8 +63,8 @@ export class Producer {
         msgId?: string;
     }): Promise<void> {
         try {
-            let messageToSend = this._validateMessage(message);
             headers = this._handleHeaders(headers);
+            let messageToSend = this._validateMessage(message);
             headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.set('$memphis_producedBy', this.producerName);
             if (msgId) headers.set('msg-id', msgId);
@@ -205,6 +205,9 @@ export class Producer {
             if (Object.prototype.toString.call(msg) == '[object Object]') {
                 return Buffer.from(JSON.stringify(msg));
             }
+            if (Object.prototype.toString.call(msg) == '[object String]') {
+                return Buffer.from(msg);
+            }
             if (!Buffer.isBuffer(msg)) {
                 throw MemphisError(new Error('Unsupported message type'));
             } else {
@@ -237,10 +240,10 @@ export class Producer {
                     $memphis_producedBy: this.producerName
                 };
                 const keys = headers.headers.keys();
-                keys.forEach((key) => {
-                    const value = headers.headers.values(key);
+                for (let key of keys) {
+                    const value = headers.headers.get(key);
                     headersObject[key] = value[0];
-                });
+                }
                 const buf = this.connection.JSONC.encode({
                     _id: id,
                     station_name: this.internal_station,

@@ -39,7 +39,8 @@ export class Consumer {
         maxAckTimeMs: number,
         maxMsgDeliveries: number,
         startConsumeFromSequence: number,
-        lastMessages: number
+        lastMessages: number,
+        realName: string
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -60,7 +61,7 @@ export class Consumer {
         this.startConsumeFromSequence = startConsumeFromSequence;
         this.lastMessages = lastMessages;
         this.context = {};
-        this.realName = consumerName.toLowerCase();
+        this.realName = realName;
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
 
@@ -98,7 +99,7 @@ export class Consumer {
                         expires: this.batchMaxTimeToWaitMs
                     });
                     this.pullInterval = setInterval(() => {
-                        if (!this.connection.brokerManager.isClosed())
+                        if (this?.connection?.brokerManager && !this.connection.brokerManager.isClosed())
                             psub.pull({
                                 batch: this.batchSize,
                                 expires: this.batchMaxTimeToWaitMs
@@ -107,7 +108,7 @@ export class Consumer {
                     }, this.pullIntervalMs);
 
                     this.pingConsumerInvterval = setInterval(async () => {
-                        if (!this.connection.brokerManager.isClosed()) {
+                        if (this?.connection?.brokerManager && !this.connection.brokerManager.isClosed()) {
                             this._pingConsumer();
                         } else clearInterval(this.pingConsumerInvterval);
                     }, this.pingConsumerInvtervalMs);

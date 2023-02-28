@@ -23,7 +23,7 @@ export declare class Consumer {
     private realName;
     private dlsMessages;
     private dlsCurrentIndex;
-    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number);
+    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string);
     setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
     fetch(): Promise<Message[]>;

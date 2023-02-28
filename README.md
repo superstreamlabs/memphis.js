@@ -37,12 +37,12 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
-**[Memphis](https://memphis.dev)** is a next-generation message broker.<br>
+**[Memphis](https://memphis.dev)** is a next-generation alternative to traditional message brokers.<br><br>
 A simple, robust, and durable cloud-native message broker wrapped with<br>
-an entire ecosystem that enables fast and reliable development of next-generation event-driven use cases.<br><br>
-Memphis enables building modern applications that require large volumes of streamed and enriched data,<br>
-modern protocols, zero ops, rapid development, extreme cost reduction,<br>
-and a significantly lower amount of dev time for data-oriented developers and data engineers.
+an entire ecosystem that enables cost-effective, fast, and reliable development of modern queue-based use cases.<br><br>
+Memphis enables the building of modern queue-based applications that require<br>
+large volumes of streamed and enriched data, modern protocols, zero ops, rapid development,<br>
+extreme cost reduction, and a significantly lower amount of dev time for data-oriented developers and data engineers.
 
 ## Installation
 
@@ -402,7 +402,6 @@ const msgs = await memphis.fetchMessages({
     stationName: '<station-name>',
     consumerName: '<consumer-name>',
     consumerGroup: '<group-name>', // defaults to the consumer name.
-    pullIntervalMs: 1000, // defaults to 1000
     batchSize: 10, // defaults to 10
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
@@ -435,13 +434,13 @@ async function bootstrap() {
 bootstrap();
 ```
 
-To Consume messages in nestjs
+To consume messages in NestJS
 
 ```js
 export class Controller {
-    import { consumeMessage, Message } from 'memphis-dev';
+    import { MemphisConsume, Message } from 'memphis-dev';
 
-    @consumeMessage({
+    @MemphisConsume({
         stationName: '<station-name>',
         consumerName: '<consumer-name>',
         consumerGroup: ''
