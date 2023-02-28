@@ -395,7 +395,7 @@ consumer.on('message', (message, context) => {
 });
 ```
 
-### Fetch single batch of messages
+### Fetch a single batch of messages
 
 ```js
 const msgs = await memphis.fetchMessages({
@@ -412,7 +412,7 @@ const msgs = await memphis.fetchMessages({
 });
 ```
 
-### Fetch single batch of messages after creating a consumer
+### Fetch a single batch of messages after creating a consumer
 
 ```js
 const msgs = await consumer.fetch({
