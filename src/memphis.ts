@@ -433,6 +433,9 @@ class Memphis {
    * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
    * @param {Number} idempotencyWindowMs - time frame in which idempotent messages will be tracked, happens based on message ID Defaults to 120000.
    * @param {String} schemaName - schema name.
+   * @param {Boolean} sendPoisonMsgToDls - whether unacked(poison) messages (reached the max deliveries) should be sent into the DLS.
+   * @param {Boolean} sendSchemaFailedMsgToDls - whether schema violation messages should be sent into the DLS.
+   * @param {Boolean} tieredStorageEnabled - if true + tiered storage configured - messages hit the retention will be moved into tier 2 storage
    */
   async station({
     name,
