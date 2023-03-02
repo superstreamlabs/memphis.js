@@ -202,6 +202,17 @@ memphis.retentionTypes.BYTES;
 
 Means that after max amount of saved bytes (set in retention value), the oldest messages will be deleted
 
+
+### Retention Values
+
+The `retention values` are directly related to the `retention types` mentioned above, where the values vary according to the type of retention chosen.
+
+All retention values are of type `int` but with different representations as follows:
+
+`memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS` is represented **in seconds**, `memphis.retentionTypes.MESSAGES` in a **number of messages** and finally `memphis.retentionTypes.BYTES` in a **number of bytes**.
+
+After these limits are reached oldest messages will be deleted.
+
 ### Storage types
 
 Memphis currently supports the following types of messages storage:
