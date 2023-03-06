@@ -63,7 +63,7 @@ declare class Memphis {
     private _compileJsonSchema;
     private _compileGraphQl;
     private _listenForSchemaUpdates;
-    private _configurationsListener;
+    private _sdkClientUpdatesListener;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     private _generateConnectionID;
