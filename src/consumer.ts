@@ -220,6 +220,6 @@ export class Consumer {
      * @returns {string} consumer key
      */
     public _getConsumerStation(): string {
-        return this.stationName;
+        return this.internalStationName;
     }
 }

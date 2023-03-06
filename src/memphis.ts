@@ -204,7 +204,7 @@ class Memphis {
         this.brokerConnection = this.brokerManager.jetstream();
         this.brokerStats = await this.brokerManager.jetstreamManager();
         this.isConnectionActive = true;
-        this._configurationsListener();
+        this._sdkClientUpdatesListener();
         for (const { options, handler, context } of this.consumeHandlers) {
           const consumer = await this.consumer(options);
           consumer.setContext(context);
@@ -372,10 +372,10 @@ class Memphis {
     }
   }
 
-  private async _configurationsListener(): Promise<void> {
+  private async _sdkClientUpdatesListener(): Promise<void> {
     try {
       const sub = this.brokerManager.subscribe(
-        `$memphis_sdk_configurations_updates`
+        `$memphis_sdk_clients_updates`
       );
       for await (const m of sub) {
         let data = this.JSONC.decode(m._rdata);
@@ -388,6 +388,10 @@ class Memphis {
               data['station_name'],
               data['update']
             );
+            break;
+          case 'remove_station':
+            this._unSetCachedProducerStation(data['station_name']);
+            this._unSetCachedConsumerStation(data['station_name']);
           default:
             break;
         }
@@ -880,8 +884,9 @@ class Memphis {
    * @param producer - Producer
    */
   public _unSetCachedProducerStation(stationName: string): void {
+    const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     this.producersMap.forEach((producer, key) => {
-      if (producer._getProducerStation() === stationName) {
+      if (producer._getProducerStation() === internalStationName) {
         this.producersMap.delete(key);
       }
     });
@@ -911,8 +916,9 @@ class Memphis {
    * @param consumer - Consumer
    */
   public _unSetCachedConsumerStation(stationName: string): void {
+    const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     this.consumersMap.forEach((consumer, key) => {
-      if (consumer._getConsumerStation() === stationName) {
+      if (consumer._getConsumerStation() === internalStationName) {
         this.consumersMap.delete(key);
       }
     });

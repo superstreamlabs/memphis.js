@@ -321,6 +321,6 @@ export class Producer {
      * @returns {string} producer key
      */
     public _getProducerStation(): string {
-        return this.stationName;
+        return this.internal_station;
     }
 }
