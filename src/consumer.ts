@@ -220,7 +220,6 @@ export class Consumer {
      * @returns {string} consumer key
      */
     public _getConsumerStation(): string {
-        const internalStationName = this.stationName.replace(/\./g, '#').toLowerCase();
-        return internalStationName;
+        return this.internalStationName;
     }
 }

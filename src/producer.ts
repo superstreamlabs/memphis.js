@@ -321,7 +321,6 @@ export class Producer {
      * @returns {string} producer key
      */
     public _getProducerStation(): string {
-        const internalStationName = this.stationName.replace(/\./g, '#').toLowerCase();
-        return internalStationName;
+        return this.internal_station;
     }
 }
