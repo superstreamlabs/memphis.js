@@ -255,7 +255,8 @@ export class Producer {
                     message: {
                         data: stringToHex(failedMsg),
                         headers: headersObject
-                    }
+                    },
+                    validation_error: ex.message,
                 });
                 await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf);
                 if (this.connection.clusterConfigurations.get('send_notification')) {
