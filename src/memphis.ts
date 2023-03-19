@@ -30,6 +30,7 @@ import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError } from './utils';
+import {v4 as uuidv4} from 'uuid';
 
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
@@ -102,7 +103,7 @@ class Memphis {
     this.retentionTypes = retentionTypes;
     this.storageTypes = storageTypes;
     this.JSONC = broker.JSONCodec();
-    this.connectionId = this._generateConnectionID();
+    this.connectionId = uuidv4().toString()
     this.stationSchemaDataMap = new Map();
     this.schemaUpdatesSubs = new Map();
     this.producersPerStation = new Map();
@@ -422,11 +423,6 @@ class Memphis {
     else return host;
   }
 
-  private _generateConnectionID(): string {
-    return [...Array(24)]
-      .map(() => Math.floor(Math.random() * 16).toString(16))
-      .join('');
-  }
 
   /**
    * Creates a station.
