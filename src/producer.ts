@@ -139,6 +139,7 @@ export class Producer {
                 } catch (ex) {
                     if (ex.message.includes('index out of range') || ex.message.includes('invalid wire type')) {
                         ex = new Error('Schema validation has failed: Invalid message format, expecting protobuf');
+                        throw MemphisError(new Error(ex.message));
                     }
                     throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                 }
@@ -183,6 +184,7 @@ export class Producer {
         } catch (ex) {
             if (ex.message.includes('Syntax Error')) {
                 ex = new Error('Schema validation has failed: Invalid message format, expecting GraphQL');
+                throw MemphisError(ex);
             }
             throw MemphisError(new Error('Schema validation has failed: ' + ex));
         }
