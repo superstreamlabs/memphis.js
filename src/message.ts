@@ -77,4 +77,22 @@ export class Message {
     getSequenceNumber(): number {
         return this.message.seq;
     }
+
+    /**
+     * Delay and resend the message after millis milliseconds
+     */
+    delay(millis: number) {
+        if (this.message.nak)
+            // for dls events which are unackable (core NATS messages)
+            this.message.nak(millis);
+        else {
+            let buf = this.connection.JSONC.encode({
+                id: this.message.headers.get('$memphis_pm_id'),
+                sequence: this.message.headers.get('$memphis_pm_sequence')
+            });
+
+            this.connection.brokerManager.publish('$memphis_pm_naks', buf);
+        }
+
+    }
 }
