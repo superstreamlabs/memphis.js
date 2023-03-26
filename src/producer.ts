@@ -139,6 +139,7 @@ export class Producer {
                 } catch (ex) {
                     if (ex.message.includes('index out of range') || ex.message.includes('invalid wire type')) {
                         ex = new Error('Schema validation has failed: Invalid message format, expecting protobuf');
+                        throw MemphisError(new Error(ex.message));
                     }
                     throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
                 }
@@ -183,6 +184,7 @@ export class Producer {
         } catch (ex) {
             if (ex.message.includes('Syntax Error')) {
                 ex = new Error('Schema validation has failed: Invalid message format, expecting GraphQL');
+                throw MemphisError(ex);
             }
             throw MemphisError(new Error('Schema validation has failed: ' + ex));
         }
@@ -255,7 +257,8 @@ export class Producer {
                     message: {
                         data: stringToHex(failedMsg),
                         headers: headersObject
-                    }
+                    },
+                    validation_error: ex.message,
                 });
                 await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf);
                 if (this.connection.clusterConfigurations.get('send_notification')) {
@@ -321,6 +324,6 @@ export class Producer {
      * @returns {string} producer key
      */
     public _getProducerStation(): string {
-        return this.stationName;
+        return this.internal_station;
     }
 }

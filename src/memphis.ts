@@ -30,6 +30,7 @@ import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError } from './utils';
+import {v4 as uuidv4} from 'uuid';
 
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
@@ -103,7 +104,7 @@ class Memphis {
     this.retentionTypes = retentionTypes;
     this.storageTypes = storageTypes;
     this.JSONC = broker.JSONCodec();
-    this.connectionId = this._generateConnectionID();
+    this.connectionId = uuidv4().toString()
     this.stationSchemaDataMap = new Map();
     this.schemaUpdatesSubs = new Map();
     this.producersPerStation = new Map();
@@ -224,7 +225,7 @@ class Memphis {
         this.brokerConnection = this.brokerManager.jetstream();
         this.brokerStats = await this.brokerManager.jetstreamManager();
         this.isConnectionActive = true;
-        this._configurationsListener();
+        this._sdkClientUpdatesListener();
         for (const { options, handler, context } of this.consumeHandlers) {
           const consumer = await this.consumer(options);
           consumer.setContext(context);
@@ -392,10 +393,10 @@ class Memphis {
     }
   }
 
-  private async _configurationsListener(): Promise<void> {
+  private async _sdkClientUpdatesListener(): Promise<void> {
     try {
       const sub = this.brokerManager.subscribe(
-        `$memphis_sdk_configurations_updates`
+        `$memphis_sdk_clients_updates`
       );
       for await (const m of sub) {
         let data = this.JSONC.decode(m._rdata);
@@ -408,6 +409,10 @@ class Memphis {
               data['station_name'],
               data['update']
             );
+            break;
+          case 'remove_station':
+            this._unSetCachedProducerStation(data['station_name']);
+            this._unSetCachedConsumerStation(data['station_name']);
           default:
             break;
         }
@@ -438,11 +443,6 @@ class Memphis {
     else return host;
   }
 
-  private _generateConnectionID(): string {
-    return [...Array(24)]
-      .map(() => Math.floor(Math.random() * 16).toString(16))
-      .join('');
-  }
 
   /**
    * Creates a station.
@@ -453,6 +453,9 @@ class Memphis {
    * @param {Number} replicas - number of replicas for the messages of the data, default is 1.
    * @param {Number} idempotencyWindowMs - time frame in which idempotent messages will be tracked, happens based on message ID Defaults to 120000.
    * @param {String} schemaName - schema name.
+   * @param {Boolean} sendPoisonMsgToDls - whether unacked(poison) messages (reached the max deliveries) should be sent into the DLS.
+   * @param {Boolean} sendSchemaFailedMsgToDls - whether schema violation messages should be sent into the DLS.
+   * @param {Boolean} tieredStorageEnabled - if true + tiered storage configured - messages hit the retention will be moved into tier 2 storage
    */
   async station({
     name,
@@ -897,8 +900,9 @@ class Memphis {
    * @param producer - Producer
    */
   public _unSetCachedProducerStation(stationName: string): void {
+    const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     this.producersMap.forEach((producer, key) => {
-      if (producer._getProducerStation() === stationName) {
+      if (producer._getProducerStation() === internalStationName) {
         this.producersMap.delete(key);
       }
     });
@@ -928,8 +932,9 @@ class Memphis {
    * @param consumer - Consumer
    */
   public _unSetCachedConsumerStation(stationName: string): void {
+    const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     this.consumersMap.forEach((consumer, key) => {
-      if (consumer._getConsumerStation() === stationName) {
+      if (consumer._getConsumerStation() === internalStationName) {
         this.consumersMap.delete(key);
       }
     });
