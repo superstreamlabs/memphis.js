@@ -182,12 +182,12 @@ class Memphis {
         };
         if (this.connectionToken != '' && this.password != ''){
           return reject(
-            MemphisError(new Error(`Can't connect with connection token and password - must choose one method`))
+            MemphisError(new Error(`You have to connect with only one of the following methods: connection token / password`))
           );
         }
         if (this.connectionToken == '' && this.password == ''){
           return reject(
-            MemphisError(new Error('Must connect with connection token or password - must choose one method'))
+            MemphisError(new Error('You have to connect with one of the following methods: connection token / password'))
           );
         }
 
