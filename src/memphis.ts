@@ -60,6 +60,7 @@ class Memphis {
   public port: number;
   public username: string;
   private connectionToken: string;
+  private password: string;
   private reconnect: boolean;
   private maxReconnect: number;
   private reconnectIntervalMs: number;
@@ -135,7 +136,8 @@ class Memphis {
     host,
     port = 6666,
     username,
-    connectionToken,
+    connectionToken = '',
+    password = '',
     reconnect = true,
     maxReconnect = 3,
     reconnectIntervalMs = 5000,
@@ -147,7 +149,8 @@ class Memphis {
     host: string;
     port?: number;
     username: string;
-    connectionToken: string;
+    connectionToken?: string;
+    password?: string;
     reconnect?: boolean;
     maxReconnect?: number;
     reconnectIntervalMs?: number;
@@ -161,6 +164,7 @@ class Memphis {
       this.port = port;
       this.username = username;
       this.connectionToken = connectionToken;
+      this.password = password
       this.reconnect = reconnect;
       this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
       this.reconnectIntervalMs = reconnectIntervalMs;
@@ -173,9 +177,25 @@ class Memphis {
           maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
           reconnectTimeWait: this.reconnectIntervalMs,
           timeout: this.timeoutMs,
-          token: this.connectionToken,
           name: conId_username
         };
+        if (this.connectionToken != '' && this.password != ''){
+          return reject(
+            MemphisError(new Error(`Can't connect with connection token and password - must choose one method`))
+          );
+        }
+        if (this.connectionToken == '' && this.password == ''){
+          return reject(
+            MemphisError(new Error('Must connect with connection token or password - must choose one method'))
+          );
+        }
+
+        if (this.connectionToken != ''){
+          connectionOpts['token'] = this.connectionToken
+        } else {
+          connectionOpts['pass'] = this.password
+          connectionOpts['user'] = this.username
+        }
 
         if (keyFile !== '' || certFile !== '' || caFile !== '') {
           if (keyFile === '') {
