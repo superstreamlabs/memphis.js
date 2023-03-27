@@ -481,7 +481,7 @@ message.ack();
 
 ### Delay and resend the message after a given duration
 
-Delay the message and tell Memphis server to re-send the same message again to the same consumer group. A message can only be delayed `Consumer.maxMsgDeliveries` number of times.
+Delay the message and tell Memphis server to re-send the same message again to the same consumer group. The message will be redelivered only in case `Consumer.maxMsgDeliveries` is not reached yet.
 
 ```js
 message.delay(delayInMilliseconds);
