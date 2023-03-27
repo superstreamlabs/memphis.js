@@ -82,6 +82,7 @@ await memphis.connect({
             port: <port>, // defaults to 6666
             username: "<username>", // (root/application type user)
             connectionToken: "<broker-token>", // you will get it on application type user creation
+            password: "<string>", // depends on how Memphis deployed - default is connection token-based authentication
             reconnect: true, // defaults to true
             maxReconnect: 3, // defaults to 3
             reconnectIntervalMs: 1500, // defaults to 1500
