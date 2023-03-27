@@ -1,6 +1,7 @@
 import { Memphis } from "./memphis";
 
 import * as broker from 'nats';
+import { MemphisError } from "./utils";
 
 export class Message {
     private message: broker.JsMsg;
@@ -76,5 +77,15 @@ export class Message {
      */
     getSequenceNumber(): number {
         return this.message.seq;
+    }
+
+    /**
+     * Delay and resend the message after millis milliseconds
+     */
+    delay(millis: number) {
+        if (this.message.nak)
+            this.message.nak(millis);
+        else 
+            throw MemphisError(new Error('cannot delay DLS message'));
     }
 }

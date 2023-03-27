@@ -480,6 +480,14 @@ Acknowledge a message indicates the Memphis server to not re-send the same messa
 message.ack();
 ```
 
+### Delay and resend the message after a given duration
+
+Delay the message and tell Memphis server to re-send the same message again to the same consumer group. The message will be redelivered only in case `Consumer.maxMsgDeliveries` is not reached yet.
+
+```js
+message.delay(delayInMilliseconds);
+```
+
 ### Get message payload
 
 As Uint8Array
