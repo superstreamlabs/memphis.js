@@ -123,7 +123,8 @@ class Memphis {
    * @param {String} host - memphis host.
    * @param {Number} port - broker port, default is 6666.
    * @param {String} username - user of type root/application.
-   * @param {String} connectionToken - broker token.
+   * @param {String} connectionToken - connection token.
+   * @param {String} password - depends on how Memphis deployed - default is connection token-based authentication
    * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
    * @param {Number} maxReconnect - The reconnect attempts.
    * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
@@ -182,7 +183,7 @@ class Memphis {
         };
         if (this.connectionToken != '' && this.password != ''){
           return reject(
-            MemphisError(new Error(`You have to connect with only one of the following methods: connection token / password`))
+            MemphisError(new Error(`You have to connect with one of the following methods: connection token / password`))
           );
         }
         if (this.connectionToken == '' && this.password == ''){
