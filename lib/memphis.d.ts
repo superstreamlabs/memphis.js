@@ -23,6 +23,7 @@ declare class Memphis {
     port: number;
     username: string;
     private connectionToken;
+    private password;
     private reconnect;
     private maxReconnect;
     private reconnectIntervalMs;
@@ -45,11 +46,12 @@ declare class Memphis {
     private consumersMap;
     private consumeHandlers;
     constructor();
-    connect({ host, port, username, connectionToken, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
+    connect({ host, port, username, connectionToken, password, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
         host: string;
         port?: number;
         username: string;
-        connectionToken: string;
+        connectionToken?: string;
+        password?: string;
         reconnect?: boolean;
         maxReconnect?: number;
         reconnectIntervalMs?: number;

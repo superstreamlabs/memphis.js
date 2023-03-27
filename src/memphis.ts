@@ -61,6 +61,7 @@ class Memphis {
   public port: number;
   public username: string;
   private connectionToken: string;
+  private password: string;
   private reconnect: boolean;
   private maxReconnect: number;
   private reconnectIntervalMs: number;
@@ -122,7 +123,8 @@ class Memphis {
    * @param {String} host - memphis host.
    * @param {Number} port - broker port, default is 6666.
    * @param {String} username - user of type root/application.
-   * @param {String} connectionToken - broker token.
+   * @param {String} connectionToken - connection token.
+   * @param {String} password - depends on how Memphis deployed - default is connection token-based authentication
    * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
    * @param {Number} maxReconnect - The reconnect attempts.
    * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
@@ -136,7 +138,8 @@ class Memphis {
     host,
     port = 6666,
     username,
-    connectionToken,
+    connectionToken = '',
+    password = '',
     reconnect = true,
     maxReconnect = 3,
     reconnectIntervalMs = 5000,
@@ -148,7 +151,8 @@ class Memphis {
     host: string;
     port?: number;
     username: string;
-    connectionToken: string;
+    connectionToken?: string;
+    password?: string;
     reconnect?: boolean;
     maxReconnect?: number;
     reconnectIntervalMs?: number;
@@ -162,6 +166,7 @@ class Memphis {
       this.port = port;
       this.username = username;
       this.connectionToken = connectionToken;
+      this.password = password
       this.reconnect = reconnect;
       this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
       this.reconnectIntervalMs = reconnectIntervalMs;
@@ -174,9 +179,25 @@ class Memphis {
           maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
           reconnectTimeWait: this.reconnectIntervalMs,
           timeout: this.timeoutMs,
-          token: this.connectionToken,
           name: conId_username
         };
+        if (this.connectionToken != '' && this.password != ''){
+          return reject(
+            MemphisError(new Error(`You have to connect with one of the following methods: connection token / password`))
+          );
+        }
+        if (this.connectionToken == '' && this.password == ''){
+          return reject(
+            MemphisError(new Error('You have to connect with one of the following methods: connection token / password'))
+          );
+        }
+
+        if (this.connectionToken != ''){
+          connectionOpts['token'] = this.connectionToken
+        } else {
+          connectionOpts['pass'] = this.password
+          connectionOpts['user'] = this.username
+        }
 
         if (keyFile !== '' || certFile !== '' || caFile !== '') {
           if (keyFile === '') {
