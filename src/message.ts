@@ -1,6 +1,7 @@
 import { Memphis } from "./memphis";
 
 import * as broker from 'nats';
+import { MemphisError } from "./utils";
 
 export class Message {
     private message: broker.JsMsg;
@@ -83,16 +84,8 @@ export class Message {
      */
     delay(millis: number) {
         if (this.message.nak)
-            // for dls events which are unackable (core NATS messages)
             this.message.nak(millis);
-        else {
-            let buf = this.connection.JSONC.encode({
-                id: this.message.headers.get('$memphis_pm_id'),
-                sequence: this.message.headers.get('$memphis_pm_sequence')
-            });
-
-            this.connection.brokerManager.publish('$memphis_pm_naks', buf);
-        }
-
+        else 
+            throw MemphisError(new Error('cannot delay DLS message'));
     }
 }
