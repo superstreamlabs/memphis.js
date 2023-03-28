@@ -246,7 +246,6 @@ export class Producer {
                         name: this.producerName,
                         connection_id: this.connection.connectionId
                     },
-                    creation_unix: unixTime,
                     message: {
                         data: stringToHex(failedMsg),
                         headers: headersObject
