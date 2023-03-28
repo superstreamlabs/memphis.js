@@ -20,7 +20,6 @@ export declare class Producer {
     private _validateProtobufMessage;
     private _validateGraphqlMessage;
     private _validateMessage;
-    private _getDlsMsgId;
     private _hanldeProduceError;
     destroy(): Promise<void>;
     _getProducerKey(): string;
