@@ -217,11 +217,6 @@ export class Producer {
             }
         }
     }
-
-    private _getDlsMsgId(stationName: string, producerName: string, unixTime: string): string {
-        return stationName + '~' + producerName + '~0~' + unixTime;
-    }
-
     private async _hanldeProduceError(ex: any, message: any, headers?: MsgHeaders) {
         if (ex.code === '503') {
             throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
@@ -236,7 +231,6 @@ export class Producer {
             }
             if (this.connection.stationSchemaverseToDlsMap.get(this.internal_station)) {
                 const unixTime = Date.now();
-                const id = this._getDlsMsgId(this.internal_station, this.producerName, unixTime.toString());
                 let headersObject = {
                     $memphis_connectionId: this.connection.connectionId,
                     $memphis_producedBy: this.producerName
@@ -247,20 +241,18 @@ export class Producer {
                     headersObject[key] = value[0];
                 }
                 const buf = this.connection.JSONC.encode({
-                    _id: id,
                     station_name: this.internal_station,
                     producer: {
                         name: this.producerName,
                         connection_id: this.connection.connectionId
                     },
-                    creation_unix: unixTime,
                     message: {
                         data: stringToHex(failedMsg),
                         headers: headersObject
                     },
                     validation_error: ex.message,
                 });
-                await this.connection.brokerConnection.publish('$memphis-' + this.internal_station + '-dls.schema.' + id, buf);
+                await this.connection.brokerManager.publish('$memphis_schemaverse_dls', buf);
                 if (this.connection.clusterConfigurations.get('send_notification')) {
                     this.connection.sendNotification(
                         'Schema validation has failed',
