@@ -80,7 +80,7 @@ export class Message {
     }
 
     /**
-     * Delay and resend the message after millis milliseconds
+     * Delay and resend the message after N milliseconds
      */
     delay(millis: number) {
         if (this.message.nak)

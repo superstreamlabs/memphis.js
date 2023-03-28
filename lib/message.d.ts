@@ -10,4 +10,5 @@ export declare class Message {
     getDataAsJson(): Object;
     getHeaders(): Object;
     getSequenceNumber(): number;
+    delay(millis: number): void;
 }
