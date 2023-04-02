@@ -1,6 +1,6 @@
 {
     "name": "memphis-dev",
-    "version": "0.5.6",
+    "version": "1.0.0",
     "description": "A powerful messaging platform for modern developers",
     "exports": {
         ".": "./lib/index.js"
