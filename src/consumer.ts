@@ -4,7 +4,7 @@ import { Memphis } from './memphis'
 import { Message } from './message';
 import { MemphisError } from './utils'
 
-
+const maxBatchSize = 5000
 export class Consumer {
     private connection: Memphis;
     private stationName: string;
@@ -127,6 +127,9 @@ export class Consumer {
      */
     public async fetch({batchSize = 10}:{batchSize?: number}): Promise<Message[]> {
         try {
+            if(batchSize > maxBatchSize){
+                throw MemphisError(new Error(`batch size parameter should be with value of ${maxBatchSize} maximum`));
+            }
             this.batchSize = batchSize
             let messages: Message[] = [];
             if (this.dlsMessages.length > 0) {
