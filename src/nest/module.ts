@@ -1,4 +1,4 @@
-import { MemphisService } from '..';
+import { MemphisService, memphis } from '..';
 import { Module, DynamicModule } from '@nestjs/common';
 @Module({})
 export class MemphisModule {
@@ -6,7 +6,10 @@ export class MemphisModule {
         return {
             global: true,
             module: MemphisModule,
-            providers: [MemphisService],
+            providers: [{
+                provide: MemphisService,
+                useValue: memphis
+            }],
             exports: [MemphisService]
         };
     }
