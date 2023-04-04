@@ -128,7 +128,7 @@ export class Consumer {
     public async fetch({batchSize = 10}:{batchSize?: number}): Promise<Message[]> {
         try {
             if(batchSize > maxBatchSize){
-                throw MemphisError(new Error(`batch size parameter should be with value of ${maxBatchSize} maximum`));
+                throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
             }
             this.batchSize = batchSize
             let messages: Message[] = [];
