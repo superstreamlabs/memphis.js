@@ -54,6 +54,8 @@ const storageTypes: IStorageTypes = {
   MEMORY: 'memory'
 };
 
+const maxBatchSize = 5000
+
 class Memphis {
   private isConnectionActive: boolean;
   public connectionId: string;
@@ -681,7 +683,9 @@ class Memphis {
   }): Promise<Consumer> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
-
+      if(batchSize > maxBatchSize){
+        throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
+      }
       const realName = consumerName.toLowerCase();
       consumerName = genUniqueSuffix
         ? generateNameSuffix(`${consumerName}_`)
@@ -857,6 +861,9 @@ class Memphis {
       throw MemphisError(
         new Error('Cant fetch messages without being connected!')
       );
+    if(batchSize > maxBatchSize){
+        throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
+    }
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);
