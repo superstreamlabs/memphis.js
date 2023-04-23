@@ -62,6 +62,7 @@ class Memphis {
   public host: string;
   public port: number;
   public username: string;
+  public accountId: number
   private connectionToken: string;
   private password: string;
   private reconnect: boolean;
@@ -95,6 +96,7 @@ class Memphis {
     this.host = '';
     this.port = 6666;
     this.username = '';
+    this.accountId = 1;
     this.connectionToken = '';
     this.reconnect = true;
     this.maxReconnect = 3;
@@ -125,6 +127,7 @@ class Memphis {
    * @param {String} host - memphis host.
    * @param {Number} port - broker port, default is 6666.
    * @param {String} username - user of type root/application.
+   * @param {String} accountId - You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored.
    * @param {String} connectionToken - connection token.
    * @param {String} password - depends on how Memphis deployed - default is connection token-based authentication
    * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
@@ -140,6 +143,7 @@ class Memphis {
     host,
     port = 6666,
     username,
+    accountId = 1,
     connectionToken = '',
     password = '',
     reconnect = true,
@@ -153,6 +157,7 @@ class Memphis {
     host: string;
     port?: number;
     username: string;
+    accountId: number;
     connectionToken?: string;
     password?: string;
     reconnect?: boolean;
@@ -167,6 +172,7 @@ class Memphis {
       this.host = this._normalizeHost(host);
       this.port = port;
       this.username = username;
+      this.accountId = accountId;
       this.connectionToken = connectionToken;
       this.password = password
       this.reconnect = reconnect;
@@ -198,7 +204,7 @@ class Memphis {
           connectionOpts['token'] = this.connectionToken
         } else {
           connectionOpts['pass'] = this.password
-          connectionOpts['user'] = this.username
+          connectionOpts['user'] = this.username + "$" + this.accountId
         }
 
         if (keyFile !== '' || certFile !== '' || caFile !== '') {

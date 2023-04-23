@@ -2,6 +2,7 @@ export interface MemphisConnectionOptions {
     host: string;
     port?: number;
     username: string;
+    accountId: number;
     connectionToken: string;
     reconnect?: boolean;
     maxReconnect?: number;
