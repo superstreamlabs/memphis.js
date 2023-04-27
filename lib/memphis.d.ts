@@ -51,7 +51,7 @@ declare class Memphis {
         host: string;
         port?: number;
         username: string;
-        accountId: number;
+        accountId?: number;
         connectionToken?: string;
         password?: string;
         reconnect?: boolean;

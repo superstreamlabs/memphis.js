@@ -2,8 +2,9 @@ export interface MemphisConnectionOptions {
     host: string;
     port?: number;
     username: string;
-    accountId: number;
-    connectionToken: string;
+    accountId?: number;
+    connectionToken?: string;
+    password?: string;
     reconnect?: boolean;
     maxReconnect?: number;
     reconnectIntervalMs?: number;
@@ -25,4 +26,6 @@ export interface MemphisConsumerOptions {
     maxAckTimeMs?: number;
     maxMsgDeliveries?: number;
     genUniqueSuffix?: boolean;
+    startConsumeFromSequence?: number,
+    lastMessages?: number,
 }
