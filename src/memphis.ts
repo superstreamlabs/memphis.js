@@ -30,7 +30,7 @@ import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError } from './utils';
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
@@ -55,8 +55,6 @@ const storageTypes: IStorageTypes = {
 };
 
 const maxBatchSize = 5000
-
-let connectionOpts
 
 class Memphis {
   private isConnectionActive: boolean;
@@ -182,6 +180,7 @@ class Memphis {
       this.reconnectIntervalMs = reconnectIntervalMs;
       this.timeoutMs = timeoutMs;
       let conId_username = this.connectionId + '::' + username;
+      let connectionOpts
       try {
         connectionOpts = {
           servers: `${this.host}:${this.port}`,
@@ -191,18 +190,18 @@ class Memphis {
           timeout: this.timeoutMs,
           name: conId_username
         };
-        if (this.connectionToken != '' && this.password != ''){
+        if (this.connectionToken != '' && this.password != '') {
           return reject(
             MemphisError(new Error(`You have to connect with one of the following methods: connection token / password`))
           );
         }
-        if (this.connectionToken == '' && this.password == ''){
+        if (this.connectionToken == '' && this.password == '') {
           return reject(
             MemphisError(new Error('You have to connect with one of the following methods: connection token / password'))
           );
         }
 
-        if (this.connectionToken != ''){
+        if (this.connectionToken != '') {
           connectionOpts['token'] = this.connectionToken
         } else {
           connectionOpts['pass'] = this.password
@@ -232,14 +231,14 @@ class Memphis {
           };
           connectionOpts['tls'] = tlsOptions;
         }
-        try{
+        try {
           this.brokerManager = await broker.connect(connectionOpts);
-        }catch(ex){
-          if (ex.message.includes('Authorization Violation') && connectionOpts['pass'] != '' && connectionOpts['user'] !=''){
-            try{
+        } catch (ex) {
+          if (ex.message.includes('Authorization Violation') && connectionOpts['pass'] != '' && connectionOpts['user'] != '') {
+            try {
               connectionOpts['user'] = this.username;
               this.brokerManager = await broker.connect(connectionOpts);
-            } catch(ex){
+            } catch (ex) {
               return reject(MemphisError(ex));
             }
           }
@@ -702,7 +701,7 @@ class Memphis {
   }): Promise<Consumer> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
-      if(batchSize > maxBatchSize){
+      if (batchSize > maxBatchSize) {
         throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
       }
       const realName = consumerName.toLowerCase();
@@ -880,13 +879,13 @@ class Memphis {
       throw MemphisError(
         new Error('Cant fetch messages without being connected!')
       );
-    if(batchSize > maxBatchSize){
-        throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
+    if (batchSize > maxBatchSize) {
+      throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
     }
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);
-    if (consumer) return await consumer.fetch({batchSize});
+    if (consumer) return await consumer.fetch({ batchSize });
 
     consumer = await this.consumer({
       stationName,
@@ -900,7 +899,7 @@ class Memphis {
       startConsumeFromSequence,
       lastMessages
     });
-    return await consumer.fetch({batchSize});
+    return await consumer.fetch({ batchSize });
   }
 
   private getCachedProducer(key: string): Producer {

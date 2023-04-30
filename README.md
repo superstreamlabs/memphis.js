@@ -78,7 +78,7 @@ await memphis.connect({
             host: "<memphis-host>",
             port: <port>, // defaults to 6666
             username: "<username>", // (root/application type user)
-            accountId: <accountId> //You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored. You can leave it empty and connect with only username and password, there is backward compatibility.
+            accountId: <accountId> //You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored
             connectionToken: "<broker-token>", // you will get it on application type user creation
             password: "<string>", // depends on how Memphis deployed - default is connection token-based authentication
             reconnect: true, // defaults to true
