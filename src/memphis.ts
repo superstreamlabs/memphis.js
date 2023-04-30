@@ -234,6 +234,7 @@ class Memphis {
         try {
           this.brokerManager = await broker.connect(connectionOpts);
         } catch (ex) {
+          // this code allow backward compatibility.
           if (ex.message.includes('Authorization Violation') && connectionOpts['pass'] != '' && connectionOpts['user'] != '') {
             try {
               connectionOpts['user'] = this.username;
