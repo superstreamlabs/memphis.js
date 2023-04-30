@@ -56,6 +56,8 @@ const storageTypes: IStorageTypes = {
 
 const maxBatchSize = 5000
 
+let connectionOpts
+
 class Memphis {
   private isConnectionActive: boolean;
   public connectionId: string;
@@ -181,7 +183,7 @@ class Memphis {
       this.timeoutMs = timeoutMs;
       let conId_username = this.connectionId + '::' + username;
       try {
-        let connectionOpts = {
+        connectionOpts = {
           servers: `${this.host}:${this.port}`,
           reconnect: this.reconnect,
           maxReconnectAttempts: this.reconnect ? this.maxReconnect : 0,
@@ -230,7 +232,18 @@ class Memphis {
           };
           connectionOpts['tls'] = tlsOptions;
         }
-        this.brokerManager = await broker.connect(connectionOpts);
+        try{
+          this.brokerManager = await broker.connect(connectionOpts);
+        }catch(ex){
+          if (ex.message.includes('Authorization Violation') && connectionOpts['pass'] != '' && connectionOpts['user'] !=''){
+            try{
+              connectionOpts['user'] = this.username;
+              this.brokerManager = await broker.connect(connectionOpts);
+            } catch(ex){
+              return reject(MemphisError(ex));
+            }
+          }
+        }
         this.brokerConnection = this.brokerManager.jetstream();
         this.brokerStats = await this.brokerManager.jetstreamManager();
         this.isConnectionActive = true;
