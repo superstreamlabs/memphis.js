@@ -265,12 +265,7 @@ class Memphis {
         })().then();
         return resolve(this);
       } catch (ex) {
-        if (ex.code === '503') {
-            this.tenantName = memphisGlobalAccountName
-            return resolve(this);
-        }else{
             return reject(MemphisError(ex));
-        }
       }
     });
   }
@@ -454,7 +449,11 @@ class Memphis {
         return teanatNameResp['tenant_name'];
     }
     catch(ex) {
-        throw MemphisError(ex);
+        if (ex.code === '503') {
+            this.tenantName = memphisGlobalAccountName
+        }else{
+            throw MemphisError(ex);
+        }
     }   
 }
 
