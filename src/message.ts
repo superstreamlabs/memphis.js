@@ -85,7 +85,7 @@ export class Message {
     delay(millis: number) {
         if (this.message.nak)
             this.message.nak(millis);
-        else 
+        else
             throw MemphisError(new Error('cannot delay DLS message'));
     }
 }
