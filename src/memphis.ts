@@ -55,6 +55,7 @@ const storageTypes: IStorageTypes = {
 };
 
 const maxBatchSize = 5000
+const memphisGlobalAccountName = "$memphis"
 
 class Memphis {
   private isConnectionActive: boolean;
@@ -85,6 +86,7 @@ class Memphis {
   public stationSchemaverseToDlsMap: Map<string, boolean>;
   private producersMap: Map<string, Producer>;
   private consumersMap: Map<string, Consumer>;
+  public tenantName: string;
   private consumeHandlers: {
     options: MemphisConsumerOptions;
     context?: object;
@@ -248,6 +250,7 @@ class Memphis {
         this.brokerStats = await this.brokerManager.jetstreamManager();
         this.isConnectionActive = true;
         this._sdkClientUpdatesListener();
+        this.tenantName = await this._getTenantName(this.accountId);
         for (const { options, handler, context } of this.consumeHandlers) {
           const consumer = await this.consumer(options);
           consumer.setContext(context);
@@ -275,7 +278,7 @@ class Memphis {
         })().then();
         return resolve(this);
       } catch (ex) {
-        return reject(MemphisError(ex));
+            return reject(MemphisError(ex));
       }
     });
   }
@@ -443,6 +446,29 @@ class Memphis {
       throw MemphisError(ex);
     }
   }
+
+  private async _getTenantName(accountId: Number): Promise<string> {
+    try{
+        const getTenantNameReq = {
+            tenant_id: accountId
+        };
+        const data = this.JSONC.encode(getTenantNameReq);
+        const res = await this.brokerManager.request('$memphis_get_tenant_name', data);
+        const errMsg = res.data.toString();
+        const teanatNameResp = JSON.parse(errMsg);
+        if (teanatNameResp['error'] != '') {
+            throw MemphisError(new Error(teanatNameResp['error']));
+        }
+        return teanatNameResp['tenant_name'];
+    }
+    catch(ex) {
+        if (ex.code === '503') {
+            this.tenantName = memphisGlobalAccountName
+        }else{
+            throw MemphisError(ex);
+        }
+    }   
+}
 
   public sendNotification(
     title: string,
