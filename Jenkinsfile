@@ -4,6 +4,14 @@ def repoUrlPrefix = "memphisos"
 
 node ("small-ec2-fleet") {
   git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+  stage('Define Version Tag') {
+    if (env.BRANCH_NAME == 'check_jenkins') { 
+      versionTag = readFile "./version-beta.conf"
+    }
+    else {
+      versionTag = readFile "./version.conf"
+    }
+  }
   
   try{
     
