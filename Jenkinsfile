@@ -4,15 +4,7 @@ def repoUrlPrefix = "memphisos"
 
 node ("small-ec2-fleet") {
   git credentialsId: 'main-github', url: gitURL, branch: gitBranch
-  stage('Define Version Tag') {
-    if (env.BRANCH_NAME == 'check_jenkins') { 
-      versionTag = readFile "./version-beta.conf"
-    }
-    else {
-      versionTag = readFile "./version.conf"
-    }
-  }
-  
+ 
   try{
     
    stage('Install NPM') {
@@ -22,28 +14,43 @@ node ("small-ec2-fleet") {
       """
     }
 
-   stage('Push to NPM') {
-      sh 'sudo npm install'
-      withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
-       sh "echo //registry.npmjs.org/:_authToken=$npm_token > .npmrc"
-       sh 'npm publish'
-      }
-    }
+   if (env.BRANCH_NAME == 'master') {
+     stage('Push to NPM') {
+       sh """
+         sed -i -r "s/version\\": \\"[0-9].[0-9].[0-9]/version\\": \\"\$(cat version-beta.conf)/g" ./package.json
+         sed -i -r "s/memphis-dev/memphis-dev-beta/g" ./package.json
+         sudo npm install
+       """
+       withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
+         sh "echo //registry.npmjs.org/:_authToken=$npm_token > .npmrc"
+         sh 'npm publish'
+       }
+     }
+   }
+   else {
+     stage('Push to NPM') {
+       sh 'sudo npm install'
+       withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
+         sh "echo //registry.npmjs.org/:_authToken=$npm_token > .npmrc"
+         sh 'npm publish'
+       }
+     }
     
-    stage('Checkout to version branch'){
-      sh 'sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo'
-      sh 'sudo yum install gh -y'
-      sh 'sudo yum install jq -y'
-      sh(script:"""sed -i -r "s/version\\": \\"[0-9].[0-9].[0-9]/version\\": \\"\$(cat version.conf)/g" ./package.json""", returnStdout: true)
-      withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
-        sh "git reset --hard origin/latest"
-        sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b \$(cat version.conf)"
-        sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin \$(cat version.conf)"
-      }
-      withCredentials([string(credentialsId: 'gh_token', variable: 'GH_TOKEN')]) {
-        sh(script:"""gh release create \$(cat version.conf) --generate-notes""", returnStdout: true)
-      }
-    }
+     stage('Checkout to version branch'){
+       sh 'sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo'
+       sh 'sudo yum install gh -y'
+       sh 'sudo yum install jq -y'
+       sh(script:"""sed -i -r "s/version\\": \\"[0-9].[0-9].[0-9]/version\\": \\"\$(cat version.conf)/g" ./package.json""", returnStdout: true)
+       withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
+         sh "git reset --hard origin/latest"
+         sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b \$(cat version.conf)"
+         sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin \$(cat version.conf)"
+       }
+       withCredentials([string(credentialsId: 'gh_token', variable: 'GH_TOKEN')]) {
+         sh(script:"""gh release create \$(cat version.conf) --generate-notes""", returnStdout: true)
+       }
+     }
+   }
     
     notifySuccessful()
 
