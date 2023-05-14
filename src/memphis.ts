@@ -395,7 +395,7 @@ class Memphis {
         this.stationSchemaDataMap.delete(stationName);
         this.meassageDescriptors.delete(stationName);
         this.jsonSchemas.delete(stationName);
-        return;
+        continue;
       }
       this.stationSchemaDataMap.set(stationName, data.init);
       try {
