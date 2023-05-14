@@ -192,7 +192,8 @@ export class Consumer {
             let removeConsumerReq = {
                 name: this.consumerName,
                 station_name: this.stationName,
-                username: this.connection.username
+                username: this.connection.username,
+                tenant_name: this.connection.tenantName
             };
             let data = this.connection.JSONC.encode(removeConsumerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
