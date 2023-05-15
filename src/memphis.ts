@@ -151,7 +151,7 @@ class Memphis {
     reconnect = true,
     maxReconnect = 3,
     reconnectIntervalMs = 5000,
-    timeoutMs = 15000,
+    timeoutMs = 2000,
     keyFile = '',
     certFile = '',
     caFile = ''
@@ -543,7 +543,8 @@ class Memphis {
           Schemaverse: sendSchemaFailedMsgToDls
         },
         username: this.username,
-        tiered_storage_enabled: tieredStorageEnabled
+        tiered_storage_enabled: tieredStorageEnabled,
+        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(
@@ -583,7 +584,8 @@ class Memphis {
       const attachSchemaReq = {
         name: name,
         station_name: stationName,
-        username: this.username
+        username: this.username,
+        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(attachSchemaReq);
       const res = await this.brokerManager.request(
@@ -611,7 +613,8 @@ class Memphis {
       }
       let detachSchemaReq = {
         station_name: stationName,
-        username: this.username
+        username: this.username,
+        tenant_name: this.tenantName
       };
       let data = this.JSONC.encode(detachSchemaReq);
       let errMsg = await this.brokerManager.request(
@@ -656,7 +659,8 @@ class Memphis {
         connection_id: this.connectionId,
         producer_type: 'application',
         req_version: 1,
-        username: this.username
+        username: this.username,
+        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(createProducerReq);
       let createRes = await this.brokerManager.request(
@@ -766,7 +770,8 @@ class Memphis {
         start_consume_from_sequence: startConsumeFromSequence,
         last_messages: lastMessages,
         req_version: 1,
-        username: this.username
+        username: this.username,
+        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(createConsumerReq);
       const res = await this.brokerManager.request(

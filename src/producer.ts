@@ -276,7 +276,8 @@ export class Producer {
             let removeProducerReq = {
                 name: this.producerName,
                 station_name: this.stationName,
-                username: this.connection.username
+                username: this.connection.username,
+                tenant_name: this.connection.tenantName
             };
             let data = this.connection.JSONC.encode(removeProducerReq);
             let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);

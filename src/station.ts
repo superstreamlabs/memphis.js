@@ -19,7 +19,8 @@ export class Station {
         try {
             const removeStationReq = {
                 station_name: this.name,
-                username: this.connection.username
+                username: this.connection.username,
+                tenant_name: this.connection.tenantName
             };
             const stationName = this.name.replace(/\./g, '#').toLowerCase();
             const sub = this.connection.schemaUpdatesSubs.get(stationName);
