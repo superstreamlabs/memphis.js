@@ -217,6 +217,7 @@ export class Producer {
             }
         }
     }
+    
     private async _hanldeProduceError(ex: any, message: any, headers?: MsgHeaders) {
         if (ex.code === '503') {
             throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
