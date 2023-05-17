@@ -277,7 +277,7 @@ class Memphis {
     if (connectionOpts['user'] != '') {
       const pingConnectionOpts = connectionOpts;
       pingConnectionOpts['reconnect'] = false;
-      let connection
+      let connection;
       try {
         connection = await broker.connect(pingConnectionOpts);
         await connection.close();
