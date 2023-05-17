@@ -234,11 +234,7 @@ class Memphis {
           };
           connectionOpts['tls'] = tlsOptions;
         }
-        try {
-          this.brokerManager = await this._getBrokerManagerConnection(connectionOpts);
-        } catch (ex) {
-          return reject(MemphisError(ex));
-        }
+        this.brokerManager = await this._getBrokerManagerConnection(connectionOpts);
         this.brokerConnection = this.brokerManager.jetstream();
         this.brokerStats = await this.brokerManager.jetstreamManager();
         this.isConnectionActive = true;
@@ -277,7 +273,7 @@ class Memphis {
   }
 
   private async _getBrokerManagerConnection(connectionOpts: Object): Promise<NatsConnection> {
-    // allow backward compatibility.
+    // for backward compatibility.
     if (connectionOpts['user'] != '') {
       const pingConnectionOpts = connectionOpts
       pingConnectionOpts['reconnect'] = false
