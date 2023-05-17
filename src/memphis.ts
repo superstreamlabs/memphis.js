@@ -275,17 +275,18 @@ class Memphis {
   private async _getBrokerManagerConnection(connectionOpts: Object): Promise<NatsConnection> {
     // for backward compatibility.
     if (connectionOpts['user'] != '') {
-      const pingConnectionOpts = connectionOpts
-      pingConnectionOpts['reconnect'] = false
+      const pingConnectionOpts = connectionOpts;
+      pingConnectionOpts['reconnect'] = false;
+      let connection
       try {
-        this.brokerManager = await broker.connect(pingConnectionOpts)
-        this.close()
+        connection = await broker.connect(pingConnectionOpts);
+        await connection.close();
       } catch (ex) {
         if (ex.message.includes('Authorization Violation')) {
           try {
             pingConnectionOpts['user'] = this.username;
-            this.brokerManager = await broker.connect(pingConnectionOpts);
-            this.close();
+            connection = await broker.connect(pingConnectionOpts);
+            await connection.close();
           } catch (ex) {
             throw MemphisError(ex);
           }
@@ -1026,8 +1027,8 @@ class Memphis {
       this.meassageDescriptors.delete(key);
       this.jsonSchemas.delete(key);
     }
-    setTimeout(() => {
-      this.brokerManager?.close?.();
+    setTimeout(async() => {
+      await this.brokerManager?.close?.();
     }, 500);
     this.consumeHandlers = [];
     this.producersMap = new Map<string, Producer>();
