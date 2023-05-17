@@ -63,6 +63,7 @@ declare class Memphis {
         certFile?: string;
         caFile?: string;
     }): Promise<Memphis>;
+    private _getBrokerManagerConnection;
     private _compileProtobufSchema;
     private _scemaUpdatesListener;
     private _compileJsonSchema;
