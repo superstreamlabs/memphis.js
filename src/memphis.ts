@@ -31,6 +31,7 @@ import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError } from './utils';
 import { v4 as uuidv4 } from 'uuid';
+import { NatsConnection } from 'nats';
 
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
@@ -233,19 +234,7 @@ class Memphis {
           };
           connectionOpts['tls'] = tlsOptions;
         }
-        try {
-          this.brokerManager = await broker.connect(connectionOpts);
-        } catch (ex) {
-          // this code allow backward compatibility.
-          if (ex.message.includes('Authorization Violation') && connectionOpts['pass'] != '' && connectionOpts['user'] != '') {
-            try {
-              connectionOpts['user'] = this.username;
-              this.brokerManager = await broker.connect(connectionOpts);
-            } catch (ex) {
-              return reject(MemphisError(ex));
-            }
-          }
-        }
+        this.brokerManager = await this._getBrokerManagerConnection(connectionOpts);
         this.brokerConnection = this.brokerManager.jetstream();
         this.brokerStats = await this.brokerManager.jetstreamManager();
         this.isConnectionActive = true;
@@ -281,6 +270,32 @@ class Memphis {
         return reject(MemphisError(ex));
       }
     });
+  }
+
+  private async _getBrokerManagerConnection(connectionOpts: Object): Promise<NatsConnection> {
+    // for backward compatibility.
+    if (connectionOpts['user'] != '') {
+      const pingConnectionOpts = connectionOpts;
+      pingConnectionOpts['reconnect'] = false;
+      let connection;
+      try {
+        connection = await broker.connect(pingConnectionOpts);
+        await connection.close();
+      } catch (ex) {
+        if (ex.message.includes('Authorization Violation')) {
+          try {
+            pingConnectionOpts['user'] = this.username;
+            connection = await broker.connect(pingConnectionOpts);
+            await connection.close();
+          } catch (ex) {
+            throw MemphisError(ex);
+          }
+        } else {
+          throw MemphisError(ex);
+        }
+      }
+    }
+    return await broker.connect(connectionOpts);
   }
 
   private async _compileProtobufSchema(stationName: string) {
@@ -1012,8 +1027,8 @@ class Memphis {
       this.meassageDescriptors.delete(key);
       this.jsonSchemas.delete(key);
     }
-    setTimeout(() => {
-      this.brokerManager?.close?.();
+    setTimeout(async() => {
+      await this.brokerManager?.close?.();
     }, 500);
     this.consumeHandlers = [];
     this.producersMap = new Map<string, Producer>();
