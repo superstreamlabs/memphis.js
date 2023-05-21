@@ -87,7 +87,6 @@ class Memphis {
   public stationSchemaverseToDlsMap: Map<string, boolean>;
   private producersMap: Map<string, Producer>;
   private consumersMap: Map<string, Consumer>;
-  public tenantName: string;
   private consumeHandlers: {
     options: MemphisConsumerOptions;
     context?: object;
@@ -239,7 +238,6 @@ class Memphis {
         this.brokerStats = await this.brokerManager.jetstreamManager();
         this.isConnectionActive = true;
         this._sdkClientUpdatesListener();
-        this.tenantName = await this._getTenantName(this.accountId);
         for (const { options, handler, context } of this.consumeHandlers) {
           const consumer = await this.consumer(options);
           consumer.setContext(context);
@@ -462,29 +460,6 @@ class Memphis {
     }
   }
 
-  private async _getTenantName(accountId: Number): Promise<string> {
-    try {
-      const getTenantNameReq = {
-        tenant_id: accountId
-      };
-      const data = this.JSONC.encode(getTenantNameReq);
-      const res = await this.brokerManager.request('$memphis_get_tenant_name', data);
-      const errMsg = res.data.toString();
-      const teanatNameResp = JSON.parse(errMsg);
-      if (teanatNameResp['error'] != '') {
-        throw MemphisError(new Error(teanatNameResp['error']));
-      }
-      return teanatNameResp['tenant_name'];
-    }
-    catch (ex) {
-      if (ex.code === '503') {
-        this.tenantName = memphisGlobalAccountName
-      } else {
-        throw MemphisError(ex);
-      }
-    }
-  }
-
   public sendNotification(
     title: string,
     msg: string,
@@ -559,7 +534,6 @@ class Memphis {
         },
         username: this.username,
         tiered_storage_enabled: tieredStorageEnabled,
-        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(
@@ -600,7 +574,6 @@ class Memphis {
         name: name,
         station_name: stationName,
         username: this.username,
-        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(attachSchemaReq);
       const res = await this.brokerManager.request(
@@ -629,7 +602,6 @@ class Memphis {
       let detachSchemaReq = {
         station_name: stationName,
         username: this.username,
-        tenant_name: this.tenantName
       };
       let data = this.JSONC.encode(detachSchemaReq);
       let errMsg = await this.brokerManager.request(
@@ -675,7 +647,6 @@ class Memphis {
         producer_type: 'application',
         req_version: 1,
         username: this.username,
-        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(createProducerReq);
       let createRes = await this.brokerManager.request(
@@ -786,7 +757,6 @@ class Memphis {
         last_messages: lastMessages,
         req_version: 1,
         username: this.username,
-        tenant_name: this.tenantName
       };
       const data = this.JSONC.encode(createConsumerReq);
       const res = await this.brokerManager.request(
