@@ -45,7 +45,6 @@ declare class Memphis {
     stationSchemaverseToDlsMap: Map<string, boolean>;
     private producersMap;
     private consumersMap;
-    tenantName: string;
     private consumeHandlers;
     constructor();
     connect({ host, port, username, accountId, connectionToken, password, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
@@ -70,7 +69,6 @@ declare class Memphis {
     private _compileGraphQl;
     private _listenForSchemaUpdates;
     private _sdkClientUpdatesListener;
-    private _getTenantName;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
     station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled }: {
