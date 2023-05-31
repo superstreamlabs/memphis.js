@@ -139,7 +139,7 @@ declare class Memphis {
     private setCachedConsumer;
     _unSetCachedConsumer(consumer: Consumer): void;
     _unSetCachedConsumerStation(stationName: string): void;
-    close(): void;
+    close(): Promise<void>;
     isConnected(): boolean;
     _setConsumeHandler(options: MemphisConsumerOptions, handler: (...args: any) => void, context: object): void;
 }

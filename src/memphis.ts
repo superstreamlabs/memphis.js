@@ -29,7 +29,7 @@ import { MsgHeaders } from './message-header';
 import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
-import { generateNameSuffix, MemphisError } from './utils';
+import { generateNameSuffix, MemphisError, sleep } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 import { NatsConnection } from 'nats';
 
@@ -56,7 +56,6 @@ const storageTypes: IStorageTypes = {
 };
 
 const maxBatchSize = 5000
-const memphisGlobalAccountName = "$memphis"
 
 class Memphis {
   private isConnectionActive: boolean;
@@ -273,7 +272,7 @@ class Memphis {
   private async _getBrokerManagerConnection(connectionOpts: Object): Promise<NatsConnection> {
     // for backward compatibility.
     if (connectionOpts['user'] != '') {
-      const pingConnectionOpts = connectionOpts;
+      const pingConnectionOpts = JSON.parse(JSON.stringify(connectionOpts)); // deep copy
       pingConnectionOpts['reconnect'] = false;
       let connection;
       try {
@@ -282,9 +281,12 @@ class Memphis {
       } catch (ex) {
         if (ex.message.includes('Authorization Violation')) {
           try {
+            if (connectionOpts['servers']?.includes("localhost")) // for handling bad quality networks like port fwd
+              await sleep(1000);
             pingConnectionOpts['user'] = this.username;
             connection = await broker.connect(pingConnectionOpts);
             await connection.close();
+            connectionOpts['user'] = this.username;
           } catch (ex) {
             throw MemphisError(ex);
           }
@@ -293,6 +295,8 @@ class Memphis {
         }
       }
     }
+    if (connectionOpts['servers']?.includes("localhost")) // for handling bad quality networks like port fwd
+      await sleep(1000);
     return await broker.connect(connectionOpts);
   }
 
@@ -986,7 +990,7 @@ class Memphis {
   /**
    * Close Memphis connection.
    */
-  close() {
+  async close() {
     this.isConnectionActive = false;
     for (let key of this.schemaUpdatesSubs.keys()) {
       const sub = this.schemaUpdatesSubs.get(key);
@@ -997,9 +1001,8 @@ class Memphis {
       this.meassageDescriptors.delete(key);
       this.jsonSchemas.delete(key);
     }
-    setTimeout(async() => {
-      await this.brokerManager?.close?.();
-    }, 500);
+    await sleep(500);
+    await this.brokerManager?.close?.();
     this.consumeHandlers = [];
     this.producersMap = new Map<string, Producer>();
     this.consumersMap = new Map<string, Consumer>();

@@ -28,3 +28,5 @@ export const stringToHex = (str: string): string => {
 export const generateNameSuffix = (additonalStr: string = ""): string => {
     return `${additonalStr}${[...Array(8)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
 }
+
+export const sleep = ms => new Promise(r => setTimeout(r, ms));
