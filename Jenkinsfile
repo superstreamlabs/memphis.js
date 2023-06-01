@@ -26,8 +26,10 @@ node ("small-ec2-fleet") {
           sed -i -r "s/memphis-dev/memphis-dev-beta/g" ./package.json
         """
       }
-      sed -i -r "s/version\\": \\"[0-9].[0-9].[0-9]/version\\": \\"$versionTag/g" ./package.json
-      sh 'sudo npm install'
+      sh """
+        sed -i -r "s/version\\": \\"[0-9].[0-9].[0-9]/version\\": \\"$versionTag/g" ./package.json
+        sudo npm install
+      """
       withCredentials([string(credentialsId: 'npm_token', variable: 'npm_token')]) {
        sh "echo //registry.npmjs.org/:_authToken=$npm_token > .npmrc"
        sh 'npm publish'
