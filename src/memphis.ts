@@ -558,7 +558,7 @@ class Memphis {
   }
 
   /**
-   * Attaches schema is deprecated
+   * Deprecated - use enforceSchema instead
    * @param {String} name - schema name.
    * @param {String} stationName - station name to attach schema to.
    */
@@ -569,7 +569,7 @@ class Memphis {
     name: string;
     stationName: string;
   }): Promise<void> {
-    this.enforceSchema({name: name, stationName: stationName})
+    await this.enforceSchema({name: name, stationName: stationName})
   }
 
   /**
@@ -1039,7 +1039,7 @@ class Memphis {
   }
 
   /**
-   * Create a schema to an existing station.
+   * Creates a schema.
    * @param {String} schemaName - schema name.
    * @param {String} schemaType - schema type (json/ graphql/ protobuf).
    * @param {String} schemaFilePath - the path of the schema file.
