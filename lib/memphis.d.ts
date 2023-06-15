@@ -87,6 +87,10 @@ declare class Memphis {
         name: string;
         stationName: string;
     }): Promise<void>;
+    enforceSchema({ name, stationName }: {
+        name: string;
+        stationName: string;
+    }): Promise<void>;
     detachSchema({ stationName }: {
         stationName: string;
     }): Promise<void>;
@@ -142,6 +146,11 @@ declare class Memphis {
     close(): Promise<void>;
     isConnected(): boolean;
     _setConsumeHandler(options: MemphisConsumerOptions, handler: (...args: any) => void, context: object): void;
+    createSchema({ schemaName, schemaType, schemaFilePath }: {
+        schemaName: string;
+        schemaType: string;
+        schemaFilePath: string;
+    }): Promise<void>;
 }
 export declare class MemphisService extends Memphis {
 }
