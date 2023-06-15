@@ -236,13 +236,25 @@ Destroying a station will remove all its resources (producers/consumers)
 await station.destroy();
 ```
 
-### Attaching a Schema to an Existing Station
+### Creating a new schema 
+
+```js
+await memphisConnection.createSchema({schemaName: "<schema-name>", schemaType: "<schema-type>", schemaFilePath: "<schema-file-path>" });
+```
+
+### Enforcing a schema on an existing Station
+
+```js
+await memphisConnection.enforceSchema({ name: '<schema-name>', stationName: '<station-name>' });
+```
+
+### Deprecated - Use enforceSchema instead
 
 ```js
 await memphisConnection.attachSchema({ name: '<schema-name>', stationName: '<station-name>' });
 ```
 
-### Detaching a Schema from Station
+### Detaching a schema from Station
 
 ```js
 await memphisConnection.detachSchema({ stationName: '<station-name>' });

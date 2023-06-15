@@ -558,11 +558,26 @@ class Memphis {
   }
 
   /**
-   * Attaches a schema to an existing station.
+   * Deprecated - use enforceSchema instead
    * @param {String} name - schema name.
    * @param {String} stationName - station name to attach schema to.
    */
   async attachSchema({
+    name,
+    stationName
+  }: {
+    name: string;
+    stationName: string;
+  }): Promise<void> {
+    await this.enforceSchema({name: name, stationName: stationName})
+  }
+
+  /**
+   * Enforce a schema to an existing station.
+   * @param {String} name - schema name.
+   * @param {String} stationName - station name to Enforce schema to.
+   */
+  async enforceSchema({
     name,
     stationName
   }: {
@@ -574,12 +589,12 @@ class Memphis {
       if (name === '' || stationName === '') {
         throw new Error('name and station name can not be empty');
       }
-      const attachSchemaReq = {
+      const enforceSchemaReq = {
         name: name,
         station_name: stationName,
         username: this.username,
       };
-      const data = this.JSONC.encode(attachSchemaReq);
+      const data = this.JSONC.encode(enforceSchemaReq);
       const res = await this.brokerManager.request(
         '$memphis_schema_attachments',
         data
@@ -1022,6 +1037,70 @@ class Memphis {
   ): void {
     this.consumeHandlers.push({ options, handler, context });
   }
+
+  /**
+   * Creates a schema.
+   * @param {String} schemaName - schema name.
+   * @param {String} schemaType - schema type (json/ graphql/ protobuf).
+   * @param {String} schemaFilePath - the path of the schema file.
+   */
+  async createSchema({
+    schemaName,
+    schemaType,
+    schemaFilePath
+  }: {
+    schemaName: string;
+    schemaType: string;
+    schemaFilePath: string;
+  }): Promise<void> {
+    try {
+      
+      if (schemaType !== "json" && schemaType !== "graphql" && schemaType !== "protobuf")
+        throw MemphisError(new Error("Schema type not supported"));
+
+      var nameConvention = RegExp('^[a-z0-9_.-]*$');
+      if (!nameConvention.test(schemaName))
+        throw MemphisError(new Error("Only alphanumeric and the '_', '-', '.' characters are allowed in the schema name"));
+
+      var firstChar = Array.from(schemaName)[0];
+      var lastChar = Array.from(schemaName)[-1];
+      if (firstChar === "." || firstChar === "_" || firstChar === "-" || lastChar === "." || lastChar === "_" || lastChar === "-")
+        throw MemphisError(new Error("schema name can not start or end with non alphanumeric character"));
+
+      if (schemaName.length === 0)
+        throw MemphisError(new Error("schema name can not be empty"));
+
+      if (schemaName.length > 128)
+        throw MemphisError(new Error("schema name should be under 128 characters"));
+
+      var schemContent = fs.readFileSync(schemaFilePath, 'utf-8');
+
+      var createSchemaReq = {
+        name: schemaName,
+        type: schemaType,
+        created_by_username: this.username,
+        schema_content: schemContent,
+        message_struct_name: "",
+      };
+        
+      var data = this.JSONC.encode(createSchemaReq);
+      let createRes = await this.brokerManager.request(
+        '$memphis_schema_creations',
+        data
+      );
+
+      createRes = this.JSONC.decode(createRes.data);
+      if (createRes.error != "")
+        throw MemphisError(new Error(createRes.error))
+      
+        
+
+    } catch (ex) {
+      throw MemphisError(ex);    
+    }
+  }
+
+
 }
 
 @Injectable({})
