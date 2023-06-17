@@ -46,8 +46,9 @@ declare class Memphis {
     private producersMap;
     private consumersMap;
     private consumeHandlers;
+    private suppressLogs;
     constructor();
-    connect({ host, port, username, accountId, connectionToken, password, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile }: {
+    connect({ host, port, username, accountId, connectionToken, password, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile, suppressLogs }: {
         host: string;
         port?: number;
         username: string;
@@ -61,6 +62,7 @@ declare class Memphis {
         keyFile?: string;
         certFile?: string;
         caFile?: string;
+        suppressLogs?: boolean;
     }): Promise<Memphis>;
     private _getBrokerManagerConnection;
     private _compileProtobufSchema;
@@ -151,6 +153,7 @@ declare class Memphis {
         schemaType: string;
         schemaFilePath: string;
     }): Promise<void>;
+    private log;
 }
 export declare class MemphisService extends Memphis {
 }
