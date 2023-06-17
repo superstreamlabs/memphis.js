@@ -91,6 +91,7 @@ class Memphis {
     context?: object;
     handler: (...args: any) => void;
   }[];
+  private suppressLogs: boolean;
 
   constructor() {
     this.isConnectionActive = false;
@@ -121,6 +122,7 @@ class Memphis {
     this.producersMap = new Map<string, Producer>();
     this.consumersMap = new Map<string, Consumer>();
     this.consumeHandlers = [];
+    this.suppressLogs = false;
   }
 
   /**
@@ -138,6 +140,7 @@ class Memphis {
    * @param {string} keyFile - path to tls key file.
    * @param {string} certFile - path to tls cert file.
    * @param {string} caFile - path to tls ca file.
+   * @param {Boolean} suppressLogs - suppress logs from Memphis.
    */
 
   connect({
@@ -153,7 +156,8 @@ class Memphis {
     timeoutMs = 2000,
     keyFile = '',
     certFile = '',
-    caFile = ''
+    caFile = '',
+    suppressLogs = false
   }: {
     host: string;
     port?: number;
@@ -168,6 +172,7 @@ class Memphis {
     keyFile?: string;
     certFile?: string;
     caFile?: string;
+    suppressLogs?: boolean;
   }): Promise<Memphis> {
     return new Promise(async (resolve, reject) => {
       this.host = this._normalizeHost(host);
@@ -180,6 +185,7 @@ class Memphis {
       this.maxReconnect = maxReconnect > 9 ? 9 : maxReconnect;
       this.reconnectIntervalMs = reconnectIntervalMs;
       this.timeoutMs = timeoutMs;
+      this.suppressLogs = suppressLogs;
       let conId_username = this.connectionId + '::' + username;
       let connectionOpts
       try {
@@ -247,14 +253,14 @@ class Memphis {
           for await (const s of this.brokerManager.status()) {
             switch (s.type) {
               case 'update':
-                console.log(`reconnected to memphis successfully`);
+                this.log(`reconnected to memphis successfully`);
                 this.isConnectionActive = true;
                 break;
               case 'reconnecting':
-                console.log(`trying to reconnect to memphis - ${s.data}`);
+                this.log(`trying to reconnect to memphis - ${s.data}`);
                 break;
               case 'disconnect':
-                console.log(`disconnected from memphis - ${s.data}`);
+                this.log(`disconnected from memphis - ${s.data}`);
                 this.isConnectionActive = false;
                 break;
               default:
@@ -1098,6 +1104,14 @@ class Memphis {
     } catch (ex) {
       throw MemphisError(ex);    
     }
+  }
+
+  private log(...args: any[]) {
+    if(this.suppressLogs) {
+      return;
+    }
+
+    console.log(...args);
   }
 
 

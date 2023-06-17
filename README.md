@@ -89,6 +89,7 @@ await memphis.connect({
             keyFile: '<key-client.pem>',
             certFile: '<cert-client.pem>',
             caFile: '<rootCA.pem>'
+            suppressLogs: false // defaults to false - indicates whether to suppress logs or not
       });
 ```
 
