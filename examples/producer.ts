@@ -1,7 +1,7 @@
 import { memphis, Memphis } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection: Memphis;
+    let memphisConnection: Memphis | null = null;
 
     try {
         memphisConnection = await memphis.connect({
