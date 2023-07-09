@@ -9,6 +9,10 @@ export interface MemphisConnectionOptions {
     maxReconnect?: number;
     reconnectIntervalMs?: number;
     timeoutMs?: number;
+    keyFile?: string;
+    certFile?: string;
+    caFile?: string;
+    suppressLogs?: boolean;
 }
 export interface MemphisPattern<TPattern = string> {
     transport: string;
