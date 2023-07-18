@@ -548,7 +548,8 @@ class Memphis {
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(
         '$memphis_station_creations',
-        data
+        data,
+        {timeout: 10000}
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -603,7 +604,8 @@ class Memphis {
       const data = this.JSONC.encode(enforceSchemaReq);
       const res = await this.brokerManager.request(
         '$memphis_schema_attachments',
-        data
+        data,
+        {timeout: 10000}
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -786,7 +788,8 @@ class Memphis {
       const data = this.JSONC.encode(createConsumerReq);
       const res = await this.brokerManager.request(
         '$memphis_consumer_creations',
-        data
+        data,
+        {timeout: 10000}
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
