@@ -308,7 +308,7 @@ class ProducerModule {
 ### Producing a message
 
 Without creating a producer.
-In cases where extra performance is needed the recommended way is to create a producer first
+In cases where extra performance is needed, the recommended way is to create a producer first
 and produce messages by using the produce function of it
 
 ```js
@@ -356,7 +356,7 @@ await producer.produce({
 
 ### Async produce
 
-Meaning your application won't wait for broker acknowledgement - use only in case you are tolerant for data loss
+For better performance. The client won't block requests while waiting for an acknowledgment.
 
 ```js
 await producer.produce({
@@ -368,7 +368,7 @@ await producer.produce({
 
 ### Message ID
 
-Stations are idempotent by default for 2 minutes (can be configured), Idempotency achieved by adding a message id
+Stations are idempotent by default for 2 minutes (can be configured). Idempotency is achieved by adding a message-id
 
 ```js
 await producer.produce({
@@ -443,7 +443,7 @@ const msgs = await consumer.fetch({
 });
 ```
 
-To set Up connection in nestjs
+To set up a connection in nestjs
 
 ```js
 import { MemphisServer } from 'memphis-dev'
@@ -485,7 +485,7 @@ export class Controller {
 
 ### Acknowledge a message
 
-Acknowledge a message indicates the Memphis server to not re-send the same message again to the same consumer / consumers group
+Acknowledge a message indicates the Memphis server to not re-send the same message again to the same consumer/consumers group
 
 ```js
 message.ack();
@@ -493,7 +493,7 @@ message.ack();
 
 ### Delay and resend the message after a given duration
 
-Delay the message and tell Memphis server to re-send the same message again to the same consumer group. The message will be redelivered only in case `Consumer.maxMsgDeliveries` is not reached yet.
+Delay the message and tell the Memphis server to re-send the same message again to the same consumer group. The message will be redelivered only in case `Consumer.maxMsgDeliveries` is not reached yet.
 
 ```js
 message.delay(delayInMilliseconds);
@@ -543,7 +543,7 @@ consumer.on('error', (error) => {
 await consumer.destroy();
 ```
 
-### Check if broker is connected
+### Check if the broker is connected
 
 ```js
 memphisConnection.isConnected();
