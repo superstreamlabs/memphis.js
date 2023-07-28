@@ -32,6 +32,7 @@ import { Station } from './station';
 import { generateNameSuffix, MemphisError, sleep } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 import { NatsConnection } from 'nats';
+const avro = require('avro-js')
 
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
@@ -81,6 +82,7 @@ class Memphis {
   public producersPerStation: Map<string, number>;
   public meassageDescriptors: Map<string, protobuf.Type>;
   public jsonSchemas: Map<string, Function>;
+  public avroSchemas: Map<string, Function>;
   public graphqlSchemas: Map<string, GraphQLSchema>;
   public clusterConfigurations: Map<string, boolean>;
   public stationSchemaverseToDlsMap: Map<string, boolean>;
@@ -116,6 +118,7 @@ class Memphis {
     this.producersPerStation = new Map();
     this.meassageDescriptors = new Map();
     this.jsonSchemas = new Map();
+    this.avroSchemas = new Map();
     this.graphqlSchemas = new Map();
     this.clusterConfigurations = new Map();
     this.stationSchemaverseToDlsMap = new Map();
@@ -350,6 +353,10 @@ class Memphis {
             const graphQlSchema = this._compileGraphQl(internalStationName);
             this.graphqlSchemas.set(internalStationName, graphQlSchema);
             break;
+          case 'avro':
+            const avroSchema = this._compileAvroSchema(internalStationName);
+            this.avroSchemas.set(internalStationName, avroSchema);
+            break;
         }
       }
       const sub = this.brokerManager.subscribe(
@@ -400,6 +407,18 @@ class Memphis {
     }
   }
 
+  private _compileAvroSchema(stationName: string): any {
+    let stationSchemaData = this.stationSchemaDataMap.get(stationName);
+    const schema = stationSchemaData['active_version']['schema_content'];
+    let validate: any;
+    try {
+      validate = avro.parse(schema);
+      return validate;
+    } catch (ex) {
+      throw MemphisError(new Error('invalid avro schema'));
+    }
+  }
+
   private _compileGraphQl(stationName: string): GraphQLSchema {
     const stationSchemaData = this.stationSchemaDataMap.get(stationName);
     const schemaContent = stationSchemaData['active_version']['schema_content'];
@@ -433,6 +452,10 @@ class Memphis {
           case 'graphql':
             const graphQlSchema = this._compileGraphQl(stationName);
             this.graphqlSchemas.set(stationName, graphQlSchema);
+            break;
+          case 'avro':
+            const avroSchema = this._compileAvroSchema(stationName);
+            this.avroSchemas.set(stationName, avroSchema);
             break;
         }
       } catch (ex) {
@@ -1064,7 +1087,7 @@ class Memphis {
   }): Promise<void> {
     try {
       
-      if (schemaType !== "json" && schemaType !== "graphql" && schemaType !== "protobuf")
+      if (schemaType !== "json" && schemaType !== "graphql" && schemaType !== "protobuf" && schemaType !== "avro")
         throw MemphisError(new Error("Schema type not supported"));
 
       var nameConvention = RegExp('^[a-z0-9_.-]*$');

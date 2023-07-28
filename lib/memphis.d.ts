@@ -40,6 +40,7 @@ declare class Memphis {
     producersPerStation: Map<string, number>;
     meassageDescriptors: Map<string, protobuf.Type>;
     jsonSchemas: Map<string, Function>;
+    avroSchemas: Map<string, Function>;
     graphqlSchemas: Map<string, GraphQLSchema>;
     clusterConfigurations: Map<string, boolean>;
     stationSchemaverseToDlsMap: Map<string, boolean>;
@@ -68,6 +69,7 @@ declare class Memphis {
     private _compileProtobufSchema;
     private _scemaUpdatesListener;
     private _compileJsonSchema;
+    private _compileAvroSchema;
     private _compileGraphQl;
     private _listenForSchemaUpdates;
     private _sdkClientUpdatesListener;
