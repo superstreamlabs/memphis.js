@@ -37,12 +37,14 @@ interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
   MESSAGES: string;
   BYTES: string;
+  ACK_BASED: string;
 }
 
 const retentionTypes: IRetentionTypes = {
   MAX_MESSAGE_AGE_SECONDS: 'message_age_sec',
   MESSAGES: 'messages',
-  BYTES: 'bytes'
+  BYTES: 'bytes',
+  ACK_BASED: 'ack_based'
 };
 
 interface IStorageTypes {

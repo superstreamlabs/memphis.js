@@ -202,6 +202,12 @@ memphis.retentionTypes.BYTES;
 
 Means that after max amount of saved bytes (set in retention value), the oldest messages will be deleted
 
+```js
+memphis.retentionTypes.ACK_BASED; // for cloud users only
+```
+
+Means that after a message is getting acked by all interested consumer groups it will be deleted from the Station.
+
 
 ### Retention Values
 
@@ -209,7 +215,7 @@ The `retention values` are directly related to the `retention types` mentioned a
 
 All retention values are of type `int` but with different representations as follows:
 
-`memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS` is represented **in seconds**, `memphis.retentionTypes.MESSAGES` in a **number of messages** and finally `memphis.retentionTypes.BYTES` in a **number of bytes**.
+`memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS` is represented **in seconds**, `memphis.retentionTypes.MESSAGES` in a **number of messages**, `memphis.retentionTypes.BYTES` in a **number of bytes** and finally `memphis.retentionTypes.ACK_BASED` is not using the retentionValue param at all.
 
 After these limits are reached oldest messages will be deleted.
 

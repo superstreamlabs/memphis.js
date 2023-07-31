@@ -11,6 +11,7 @@ interface IRetentionTypes {
     MAX_MESSAGE_AGE_SECONDS: string;
     MESSAGES: string;
     BYTES: string;
+    ACK_BASED: string;
 }
 interface IStorageTypes {
     DISK: string;
