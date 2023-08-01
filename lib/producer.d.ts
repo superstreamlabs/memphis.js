@@ -17,6 +17,7 @@ export declare class Producer {
     }): Promise<void>;
     private _parseJsonValidationErrors;
     private _validateJsonMessage;
+    private _validateAvroMessage;
     private _validateProtobufMessage;
     private _validateGraphqlMessage;
     private _validateMessage;

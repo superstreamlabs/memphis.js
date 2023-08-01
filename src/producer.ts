@@ -3,6 +3,7 @@ import * as broker from 'nats';
 
 import { Memphis, MsgHeaders } from '.';
 import { MemphisError, stringToHex } from './utils';
+const avro = require('avro-js')
 
 const schemaVFailAlertType = 'schema_validation_fail_alert';
 
@@ -129,6 +130,47 @@ export class Producer {
         }
     }
 
+    private _validateAvroMessage(msg: any): any {
+        try {
+            let schema = this.connection.avroSchemas.get(this.internal_station);
+            let msgObj;
+            let msgToSend = new Uint8Array();
+            const isBuffer = Buffer.isBuffer(msg);
+            if (isBuffer) {
+                try {
+                    msgObj = JSON.parse(msg.toString());
+                } catch (ex) {
+                    throw MemphisError(new Error('Expecting Avro format: ' + ex));
+                }
+                msgToSend = msg;
+                const type = avro.parse(schema); 
+                var buf = type.toBuffer(msgObj);
+                const valid = type.isValid(msgObj);
+                if (!valid) {
+                    throw MemphisError(new Error(`Schema validation has failed: ${type}`));
+                }
+                return msgToSend;
+            } else if (Object.prototype.toString.call(msg) == '[object Object]') {
+                msgObj = msg;
+                let enc = new TextEncoder();
+                const msgString = JSON.stringify(msg);
+                msgToSend = enc.encode(msgString);
+                const type = avro.parse(schema); 
+                var buf = type.toBuffer(msgObj);
+                const valid = type.isValid(msgObj);
+                if (!valid) {
+                    throw MemphisError(new Error(`Schema validation has failed: ${type}`));
+                }
+
+                return msgToSend;
+            } else {
+                throw MemphisError(new Error('Unsupported message type'));
+            }
+        } catch (ex) {
+            throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
+        }
+    }
+
     private _validateProtobufMessage(msg: any): any {
         let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
         if (meassageDescriptor) {
@@ -200,6 +242,8 @@ export class Producer {
                     return this._validateJsonMessage(msg);
                 case 'graphql':
                     return this._validateGraphqlMessage(msg);
+                case 'avro':
+                    return this._validateAvroMessage(msg);
                 default:
                     return msg;
             }
