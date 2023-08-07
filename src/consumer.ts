@@ -1,4 +1,5 @@
 import * as events from 'events';
+import { JetStreamPullSubscription, Subscription } from 'nats';
 
 import { Memphis } from './memphis'
 import { Message } from './message';
@@ -28,6 +29,8 @@ export class Consumer {
     private realName: string;
     private dlsMessages: Message[];
     private dlsCurrentIndex: number;
+    private pullSubscription: JetStreamPullSubscription;
+    private subscription: Subscription;
 
     constructor(
         connection: Memphis,
@@ -65,11 +68,13 @@ export class Consumer {
         this.realName = realName;
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
+        this.pullSubscription = null;
 
-        const sub = this.connection.brokerManager.subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
+        this.subscription = this.connection.brokerManager
+          .subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
             queue: `$memphis_${this.internalStationName}_${this.internalConsumerGroupName}`
         });
-        this._handleAsyncIterableSubscriber(sub, true);
+        this._handleAsyncIterableSubscriber(this.subscription, true);
     }
 
     /**
@@ -95,6 +100,7 @@ export class Consumer {
                     }
                 })
                 .then(async (psub: any) => {
+                    this.pullSubscription = psub;
                     psub.pull({
                         batch: this.batchSize,
                         expires: this.batchMaxTimeToWaitMs
@@ -184,10 +190,27 @@ export class Consumer {
     }
 
     /**
+     * Closes this consumers. Stops it from receiving messages.
+     */
+    stop(): void {
+        clearInterval(this.pullInterval);
+        clearInterval(this.pingConsumerInvterval);
+        if (this.subscription) {
+            this.subscription.unsubscribe();
+            this.subscription = null;
+        }
+        if (this.pullSubscription) {
+            this.pullSubscription.unsubscribe();
+            this.pullSubscription = null;
+        }
+    }
+
+    /**
      * Destroy the consumer.
      */
     async destroy(): Promise<void> {
         clearInterval(this.pullInterval);
+        clearInterval(this.pingConsumerInvterval);
         try {
             let removeConsumerReq = {
                 name: this.consumerName,

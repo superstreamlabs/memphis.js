@@ -23,6 +23,8 @@ export declare class Consumer {
     private realName;
     private dlsMessages;
     private dlsCurrentIndex;
+    private pullSubscription;
+    private subscription;
     constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string);
     setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
@@ -31,6 +33,7 @@ export declare class Consumer {
     }): Promise<Message[]>;
     private _handleAsyncIterableSubscriber;
     private _pingConsumer;
+    stop(): void;
     destroy(): Promise<void>;
     _getConsumerKey(): string;
     _getConsumerStation(): string;
