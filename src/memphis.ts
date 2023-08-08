@@ -96,6 +96,7 @@ class Memphis {
     handler: (...args: any) => void;
   }[];
   private suppressLogs: boolean;
+  public stationPartitions: Map<string, Object>;
 
   constructor() {
     this.isConnectionActive = false;
@@ -128,6 +129,7 @@ class Memphis {
     this.consumersMap = new Map<string, Consumer>();
     this.consumeHandlers = [];
     this.suppressLogs = false;
+    this.stationPartitions = new Map<string, Object>();
   }
 
   /**
@@ -540,7 +542,8 @@ class Memphis {
     schemaName = '',
     sendPoisonMsgToDls = true,
     sendSchemaFailedMsgToDls = true,
-    tieredStorageEnabled = false
+    tieredStorageEnabled = false,
+    partitionsNumber = 1,
   }: {
     name: string;
     retentionType?: string;
@@ -552,8 +555,12 @@ class Memphis {
     sendPoisonMsgToDls?: boolean;
     sendSchemaFailedMsgToDls?: boolean;
     tieredStorageEnabled?: boolean;
+    partitionsNumber?: number;
   }): Promise<Station> {
     try {
+      if (partitionsNumber < 1) {
+        partitionsNumber = 1
+      }
       if (!this.isConnectionActive) throw new Error('Connection is dead');
       const createStationReq = {
         name: name,
@@ -569,6 +576,7 @@ class Memphis {
         },
         username: this.username,
         tiered_storage_enabled: tieredStorageEnabled,
+        partitions_number: partitionsNumber,
       };
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(
@@ -697,7 +705,7 @@ class Memphis {
         station_name: stationName,
         connection_id: this.connectionId,
         producer_type: 'application',
-        req_version: 1,
+        req_version: 2,
         username: this.username,
       };
       const data = this.JSONC.encode(createProducerReq);
@@ -719,8 +727,9 @@ class Memphis {
         createRes.send_notification
       );
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
-
-      const producer = new Producer(this, producerName, stationName, realName);
+      this.stationPartitions.set(internal_station, createRes.partitions_update.partitions_list);
+      
+      const producer = new Producer(this, producerName, stationName, realName, createRes.partitions_update.partitions_list);
       this.setCachedProducer(producer);
 
       return producer;
@@ -807,20 +816,29 @@ class Memphis {
         max_msg_deliveries: maxMsgDeliveries,
         start_consume_from_sequence: startConsumeFromSequence,
         last_messages: lastMessages,
-        req_version: 1,
+        req_version: 2,
         username: this.username,
       };
       const data = this.JSONC.encode(createConsumerReq);
-      const res = await this.brokerManager.request(
+      
+      let createRes = await this.brokerManager.request(
         '$memphis_consumer_creations',
         data,
         {timeout: 10000}
       );
-      const errMsg = res.data.toString();
-      if (errMsg != '') {
+      var partitions: number[] = null
+      try{
+        createRes = this.JSONC.decode(createRes.data);
+        if (createRes.error != '') {
+          throw MemphisError(new Error(createRes.error));
+        } 
+        partitions = createRes.partitions
+      } catch { // decode failed, we may be dealing with an old broker
+        const errMsg = createRes.data.toString();
+        if (errMsg != '') {
         throw MemphisError(new Error(errMsg));
+        }
       }
-
       const consumer = new Consumer(
         this,
         stationName,
@@ -833,7 +851,8 @@ class Memphis {
         maxMsgDeliveries,
         startConsumeFromSequence,
         lastMessages,
-        realName
+        realName,
+        partitions
       );
       this.setCachedConsumer(consumer);
 
@@ -1143,6 +1162,24 @@ class Memphis {
   }
 
 
+}
+
+export class RoundRobinProducerConsumerGenerator {
+  NumberOfPartitions: number;
+  Partitions: number[];
+  Current: number;
+
+  constructor(partitions: number[]) {
+    this.NumberOfPartitions = partitions.length;
+    this.Partitions = partitions;
+    this.Current = 0;
+  }
+
+  Next(): number {
+    const partitionNumber = this.Partitions[this.Current];
+    this.Current = (this.Current + 1) % this.NumberOfPartitions;
+    return partitionNumber;
+  }
 }
 
 @Injectable({})

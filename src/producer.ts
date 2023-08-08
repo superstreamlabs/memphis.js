@@ -1,7 +1,7 @@
 import { parse as parseGraphQl, validate as validateGraphQl } from 'graphql';
 import * as broker from 'nats';
 
-import { Memphis, MsgHeaders } from '.';
+import { Memphis, MsgHeaders, RoundRobinProducerConsumerGenerator } from '.';
 import { MemphisError, stringToHex } from './utils';
 const avro = require('avro-js')
 
@@ -13,13 +13,17 @@ export class Producer {
     private stationName: string;
     private internal_station: string;
     private realName: string;
+    private partitionsGenerator: RoundRobinProducerConsumerGenerator;
 
-    constructor(connection: Memphis, producerName: string, stationName: string, realName: string) {
+    constructor(connection: Memphis, producerName: string, stationName: string, realName: string, partitions: number[]) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
         this.realName = realName;
+        if (partitions.length > 0){
+            this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
+        }
     }
 
     _handleHeaders(headers: any): broker.MsgHdrs {
@@ -69,14 +73,18 @@ export class Producer {
             headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.set('$memphis_producedBy', this.producerName);
             if (msgId) headers.set('msg-id', msgId);
-
+            let streamName = `${this.internal_station}`;
+            if(this.connection.stationPartitions[this.internal_station].length > 0){
+                let partitionNumber = this.partitionsGenerator.Next()
+                streamName = `${this.internal_station}$${partitionNumber.toString()}`
+            }
             if (asyncProduce)
-                this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
+                this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
             else
-                await this.connection.brokerConnection.publish(`${this.internal_station}.final`, messageToSend, {
+                await this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
