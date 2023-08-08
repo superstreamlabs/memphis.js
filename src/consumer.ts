@@ -6,14 +6,6 @@ import { MemphisError } from './utils'
 
 const maxBatchSize = 5000
   
-//   const rrGenerator = new RoundRobinConsumerGenerator(10); // Replace 10 with your desired partitions length
-  
-//   (async () => {
-//     for (let i = 0; i < 20; i++) {
-//       const partition = await rrGenerator.Next();
-//       console.log(`Received from partition ${partition}`);
-//     }
-//   })();
 export class Consumer {
     private connection: Memphis;
     private stationName: string;
@@ -196,7 +188,7 @@ export class Consumer {
             const consumerName = this.consumerName.replace(/\./g, '#').toLowerCase();
             const durableName = consumerGroup || consumerName;
             if(stationPartitions != null && stationPartitions.length > 0){
-                for (const p in stationPartitions) {
+                for (const p of stationPartitions) {
                     await this.connection.brokerStats.consumers.info(`${stationName}$${p}`, durableName);
                 }
             } else{
