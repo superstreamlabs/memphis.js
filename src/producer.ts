@@ -74,7 +74,8 @@ export class Producer {
             headers.set('$memphis_producedBy', this.producerName);
             if (msgId) headers.set('msg-id', msgId);
             let streamName = `${this.internal_station}`;
-            if(this.connection.stationPartitions[this.internal_station].length > 0){
+            let stationPartitions = this.connection.stationPartitions.get(this.internal_station)
+            if(stationPartitions != null && stationPartitions.length > 0){
                 let partitionNumber = this.partitionsGenerator.Next()
                 streamName = `${this.internal_station}$${partitionNumber.toString()}`
             }

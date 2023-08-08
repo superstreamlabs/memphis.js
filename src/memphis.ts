@@ -96,7 +96,7 @@ class Memphis {
     handler: (...args: any) => void;
   }[];
   private suppressLogs: boolean;
-  public stationPartitions: Map<string, Object>;
+  public stationPartitions: Map<string, number[]>;
 
   constructor() {
     this.isConnectionActive = false;
@@ -129,7 +129,7 @@ class Memphis {
     this.consumersMap = new Map<string, Consumer>();
     this.consumeHandlers = [];
     this.suppressLogs = false;
-    this.stationPartitions = new Map<string, Object>();
+    this.stationPartitions = new Map<string, number[]>();
   }
 
   /**
@@ -832,7 +832,8 @@ class Memphis {
         if (createRes.error != '') {
           throw MemphisError(new Error(createRes.error));
         } 
-        partitions = createRes.partitions
+        partitions = createRes.partitions_update.partitions_list
+        this.stationPartitions.set(stationName.replace(/\./g, '#'), createRes.partitions_update.partitions_list);
       } catch { // decode failed, we may be dealing with an old broker
         const errMsg = createRes.data.toString();
         if (errMsg != '') {

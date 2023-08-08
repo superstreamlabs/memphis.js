@@ -76,7 +76,6 @@ export class Consumer {
         this.realName = realName;
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
-        this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
         let partitionsLen = 1;
         if (partitions !== null) {
             partitionsLen = partitions.length
@@ -108,7 +107,7 @@ export class Consumer {
             const fetchAndHandleMessages = async () => {
                 try {
                     const messages = await this.fetch({ batchSize: this.batchSize });
-                    this._handleAsyncIterableSubscriber(messages, false);
+                    this._handleAsyncConsumedMessages(messages, false);
                 } catch (error) {
                     this.eventEmitter.emit('error', MemphisError(error));
                 }
@@ -136,7 +135,8 @@ export class Consumer {
                 throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
             }
             let streamName = `${this.internalStationName}`;
-            if(this.connection.stationPartitions[this.internalStationName].length > 0){
+            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName)
+            if(stationPartitions != null && stationPartitions.length > 0){
                 let partitionNumber = this.partitionsGenerator.Next()
                 streamName = `${this.internalStationName}$${partitionNumber.toString()}`
             }
@@ -154,7 +154,7 @@ export class Consumer {
                 return messages;
             }
             const durableName = this.consumerGroup ? this.internalConsumerGroupName : this.internalConsumerName;
-            const batch = await this.connection.brokerConnection.fetch(`${streamName}.final`, durableName,
+            const batch = await this.connection.brokerConnection.fetch(streamName, durableName,
                 { batch: batchSize, expires: this.batchMaxTimeToWaitMs });
 
             for await (const m of batch)
@@ -181,13 +181,28 @@ export class Consumer {
         }
     }
 
+    private async _handleAsyncConsumedMessages(messages: Message[], isDls: boolean) {
+        for await (const m of messages) {
+            this.eventEmitter.emit('message',m, this.context);
+        }
+    }
+
+
     private async _pingConsumer() {
         try {
+            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName)
             const stationName = this.stationName.replace(/\./g, '#').toLowerCase();
             const consumerGroup = this.consumerGroup.replace(/\./g, '#').toLowerCase();
             const consumerName = this.consumerName.replace(/\./g, '#').toLowerCase();
             const durableName = consumerGroup || consumerName;
-            await this.connection.brokerStats.consumers.info(stationName, durableName);
+            if(stationPartitions != null && stationPartitions.length > 0){
+                for (const p in stationPartitions) {
+                    await this.connection.brokerStats.consumers.info(`${stationName}$${p}`, durableName);
+                }
+            } else{
+                await this.connection.brokerStats.consumers.info(stationName, durableName);
+            }
+           
         } catch (ex) {
             this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
         }
