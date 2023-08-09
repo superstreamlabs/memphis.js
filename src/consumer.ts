@@ -5,7 +5,7 @@ import { Message } from './message';
 import { MemphisError } from './utils'
 
 const maxBatchSize = 5000
-  
+
 export class Consumer {
     private connection: Memphis;
     private stationName: string;
@@ -121,14 +121,14 @@ export class Consumer {
     /**
      * Fetch a batch of messages.
      */
-    public async fetch({batchSize = 10}:{batchSize?: number}): Promise<Message[]> {
+    public async fetch({ batchSize = 10 }: { batchSize?: number }): Promise<Message[]> {
         try {
-            if(batchSize > maxBatchSize){
+            if (batchSize > maxBatchSize) {
                 throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
             }
             let streamName = `${this.internalStationName}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internalStationName)
-            if(stationPartitions != null && stationPartitions.length > 0){
+            if (stationPartitions != null && stationPartitions.length > 0) {
                 let partitionNumber = this.partitionsGenerator.Next()
                 streamName = `${this.internalStationName}$${partitionNumber.toString()}`
             }
@@ -175,7 +175,7 @@ export class Consumer {
 
     private async _handleAsyncConsumedMessages(messages: Message[], isDls: boolean) {
         for await (const m of messages) {
-            this.eventEmitter.emit('message',m, this.context);
+            this.eventEmitter.emit('message', m, this.context);
         }
     }
 
@@ -187,14 +187,14 @@ export class Consumer {
             const consumerGroup = this.consumerGroup.replace(/\./g, '#').toLowerCase();
             const consumerName = this.consumerName.replace(/\./g, '#').toLowerCase();
             const durableName = consumerGroup || consumerName;
-            if(stationPartitions != null && stationPartitions.length > 0){
+            if (stationPartitions != null && stationPartitions.length > 0) {
                 for (const p of stationPartitions) {
                     await this.connection.brokerStats.consumers.info(`${stationName}$${p}`, durableName);
                 }
-            } else{
+            } else {
                 await this.connection.brokerStats.consumers.info(stationName, durableName);
             }
-           
+
         } catch (ex) {
             this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
         }

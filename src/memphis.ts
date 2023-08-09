@@ -582,7 +582,7 @@ class Memphis {
       const res = await this.brokerManager.request(
         '$memphis_station_creations',
         data,
-        {timeout: 10000}
+        { timeout: 10000 }
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -609,7 +609,7 @@ class Memphis {
     name: string;
     stationName: string;
   }): Promise<void> {
-    await this.enforceSchema({name: name, stationName: stationName})
+    await this.enforceSchema({ name: name, stationName: stationName })
   }
 
   /**
@@ -638,7 +638,7 @@ class Memphis {
       const res = await this.brokerManager.request(
         '$memphis_schema_attachments',
         data,
-        {timeout: 10000}
+        { timeout: 10000 }
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -728,7 +728,7 @@ class Memphis {
       );
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.stationPartitions.set(internal_station, createRes.partitions_update.partitions_list);
-      
+
       const producer = new Producer(this, producerName, stationName, realName, createRes.partitions_update.partitions_list);
       this.setCachedProducer(producer);
 
@@ -820,24 +820,24 @@ class Memphis {
         username: this.username,
       };
       const data = this.JSONC.encode(createConsumerReq);
-      
+
       let createRes = await this.brokerManager.request(
         '$memphis_consumer_creations',
         data,
-        {timeout: 10000}
+        { timeout: 10000 }
       );
       var partitions: number[] = null
-      try{
+      try {
         createRes = this.JSONC.decode(createRes.data);
         if (createRes.error != '') {
           throw MemphisError(new Error(createRes.error));
-        } 
+        }
         partitions = createRes.partitions_update.partitions_list
         this.stationPartitions.set(stationName.replace(/\./g, '#'), createRes.partitions_update.partitions_list);
       } catch { // decode failed, we may be dealing with an old broker
-        const errMsg = createRes.data.toString();
+        const errMsg = createRes.data ? createRes.data.toString() : createRes.error.toString();
         if (errMsg != '') {
-        throw MemphisError(new Error(errMsg));
+          throw MemphisError(new Error(errMsg));
         }
       }
       const consumer = new Consumer(
@@ -1108,7 +1108,7 @@ class Memphis {
     schemaFilePath: string;
   }): Promise<void> {
     try {
-      
+
       if (schemaType !== "json" && schemaType !== "graphql" && schemaType !== "protobuf" && schemaType !== "avro")
         throw MemphisError(new Error("Schema type not supported"));
 
@@ -1136,7 +1136,7 @@ class Memphis {
         schema_content: schemContent,
         message_struct_name: "",
       };
-        
+
       var data = this.JSONC.encode(createSchemaReq);
       let createRes = await this.brokerManager.request(
         '$memphis_schema_creations',
@@ -1146,16 +1146,16 @@ class Memphis {
       createRes = this.JSONC.decode(createRes.data);
       if (createRes.error != "")
         throw MemphisError(new Error(createRes.error))
-      
-        
+
+
 
     } catch (ex) {
-      throw MemphisError(ex);    
+      throw MemphisError(ex);
     }
   }
 
   private log(...args: any[]) {
-    if(this.suppressLogs) {
+    if (this.suppressLogs) {
       return;
     }
 
