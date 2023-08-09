@@ -727,9 +727,15 @@ class Memphis {
         createRes.send_notification
       );
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
-      this.stationPartitions.set(internal_station, createRes.partitions_update.partitions_list);
+      var partitions: number[]
+      if (createRes.partitions_update === undefined || createRes.partitions_update === null) {
+        partitions = []
+    } else {
+      partitions = createRes.partitions_update.partitions_list
+    }
+      this.stationPartitions.set(internal_station, partitions);
 
-      const producer = new Producer(this, producerName, stationName, realName, createRes.partitions_update.partitions_list);
+      const producer = new Producer(this, producerName, stationName, realName, partitions);
       this.setCachedProducer(producer);
 
       return producer;
@@ -826,20 +832,21 @@ class Memphis {
         data,
         { timeout: 10000 }
       );
-      var partitions: number[] = null
+      const internal_station = stationName.replace(/\./g, '#')
+      let partitions = []
       try {
         createRes = this.JSONC.decode(createRes.data);
         if (createRes.error != '') {
           throw MemphisError(new Error(createRes.error));
         }
         partitions = createRes.partitions_update.partitions_list
-        this.stationPartitions.set(stationName.replace(/\./g, '#'), createRes.partitions_update.partitions_list);
       } catch { // decode failed, we may be dealing with an old broker
         const errMsg = createRes.data ? createRes.data.toString() : createRes.error.toString();
         if (errMsg != '') {
           throw MemphisError(new Error(errMsg));
         }
       }
+      this.stationPartitions.set(internal_station, partitions);
       const consumer = new Consumer(
         this,
         stationName,
