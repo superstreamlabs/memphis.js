@@ -49,6 +49,7 @@ declare class Memphis {
     private consumersMap;
     private consumeHandlers;
     private suppressLogs;
+    stationPartitions: Map<string, number[]>;
     constructor();
     connect({ host, port, username, accountId, connectionToken, password, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile, suppressLogs }: {
         host: string;
@@ -76,7 +77,7 @@ declare class Memphis {
     private _sdkClientUpdatesListener;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
-    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled }: {
+    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled, partitionsNumber, }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
@@ -87,6 +88,7 @@ declare class Memphis {
         sendPoisonMsgToDls?: boolean;
         sendSchemaFailedMsgToDls?: boolean;
         tieredStorageEnabled?: boolean;
+        partitionsNumber?: number;
     }): Promise<Station>;
     attachSchema({ name, stationName }: {
         name: string;
@@ -157,6 +159,13 @@ declare class Memphis {
         schemaFilePath: string;
     }): Promise<void>;
     private log;
+}
+export declare class RoundRobinProducerConsumerGenerator {
+    NumberOfPartitions: number;
+    Partitions: number[];
+    Current: number;
+    constructor(partitions: number[]);
+    Next(): number;
 }
 export declare class MemphisService extends Memphis {
 }
