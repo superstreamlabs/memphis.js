@@ -835,7 +835,7 @@ class Memphis {
         partitions = createRes.partitions_update.partitions_list
         this.stationPartitions.set(stationName.replace(/\./g, '#'), createRes.partitions_update.partitions_list);
       } catch { // decode failed, we may be dealing with an old broker
-        const errMsg = createRes.error.toString();
+        const errMsg = createRes.data ? createRes.data.toString() : createRes.error.toString();
         if (errMsg != '') {
           throw MemphisError(new Error(errMsg));
         }
