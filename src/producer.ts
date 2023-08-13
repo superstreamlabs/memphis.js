@@ -21,7 +21,7 @@ export class Producer {
         this.stationName = stationName.toLowerCase();
         this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
         this.realName = realName;
-        if (partitions.length > 0){
+        if (partitions?.length > 0){
             this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
         }
     }
