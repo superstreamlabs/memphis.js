@@ -728,11 +728,11 @@ class Memphis {
       );
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       var partitions: number[]
-      if (createRes.partitions_update === undefined || createRes.partitions_update === null) {
-        partitions = []
-    } else {
-      partitions = createRes.partitions_update.partitions_list
-    }
+      if (createRes?.partitions_update === undefined || createRes?.partitions_update === null || createRes?.partitions_update?.partitions_list === null) {
+        partitions = [];
+      } else {
+        partitions = createRes.partitions_update.partitions_list;
+      }
       this.stationPartitions.set(internal_station, partitions);
 
       const producer = new Producer(this, producerName, stationName, realName, partitions);
