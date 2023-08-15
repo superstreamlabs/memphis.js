@@ -198,7 +198,6 @@ export class Consumer {
         } catch (ex) {
             if (ex.message.includes('consumer not found') || ex.message.includes('stream not found')){
                 this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
-                console.log(ex.message)
             }
         }
     }
