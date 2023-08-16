@@ -1,11 +1,12 @@
 import * as events from 'events';
-import { JetStreamPullSubscription, Subscription } from 'nats';
+import { Subscription } from 'nats';
 
-import { Memphis } from './memphis'
+import { Memphis, RoundRobinProducerConsumerGenerator } from './memphis'
 import { Message } from './message';
 import { MemphisError } from './utils'
 
 const maxBatchSize = 5000
+
 export class Consumer {
     private connection: Memphis;
     private stationName: string;
@@ -29,7 +30,7 @@ export class Consumer {
     private realName: string;
     private dlsMessages: Message[];
     private dlsCurrentIndex: number;
-    private pullSubscription: JetStreamPullSubscription;
+    private partitionsGenerator: RoundRobinProducerConsumerGenerator;
     private subscription: Subscription;
 
     constructor(
@@ -44,7 +45,8 @@ export class Consumer {
         maxMsgDeliveries: number,
         startConsumeFromSequence: number,
         lastMessages: number,
-        realName: string
+        realName: string,
+        partitions: number[]
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -68,8 +70,13 @@ export class Consumer {
         this.realName = realName;
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
-        this.pullSubscription = null;
-
+        let partitionsLen = 1;
+        if (partitions !== null) {
+            partitionsLen = partitions.length
+        }
+        if (partitions.length > 0) {
+            this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
+        }        
         this.subscription = this.connection.brokerManager
           .subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
             queue: `$memphis_${this.internalStationName}_${this.internalConsumerGroupName}`
@@ -92,49 +99,41 @@ export class Consumer {
      */
     on(event: String, cb: (...args: any[]) => void) {
         if (event === 'message') {
-            this.connection.brokerConnection
-                .pullSubscribe(`${this.internalStationName}.final`, {
-                    mack: true,
-                    config: {
-                        durable_name: this.consumerGroup ? this.internalConsumerGroupName : this.internalConsumerName
-                    }
-                })
-                .then(async (psub: any) => {
-                    this.pullSubscription = psub;
-                    psub.pull({
-                        batch: this.batchSize,
-                        expires: this.batchMaxTimeToWaitMs
-                    });
-                    this.pullInterval = setInterval(() => {
-                        if (this?.connection?.brokerManager && !this.connection.brokerManager.isClosed())
-                            psub.pull({
-                                batch: this.batchSize,
-                                expires: this.batchMaxTimeToWaitMs
-                            });
-                        else clearInterval(this.pullInterval);
-                    }, this.pullIntervalMs);
+            const fetchAndHandleMessages = async () => {
+                try {
+                    const messages = await this.fetch({ batchSize: this.batchSize });
+                    this._handleAsyncConsumedMessages(messages, false);
+                } catch (error) {
+                    this.eventEmitter.emit('error', MemphisError(error));
+                }
+            };
+            fetchAndHandleMessages();
+            this.pullInterval = setInterval(fetchAndHandleMessages, this.pullIntervalMs);
 
-                    this.pingConsumerInvterval = setInterval(async () => {
-                        if (this?.connection?.brokerManager && !this.connection.brokerManager.isClosed()) {
-                            this._pingConsumer();
-                        } else clearInterval(this.pingConsumerInvterval);
-                    }, this.pingConsumerInvtervalMs);
-
-                    this._handleAsyncIterableSubscriber(psub, false);
-                })
-                .catch((error: any) => this.eventEmitter.emit('error', MemphisError(error)));
+            this.pingConsumerInvterval = setInterval(async () => {
+                if (this?.connection?.brokerManager && !this.connection.brokerManager.isClosed()) {
+                    this._pingConsumer();
+                } else {
+                    clearInterval(this.pingConsumerInvterval);
+                }
+            }, this.pingConsumerInvtervalMs);
         }
-
         this.eventEmitter.on(<string>event, cb);
     }
 
     /**
      * Fetch a batch of messages.
      */
-    public async fetch({batchSize = 10}:{batchSize?: number}): Promise<Message[]> {
+    public async fetch({ batchSize = 10 }: { batchSize?: number }): Promise<Message[]> {
         try {
-            if(batchSize > maxBatchSize){
+            if (batchSize > maxBatchSize) {
                 throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
+            }
+            let streamName = `${this.internalStationName}`;
+            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName)
+            if (stationPartitions != null && stationPartitions.length > 0) {
+                let partitionNumber = this.partitionsGenerator.Next()
+                streamName = `${this.internalStationName}$${partitionNumber.toString()}`
             }
             this.batchSize = batchSize
             let messages: Message[] = [];
@@ -150,7 +149,7 @@ export class Consumer {
                 return messages;
             }
             const durableName = this.consumerGroup ? this.internalConsumerGroupName : this.internalConsumerName;
-            const batch = await this.connection.brokerConnection.fetch(this.internalStationName, durableName,
+            const batch = await this.connection.brokerConnection.fetch(streamName, durableName,
                 { batch: batchSize, expires: this.batchMaxTimeToWaitMs });
 
             for await (const m of batch)
@@ -177,15 +176,32 @@ export class Consumer {
         }
     }
 
+    private async _handleAsyncConsumedMessages(messages: Message[], isDls: boolean) {
+        for await (const m of messages) {
+            this.eventEmitter.emit('message', m, this.context);
+        }
+    }
+
+
     private async _pingConsumer() {
         try {
+            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName)
             const stationName = this.stationName.replace(/\./g, '#').toLowerCase();
             const consumerGroup = this.consumerGroup.replace(/\./g, '#').toLowerCase();
             const consumerName = this.consumerName.replace(/\./g, '#').toLowerCase();
             const durableName = consumerGroup || consumerName;
-            await this.connection.brokerStats.consumers.info(stationName, durableName);
+            if (stationPartitions != null && stationPartitions.length > 0) {
+                for (const p of stationPartitions) {
+                    await this.connection.brokerStats.consumers.info(`${stationName}$${p}`, durableName);
+                }
+            } else {
+                await this.connection.brokerStats.consumers.info(stationName, durableName);
+            }
+
         } catch (ex) {
-            this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
+            if (ex.message.includes('consumer not found') || ex.message.includes('stream not found')){
+                this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
+            }
         }
     }
 
@@ -198,10 +214,6 @@ export class Consumer {
         if (this.subscription) {
             this.subscription.unsubscribe();
             this.subscription = null;
-        }
-        if (this.pullSubscription) {
-            this.pullSubscription.unsubscribe();
-            this.pullSubscription = null;
         }
     }
 

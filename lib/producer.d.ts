@@ -6,7 +6,8 @@ export declare class Producer {
     private stationName;
     private internal_station;
     private realName;
-    constructor(connection: Memphis, producerName: string, stationName: string, realName: string);
+    private partitionsGenerator;
+    constructor(connection: Memphis, producerName: string, stationName: string, realName: string, partitions: number[]);
     _handleHeaders(headers: any): broker.MsgHdrs;
     produce({ message, ackWaitSec, asyncProduce, headers, msgId }: {
         message: any;

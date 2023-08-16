@@ -147,7 +147,8 @@ const station = await memphis.station({
     idempotencyWindowMs: 0, // defaults to 120000
     sendPoisonMsgToDls: true, // defaults to true
     sendSchemaFailedMsgToDls: true, // defaults to true
-    tieredStorageEnabled: false // defaults to false
+    tieredStorageEnabled: false, // defaults to false
+    partitionsNumber: 1 // defaults to 1
 });
 ```
 
@@ -339,7 +340,10 @@ await producer.produce({
 });
 ```
 
-### Add Header
+Note:
+When producing to a station with more than one partition, the producer will produce messages in a Round Robin fashion between the different partitions.
+
+### Add Headers
 
 ```js
 const headers = memphis.headers();
@@ -407,6 +411,9 @@ const consumer = await memphisConnection.consumer({
     lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
 });
 ```
+
+Note:
+When consuming from a station with more than one partition, the consumer will consume messages in Round Robin fashion from the different partitions.
 
 ### Passing context to message handlers
 

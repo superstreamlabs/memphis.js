@@ -96,6 +96,7 @@ class Memphis {
     handler: (...args: any) => void;
   }[];
   private suppressLogs: boolean;
+  public stationPartitions: Map<string, number[]>;
 
   constructor() {
     this.isConnectionActive = false;
@@ -128,6 +129,7 @@ class Memphis {
     this.consumersMap = new Map<string, Consumer>();
     this.consumeHandlers = [];
     this.suppressLogs = false;
+    this.stationPartitions = new Map<string, number[]>();
   }
 
   /**
@@ -540,7 +542,8 @@ class Memphis {
     schemaName = '',
     sendPoisonMsgToDls = true,
     sendSchemaFailedMsgToDls = true,
-    tieredStorageEnabled = false
+    tieredStorageEnabled = false,
+    partitionsNumber = 1,
   }: {
     name: string;
     retentionType?: string;
@@ -552,8 +555,12 @@ class Memphis {
     sendPoisonMsgToDls?: boolean;
     sendSchemaFailedMsgToDls?: boolean;
     tieredStorageEnabled?: boolean;
+    partitionsNumber?: number;
   }): Promise<Station> {
     try {
+      if (partitionsNumber < 1) {
+        partitionsNumber = 1
+      }
       if (!this.isConnectionActive) throw new Error('Connection is dead');
       const createStationReq = {
         name: name,
@@ -569,12 +576,13 @@ class Memphis {
         },
         username: this.username,
         tiered_storage_enabled: tieredStorageEnabled,
+        partitions_number: partitionsNumber,
       };
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(
         '$memphis_station_creations',
         data,
-        {timeout: 10000}
+        { timeout: 10000 }
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -601,7 +609,7 @@ class Memphis {
     name: string;
     stationName: string;
   }): Promise<void> {
-    await this.enforceSchema({name: name, stationName: stationName})
+    await this.enforceSchema({ name: name, stationName: stationName })
   }
 
   /**
@@ -630,7 +638,7 @@ class Memphis {
       const res = await this.brokerManager.request(
         '$memphis_schema_attachments',
         data,
-        {timeout: 10000}
+        { timeout: 10000 }
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -697,7 +705,7 @@ class Memphis {
         station_name: stationName,
         connection_id: this.connectionId,
         producer_type: 'application',
-        req_version: 1,
+        req_version: 2,
         username: this.username,
       };
       const data = this.JSONC.encode(createProducerReq);
@@ -719,8 +727,15 @@ class Memphis {
         createRes.send_notification
       );
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
+      var partitions: number[]
+      if (createRes?.partitions_update === undefined || createRes?.partitions_update === null || createRes?.partitions_update?.partitions_list === null) {
+        partitions = [];
+      } else {
+        partitions = createRes.partitions_update.partitions_list;
+      }
+      this.stationPartitions.set(internal_station, partitions);
 
-      const producer = new Producer(this, producerName, stationName, realName);
+      const producer = new Producer(this, producerName, stationName, realName, partitions);
       this.setCachedProducer(producer);
 
       return producer;
@@ -807,20 +822,35 @@ class Memphis {
         max_msg_deliveries: maxMsgDeliveries,
         start_consume_from_sequence: startConsumeFromSequence,
         last_messages: lastMessages,
-        req_version: 1,
+        req_version: 2,
         username: this.username,
       };
       const data = this.JSONC.encode(createConsumerReq);
-      const res = await this.brokerManager.request(
+
+      let createRes = await this.brokerManager.request(
         '$memphis_consumer_creations',
         data,
-        {timeout: 10000}
+        { timeout: 10000 }
       );
-      const errMsg = res.data.toString();
-      if (errMsg != '') {
-        throw MemphisError(new Error(errMsg));
+      const internal_station = stationName.replace(/\./g, '#')
+      let partitions = []
+      try {
+        createRes = this.JSONC.decode(createRes.data);
+        if (createRes.error != '') {
+          throw MemphisError(new Error(createRes.error));
+        }
+        if (createRes?.partitions_update === undefined || createRes?.partitions_update === null || createRes?.partitions_update?.partitions_list === null) {
+          partitions = [];
+        } else {
+          partitions = createRes.partitions_update.partitions_list;
+        }
+      } catch { // decode failed, we may be dealing with an old broker
+        const errMsg = createRes.data ? createRes.data.toString() : createRes.error.toString();
+        if (errMsg != '') {
+          throw MemphisError(new Error(errMsg));
+        }
       }
-
+      this.stationPartitions.set(internal_station, partitions);
       const consumer = new Consumer(
         this,
         stationName,
@@ -833,7 +863,8 @@ class Memphis {
         maxMsgDeliveries,
         startConsumeFromSequence,
         lastMessages,
-        realName
+        realName,
+        partitions
       );
       this.setCachedConsumer(consumer);
 
@@ -1092,7 +1123,7 @@ class Memphis {
     schemaFilePath: string;
   }): Promise<void> {
     try {
-      
+
       if (schemaType !== "json" && schemaType !== "graphql" && schemaType !== "protobuf" && schemaType !== "avro")
         throw MemphisError(new Error("Schema type not supported"));
 
@@ -1120,7 +1151,7 @@ class Memphis {
         schema_content: schemContent,
         message_struct_name: "",
       };
-        
+
       var data = this.JSONC.encode(createSchemaReq);
       let createRes = await this.brokerManager.request(
         '$memphis_schema_creations',
@@ -1130,16 +1161,16 @@ class Memphis {
       createRes = this.JSONC.decode(createRes.data);
       if (createRes.error != "")
         throw MemphisError(new Error(createRes.error))
-      
-        
+
+
 
     } catch (ex) {
-      throw MemphisError(ex);    
+      throw MemphisError(ex);
     }
   }
 
   private log(...args: any[]) {
-    if(this.suppressLogs) {
+    if (this.suppressLogs) {
       return;
     }
 
@@ -1147,6 +1178,24 @@ class Memphis {
   }
 
 
+}
+
+export class RoundRobinProducerConsumerGenerator {
+  NumberOfPartitions: number;
+  Partitions: number[];
+  Current: number;
+
+  constructor(partitions: number[]) {
+    this.NumberOfPartitions = partitions.length;
+    this.Partitions = partitions;
+    this.Current = 0;
+  }
+
+  Next(): number {
+    const partitionNumber = this.Partitions[this.Current];
+    this.Current = (this.Current + 1) % this.NumberOfPartitions;
+    return partitionNumber;
+  }
 }
 
 @Injectable({})
