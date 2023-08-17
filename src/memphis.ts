@@ -115,7 +115,6 @@ class Memphis {
     this.retentionTypes = retentionTypes;
     this.storageTypes = storageTypes;
     this.JSONC = broker.JSONCodec();
-    this.connectionId = uuidv4().toString()
     this.stationSchemaDataMap = new Map();
     this.schemaUpdatesSubs = new Map();
     this.producersPerStation = new Map();
@@ -125,8 +124,6 @@ class Memphis {
     this.graphqlSchemas = new Map();
     this.clusterConfigurations = new Map();
     this.stationSchemaverseToDlsMap = new Map();
-    this.producersMap = new Map<string, Producer>();
-    this.consumersMap = new Map<string, Consumer>();
     this.consumeHandlers = [];
     this.suppressLogs = false;
     this.stationPartitions = new Map<string, number[]>();
@@ -193,6 +190,9 @@ class Memphis {
       this.reconnectIntervalMs = reconnectIntervalMs;
       this.timeoutMs = timeoutMs;
       this.suppressLogs = suppressLogs;
+      this.connectionId = uuidv4().toString()
+      this.producersMap = new Map<string, Producer>();
+      this.consumersMap = new Map<string, Consumer>();
       let conId_username = this.connectionId + '::' + username;
       let connectionOpts
       try {
@@ -697,9 +697,17 @@ class Memphis {
         throw MemphisError(new Error('Connection is dead'));
 
       const realName = producerName.toLowerCase();
-      producerName = genUniqueSuffix
-        ? generateNameSuffix(`${producerName}_`)
-        : producerName;
+      if (genUniqueSuffix === true){
+        producerName = generateNameSuffix(`${producerName}_`)
+      }
+      else {
+        const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+        const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
+        const producer = this.getCachedProducer(producerMapKey);
+        if (producer){
+          return producer;
+        }
+      }
       const createProducerReq = {
         name: producerName,
         station_name: stationName,

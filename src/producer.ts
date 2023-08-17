@@ -75,10 +75,15 @@ export class Producer {
             if (msgId) headers.set('msg-id', msgId);
             let streamName = `${this.internal_station}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internal_station)
-            if(stationPartitions != null && stationPartitions.length > 0){
+            if (stationPartitions.length === 1){
+                let partitionNumber = stationPartitions[0]
+                streamName = `${this.internal_station}$${partitionNumber.toString()}`
+            }
+            else if(stationPartitions != null && stationPartitions.length > 0){
                 let partitionNumber = this.partitionsGenerator.Next()
                 streamName = `${this.internal_station}$${partitionNumber.toString()}`
             }
+            
             if (asyncProduce)
                 this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
                     headers: headers,
