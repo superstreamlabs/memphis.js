@@ -34,6 +34,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { NatsConnection } from 'nats';
 const avro = require('avro-js')
 
+const appId = uuidv4();
+
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
   MESSAGES: string;
@@ -697,14 +699,14 @@ class Memphis {
         throw MemphisError(new Error('Connection is dead'));
 
       const realName = producerName.toLowerCase();
-      if (genUniqueSuffix === true){
+      if (genUniqueSuffix === true) {
         producerName = generateNameSuffix(`${producerName}_`)
       }
       else {
         const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
         const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
         const producer = this.getCachedProducer(producerMapKey);
-        if (producer){
+        if (producer) {
           return producer;
         }
       }
@@ -713,8 +715,9 @@ class Memphis {
         station_name: stationName,
         connection_id: this.connectionId,
         producer_type: 'application',
-        req_version: 2,
+        req_version: 3,
         username: this.username,
+        app_id: appId,
       };
       const data = this.JSONC.encode(createProducerReq);
       let createRes = await this.brokerManager.request(
@@ -830,8 +833,9 @@ class Memphis {
         max_msg_deliveries: maxMsgDeliveries,
         start_consume_from_sequence: startConsumeFromSequence,
         last_messages: lastMessages,
-        req_version: 2,
+        req_version: 3,
         username: this.username,
+        app_id: appId,
       };
       const data = this.JSONC.encode(createConsumerReq);
 
