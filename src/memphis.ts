@@ -683,7 +683,7 @@ class Memphis {
    * Creates a producer.
    * @param {String} stationName - station name to produce messages into.
    * @param {String} producerName - name for the producer.
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    */
   async producer({
     stationName,
@@ -700,6 +700,7 @@ class Memphis {
 
       const realName = producerName.toLowerCase();
       if (genUniqueSuffix === true) {
+        console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
         producerName = generateNameSuffix(`${producerName}_`)
       }
       else {
@@ -765,7 +766,7 @@ class Memphis {
    * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
    */
@@ -800,6 +801,11 @@ class Memphis {
         throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
       }
       const realName = consumerName.toLowerCase();
+
+      if (genUniqueSuffix) {
+        console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
+      }
+
       consumerName = genUniqueSuffix
         ? generateNameSuffix(`${consumerName}_`)
         : consumerName;
@@ -894,10 +900,10 @@ class Memphis {
    * Produce a message.
    * @param {String} stationName - station name to produce messages into.
    * @param {String} producerName - name for the producer.
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
    * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
-   * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
+   * @param {Boolean} asyncProduce - for better performance. The client won't block requests while waiting for an acknowledgment. Defaults to true.
    * @param {Any} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
    * @param {Any} msgId - Message ID - for idempotent message production
    */
@@ -928,6 +934,11 @@ class Memphis {
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
     producer = this.getCachedProducer(producerMapKey);
+
+    if (genUniqueSuffix) {
+      console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
+    }
+
     if (producer)
       return await producer.produce({
         message,
@@ -956,7 +967,7 @@ class Memphis {
    * @param {String} stationName - station name to consume messages from.
    * @param {String} consumerName - name for the consumer.
    * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired consumer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired consumer name.
    * @param {Number} batchSize - pull batch size.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000. 
@@ -995,6 +1006,11 @@ class Memphis {
     if (batchSize > maxBatchSize) {
       throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
     }
+
+    if (genUniqueSuffix) {
+      console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
+    }
+
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);
