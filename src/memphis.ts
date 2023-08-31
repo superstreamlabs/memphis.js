@@ -29,7 +29,7 @@ import { MsgHeaders } from './message-header';
 import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
-import { generateNameSuffix, MemphisError, sleep } from './utils';
+import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 import { NatsConnection } from 'nats';
 const avro = require('avro-js')
@@ -266,12 +266,22 @@ class Memphis {
                 this.isConnectionActive = true;
                 break;
               case 'reconnecting':
-                this.log(`trying to reconnect to memphis - ${s.data}`);
+                this.log(`trying to reconnect to memphis - ${MemphisErrorString(s.data)}`);
                 break;
               case 'disconnect':
-                this.log(`disconnected from memphis - ${s.data}`);
+                this.log(`disconnected from memphis - ${MemphisErrorString(s.data)}`);
                 this.isConnectionActive = false;
                 break;
+              case 'error':
+                  let err = s.data;
+                  if (err.includes("AUTHORIZATION_VIOLATION")) {
+                    this.log("to continue using Memphis, please upgrade your plan to a paid plan")
+                  } else {
+                    this.log(MemphisErrorString(err));
+                  }
+                  this.isConnectionActive = false;
+                  await this.brokerManager.close();
+                  break;
               default:
                 this.isConnectionActive = true;
             }
@@ -294,7 +304,7 @@ class Memphis {
         connection = await broker.connect(pingConnectionOpts);
         await connection.close();
       } catch (ex) {
-        if (ex.message.includes('Authorization Violation')) {
+        if (ex.message.includes('Authorization Violation') && !ex.message.includes('upgrade your plan')) {
           try {
             if (connectionOpts['servers']?.includes("localhost")) // for handling bad quality networks like port fwd
               await sleep(1000);
