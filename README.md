@@ -550,7 +550,19 @@ consumer.on('error', (error) => {
 });
 ```
 
+### Stopping a Consumer 
+
+Stopping a consumer simply stops it from consuming messages in the code. 
+
+Let's say you don't want listeners of a consumer to receive messages anymore (even if messages are still being produced to its station), stop the consumer and that's it.
+
+```js
+await consumer.stop();
+```
+
 ### Destroying a Consumer
+
+This is different from stopping a consumer. Destroying a consumer destroys it from the station and the broker itself. It won't exist again.
 
 ```js
 await consumer.destroy();
