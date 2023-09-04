@@ -864,6 +864,7 @@ class Memphis {
       let partitions = []
       try {
         createRes = this.JSONC.decode(createRes.data);
+        await this._scemaUpdatesListener(stationName, createRes.schema_update);
         if (createRes.error != '') {
           throw MemphisError(new Error(createRes.error));
         }

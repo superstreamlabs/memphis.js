@@ -150,7 +150,7 @@ export class Consumer {
                 { batch: batchSize, expires: this.batchMaxTimeToWaitMs });
 
             for await (const m of batch)
-                messages.push(new Message(m, this.connection, this.consumerGroup));
+                messages.push(new Message(m, this.connection, this.consumerGroup, this.stationName));
 
             return messages;
         } catch (ex) {
@@ -165,11 +165,11 @@ export class Consumer {
                 if (this.dlsCurrentIndex >= 10000) {
                     indexToInsert %= 10000;
                 }
-                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup);
+                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup,  this.stationName);
                 this.dlsCurrentIndex++;
             }
 
-            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup), this.context);
+            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup,  this.stationName), this.context);
         }
     }
 
