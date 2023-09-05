@@ -31,8 +31,10 @@ import { MsgHeaders } from './message-header';
 import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
-import { generateNameSuffix, MemphisError, sleep } from './utils';
+import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
 const avro = require('avro-js')
+
+const appId = uuidv4();
 
 interface IRetentionTypes {
   MAX_MESSAGE_AGE_SECONDS: string;
@@ -115,7 +117,6 @@ class Memphis {
     this.retentionTypes = retentionTypes;
     this.storageTypes = storageTypes;
     this.JSONC = broker.JSONCodec();
-    this.connectionId = uuidv4().toString()
     this.stationSchemaDataMap = new Map();
     this.schemaUpdatesSubs = new Map();
     this.producersPerStation = new Map();
@@ -125,8 +126,6 @@ class Memphis {
     this.graphqlSchemas = new Map();
     this.clusterConfigurations = new Map();
     this.stationSchemaverseToDlsMap = new Map();
-    this.producersMap = new Map<string, Producer>();
-    this.consumersMap = new Map<string, Consumer>();
     this.consumeHandlers = [];
     this.suppressLogs = false;
     this.stationPartitions = new Map<string, number[]>();
@@ -193,6 +192,9 @@ class Memphis {
       this.reconnectIntervalMs = reconnectIntervalMs;
       this.timeoutMs = timeoutMs;
       this.suppressLogs = suppressLogs;
+      this.connectionId = uuidv4().toString()
+      this.producersMap = new Map<string, Producer>();
+      this.consumersMap = new Map<string, Consumer>();
       let conId_username = this.connectionId + '::' + username;
       let connectionOpts
       try {
@@ -264,12 +266,22 @@ class Memphis {
                 this.isConnectionActive = true;
                 break;
               case 'reconnecting':
-                this.log(`trying to reconnect to memphis - ${s.data}`);
+                this.log(`trying to reconnect to memphis - ${MemphisErrorString(s.data)}`);
                 break;
               case 'disconnect':
-                this.log(`disconnected from memphis - ${s.data}`);
+                this.log(`disconnected from memphis - ${MemphisErrorString(s.data)}`);
                 this.isConnectionActive = false;
                 break;
+              case 'error':
+                  let err = s.data;
+                  if (err.includes("AUTHORIZATION_VIOLATION")) {
+                    this.log("to continue using Memphis, please upgrade your plan to a paid plan")
+                  } else {
+                    this.log(MemphisErrorString(err));
+                  }
+                  this.isConnectionActive = false;
+                  await this.brokerManager.close();
+                  break;
               default:
                 this.isConnectionActive = true;
             }
@@ -292,7 +304,7 @@ class Memphis {
         connection = await broker.connect(pingConnectionOpts);
         await connection.close();
       } catch (ex) {
-        if (ex.message.includes('Authorization Violation')) {
+        if (ex.message.includes('Authorization Violation') && !ex.message.includes('upgrade your plan')) {
           try {
             if (connectionOpts['servers']?.includes("localhost")) // for handling bad quality networks like port fwd
               await sleep(1000);
@@ -681,7 +693,7 @@ class Memphis {
    * Creates a producer.
    * @param {String} stationName - station name to produce messages into.
    * @param {String} producerName - name for the producer.
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    */
   async producer({
     stationName,
@@ -697,16 +709,26 @@ class Memphis {
         throw MemphisError(new Error('Connection is dead'));
 
       const realName = producerName.toLowerCase();
-      producerName = genUniqueSuffix
-        ? generateNameSuffix(`${producerName}_`)
-        : producerName;
+      if (genUniqueSuffix === true) {
+        console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
+        producerName = generateNameSuffix(`${producerName}_`)
+      }
+      else {
+        const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+        const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
+        const producer = this.getCachedProducer(producerMapKey);
+        if (producer) {
+          return producer;
+        }
+      }
       const createProducerReq = {
         name: producerName,
         station_name: stationName,
         connection_id: this.connectionId,
         producer_type: 'application',
-        req_version: 2,
+        req_version: 3,
         username: this.username,
+        app_id: appId,
       };
       const data = this.JSONC.encode(createProducerReq);
       let createRes = await this.brokerManager.request(
@@ -754,7 +776,7 @@ class Memphis {
    * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
    */
@@ -789,6 +811,11 @@ class Memphis {
         throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
       }
       const realName = consumerName.toLowerCase();
+
+      if (genUniqueSuffix) {
+        console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
+      }
+
       consumerName = genUniqueSuffix
         ? generateNameSuffix(`${consumerName}_`)
         : consumerName;
@@ -822,8 +849,9 @@ class Memphis {
         max_msg_deliveries: maxMsgDeliveries,
         start_consume_from_sequence: startConsumeFromSequence,
         last_messages: lastMessages,
-        req_version: 2,
+        req_version: 3,
         username: this.username,
+        app_id: appId,
       };
       const data = this.JSONC.encode(createConsumerReq);
 
@@ -882,10 +910,10 @@ class Memphis {
    * Produce a message.
    * @param {String} stationName - station name to produce messages into.
    * @param {String} producerName - name for the producer.
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired producer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
    * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
-   * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
+   * @param {Boolean} asyncProduce - for better performance. The client won't block requests while waiting for an acknowledgment. Defaults to true.
    * @param {Any} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
    * @param {Any} msgId - Message ID - for idempotent message production
    */
@@ -916,6 +944,11 @@ class Memphis {
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
     producer = this.getCachedProducer(producerMapKey);
+
+    if (genUniqueSuffix) {
+      console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
+    }
+
     if (producer)
       return await producer.produce({
         message,
@@ -944,7 +977,7 @@ class Memphis {
    * @param {String} stationName - station name to consume messages from.
    * @param {String} consumerName - name for the consumer.
    * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
-   * @param {String} genUniqueSuffix - Indicates memphis to add a unique suffix to the desired consumer name.
+   * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired consumer name.
    * @param {Number} batchSize - pull batch size.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000. 
@@ -983,6 +1016,11 @@ class Memphis {
     if (batchSize > maxBatchSize) {
       throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
     }
+
+    if (genUniqueSuffix) {
+      console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
+    }
+
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);

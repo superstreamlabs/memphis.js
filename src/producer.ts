@@ -50,14 +50,14 @@ export class Producer {
      * Produces a message into a station.
      * @param {Any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
      * @param {Number} ackWaitSec - max time in seconds to wait for an ack from memphis.
-     * @param {Boolean} asyncProduce - produce operation won't wait for broker acknowledgement
+     * @param {Boolean} asyncProduce - for better performance. The client won't block requests while waiting for an acknowledgment. Defaults to true.
      * @param {Object} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
      * @param {String} msgId - Message ID - for idempotent message production
      */
     async produce({
         message,
         ackWaitSec = 15,
-        asyncProduce = false,
+        asyncProduce = true,
         headers = new MsgHeaders(),
         msgId = null
     }: {
@@ -75,10 +75,15 @@ export class Producer {
             if (msgId) headers.set('msg-id', msgId);
             let streamName = `${this.internal_station}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internal_station)
-            if(stationPartitions != null && stationPartitions.length > 0){
+            if (stationPartitions.length === 1){
+                let partitionNumber = stationPartitions[0]
+                streamName = `${this.internal_station}$${partitionNumber.toString()}`
+            }
+            else if(stationPartitions != null && stationPartitions.length > 0){
                 let partitionNumber = this.partitionsGenerator.Next()
                 streamName = `${this.internal_station}$${partitionNumber.toString()}`
             }
+            
             if (asyncProduce)
                 this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
                     headers: headers,

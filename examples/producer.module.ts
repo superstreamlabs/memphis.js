@@ -15,7 +15,8 @@ export class ProducerModule {
                 memphisConnection = await this.memphis.connect({
                     host: "<memphis-host>",
                     username: "<application type username>",
-                    connectionToken: "<broker-token>"
+                    password: 'password',
+                    accountId: '<account-id>' // for cloud usage
                 });
 
                 const producer = await memphisConnection.producer({

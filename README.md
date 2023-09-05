@@ -287,7 +287,6 @@ of whether there are messages in flight for the client.
 const producer = await memphisConnection.producer({
     stationName: '<station-name>',
     producerName: '<producer-name>',
-    genUniqueSuffix: false // defaults to false
 });
 ```
 
@@ -322,10 +321,9 @@ and produce messages by using the produce function of it
 await memphisConnection.produce({
         stationName: '<station-name>',
         producerName: '<producer-name>',
-        genUniqueSuffix: false, // defaults to false
         message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema) or Uint8Arrays/object (schema validated station - avro schema)
         ackWaitSec: 15, // defaults to 15
-        asyncProduce: true // defaults to false
+        asyncProduce: true // defaults to true. For better performance. The client won't block requests while waiting for an acknowledgment.
         headers: headers, // defults to empty
         msgId: 'id' // defaults to null
 });
@@ -366,13 +364,13 @@ await producer.produce({
 
 ### Async produce
 
-For better performance. The client won't block requests while waiting for an acknowledgment.
+For better performance. The client won't block requests while waiting for an acknowledgment. Defaults to true.
 
 ```js
 await producer.produce({
     message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema) or Uint8Arrays/object (schema validated station - avro schema)
     ackWaitSec: 15, // defaults to 15
-    asyncProduce: true // defaults to false
+    asyncProduce: true // defaults to true. For better performance. The client won't block requests while waiting for an acknowledgment.
 });
 ```
 
@@ -406,7 +404,6 @@ const consumer = await memphisConnection.consumer({
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 10, // defaults to 10
-    genUniqueSuffix: false, // defaults to false
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
     lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
 });
@@ -442,7 +439,6 @@ const msgs = await memphis.fetchMessages({
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 10, // defaults to 10
-    genUniqueSuffix: false, // defaults to false
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
     lastMessages: -1 // consume the last N messages, defaults to -1 (all messages in the station)
 });

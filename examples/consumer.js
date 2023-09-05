@@ -7,7 +7,8 @@ const { memphis } = require('memphis-dev');
         memphisConnection = await memphis.connect({
             host: '<memphis-host>',
             username: '<application type username>',
-            connectionToken: '<broker-token>'
+            password: 'password',
+            accountId: '<account-id>' // for cloud usage
         });
 
         const consumer = await memphisConnection.consumer({

@@ -17,6 +17,16 @@ export const MemphisError = (error: Error): Error => {
     return error;
 };
 
+export const MemphisErrorString = (err: String): String => {
+    if (err) {
+        err = err.replace('NatsError', 'memphis');
+        err = err.replace('Nats', 'memphis');
+        err = err.replace('nats', 'memphis');
+        err = err.replace('NATS', 'Memphis');
+    }
+    return err;
+};
+
 export const stringToHex = (str: string): string => {
     var hex = '';
     for (var i = 0; i < str.length; i++) {
