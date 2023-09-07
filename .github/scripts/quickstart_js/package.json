@@ -1,0 +1,17 @@
+{
+    "name": "update_quickstart_js",
+    "version": "1.0.0",
+    "description": "Scrapes readme's hopefully",
+    "main": "update_quickstart_js.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "run": "node update_quickstart_js.js"
+    },
+    "author": "Memphis",
+    "license": "ISC",
+    "type": "module",
+    "dependencies": {
+      "@octokit/request": "^8.1.1",
+      "@octokit/rest": "^20.0.1"
+    }
+  }
