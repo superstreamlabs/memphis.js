@@ -23,6 +23,8 @@ import { buildSchema as buildGraphQlSchema, GraphQLSchema } from 'graphql';
 import * as broker from 'nats';
 import * as protobuf from 'protobufjs';
 
+import { NatsConnection } from 'nats';
+import { v4 as uuidv4 } from 'uuid';
 import { Consumer } from './consumer';
 import { Message } from './message';
 import { MsgHeaders } from './message-header';
@@ -30,8 +32,6 @@ import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
-import { v4 as uuidv4 } from 'uuid';
-import { NatsConnection } from 'nats';
 const avro = require('avro-js')
 
 const appId = uuidv4();
@@ -1088,8 +1088,10 @@ class Memphis {
    * @param consumer - Consumer
    */
   public _unSetCachedConsumer(consumer: Consumer): void {
-    if (!this.getCachedConsumer(consumer._getConsumerKey()))
+    if (!this.getCachedConsumer(consumer._getConsumerKey())) {
+      consumer.stop();
       this.consumersMap.delete(consumer._getConsumerKey());
+    }
   }
 
   /**
@@ -1100,6 +1102,7 @@ class Memphis {
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     this.consumersMap.forEach((consumer, key) => {
       if (consumer._getConsumerStation() === internalStationName) {
+        consumer.stop();
         this.consumersMap.delete(key);
       }
     });
@@ -1123,6 +1126,7 @@ class Memphis {
     await this.brokerManager?.close?.();
     this.consumeHandlers = [];
     this.producersMap = new Map<string, Producer>();
+    this.consumersMap.forEach((consumer) => consumer.stop());
     this.consumersMap = new Map<string, Consumer>();
   }
 

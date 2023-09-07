@@ -1,4 +1,5 @@
 import * as events from 'events';
+import { Subscription } from 'nats';
 
 import { Memphis, RoundRobinProducerConsumerGenerator } from './memphis'
 import { Message } from './message';
@@ -30,6 +31,7 @@ export class Consumer {
     private dlsMessages: Message[];
     private dlsCurrentIndex: number;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
+    private subscription: Subscription;
 
     constructor(
         connection: Memphis,
@@ -74,11 +76,12 @@ export class Consumer {
         }
         if (partitions.length > 0) {
             this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
-        }
-        const sub = this.connection.brokerManager.subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
+        }        
+        this.subscription = this.connection.brokerManager
+          .subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
             queue: `$memphis_${this.internalStationName}_${this.internalConsumerGroupName}`
         });
-        this._handleAsyncIterableSubscriber(sub, true);
+        this._handleAsyncIterableSubscriber(this.subscription, true);
     }
 
     /**
@@ -203,10 +206,23 @@ export class Consumer {
     }
 
     /**
+     * Closes this consumers. Stops it from receiving messages.
+     */
+    stop(): void {
+        clearInterval(this.pullInterval);
+        clearInterval(this.pingConsumerInvterval);
+        if (this.subscription) {
+            this.subscription.unsubscribe();
+            this.subscription = null;
+        }
+    }
+
+    /**
      * Destroy the consumer.
      */
     async destroy(): Promise<void> {
         clearInterval(this.pullInterval);
+        clearInterval(this.pingConsumerInvterval);
         try {
             let removeConsumerReq = {
                 name: this.consumerName,

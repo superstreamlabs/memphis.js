@@ -24,6 +24,7 @@ export declare class Consumer {
     private dlsMessages;
     private dlsCurrentIndex;
     private partitionsGenerator;
+    private subscription;
     constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string, partitions: number[]);
     setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
@@ -33,6 +34,7 @@ export declare class Consumer {
     private _handleAsyncIterableSubscriber;
     private _handleAsyncConsumedMessages;
     private _pingConsumer;
+    stop(): void;
     destroy(): Promise<void>;
     _getConsumerKey(): string;
     _getConsumerStation(): string;
