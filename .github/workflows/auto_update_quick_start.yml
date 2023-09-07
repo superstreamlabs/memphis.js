@@ -1,0 +1,25 @@
+name: Auto-Update node Quickstart Page
+on:
+  push:
+    branches:
+      - latest
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with: 
+        sparse-checkout: .github
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 'latest'
+    - name: Run quickstart script
+      env:
+        REPO_TOKEN: ${{ secrets.DOCS_ACTION_TOKEN }}
+      run: |
+        cd ./.github/scripts/quickstart_js
+        ls
+        npm ci
+        node update_quickstart_js.js
