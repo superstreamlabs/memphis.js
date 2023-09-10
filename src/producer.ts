@@ -78,13 +78,12 @@ export class Producer {
             if (msgId) headers.set('msg-id', msgId);
             let streamName = `${this.internalStation}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internalStation)
-            if (stationPartitions.length === 1) {
+            if (stationPartitions != null && stationPartitions.length === 1) {
                 let partitionNumber = stationPartitions[0]
                 streamName = `${this.internalStation}$${partitionNumber.toString()}`
             } else if (stationPartitions != null && stationPartitions.length > 0) {
                 if (producerPartitionKey != null) {
                     const partitionNumberKey = await this.connection._getPartitionFromKey(producerPartitionKey, this.internalStation)
-                    console.log({ partitionNumberKey })
                     streamName = `${this.internalStation}$${partitionNumberKey.toString()}`
                 }
                 else {
