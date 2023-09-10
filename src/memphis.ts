@@ -33,6 +33,7 @@ import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
 const avro = require('avro-js')
+const mmh3 = require('murmurhash3');
 
 const appId = uuidv4();
 
@@ -99,6 +100,7 @@ class Memphis {
   }[];
   private suppressLogs: boolean;
   public stationPartitions: Map<string, number[]>;
+  public seed: number;
 
   constructor() {
     this.isConnectionActive = false;
@@ -791,7 +793,8 @@ class Memphis {
     maxMsgDeliveries = 10,
     genUniqueSuffix = false,
     startConsumeFromSequence = 1,
-    lastMessages = -1
+    lastMessages = -1,
+    partitionKey = null,
   }: {
     stationName: string;
     consumerName: string;
@@ -804,6 +807,7 @@ class Memphis {
     genUniqueSuffix?: boolean;
     startConsumeFromSequence?: number;
     lastMessages?: number;
+    partitionKey?: string;
   }): Promise<Consumer> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -852,6 +856,7 @@ class Memphis {
         req_version: 3,
         username: this.username,
         app_id: appId,
+        partitionKey: partitionKey,
       };
       const data = this.JSONC.encode(createConsumerReq);
 
@@ -892,7 +897,8 @@ class Memphis {
         startConsumeFromSequence,
         lastMessages,
         realName,
-        partitions
+        partitions,
+        partitionKey
       );
       this.setCachedConsumer(consumer);
 
@@ -925,7 +931,8 @@ class Memphis {
     ackWaitSec,
     asyncProduce,
     headers,
-    msgId
+    msgId,
+    producerPartitionKey = null
   }: {
     stationName: string;
     producerName: string;
@@ -935,6 +942,7 @@ class Memphis {
     asyncProduce?: boolean;
     headers?: any;
     msgId?: string;
+    producerPartitionKey?: string;
   }): Promise<void> {
     let producer: Producer;
     if (!this.isConnectionActive)
@@ -955,7 +963,8 @@ class Memphis {
         ackWaitSec,
         asyncProduce,
         headers,
-        msgId
+        msgId,
+        producerPartitionKey
       });
 
     producer = await this.producer({
@@ -968,7 +977,8 @@ class Memphis {
       ackWaitSec,
       asyncProduce,
       headers,
-      msgId
+      msgId,
+      producerPartitionKey
     });
   }
 
@@ -995,7 +1005,8 @@ class Memphis {
     batchMaxTimeToWaitMs = 5000,
     maxMsgDeliveries = 10,
     startConsumeFromSequence = 1,
-    lastMessages = -1
+    lastMessages = -1,
+    partitionKey = null,
   }: {
     stationName: string;
     consumerName: string;
@@ -1007,6 +1018,7 @@ class Memphis {
     maxMsgDeliveries?: number;
     startConsumeFromSequence?: number;
     lastMessages?: number;
+    partitionKey?: string;
   }): Promise<Message[]> {
     let consumer: Consumer;
     if (!this.isConnectionActive)
@@ -1024,7 +1036,7 @@ class Memphis {
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);
-    if (consumer) return await consumer.fetch({ batchSize });
+    if (consumer) return await consumer.fetch({ batchSize, partitionKey });
 
     consumer = await this.consumer({
       stationName,
@@ -1036,9 +1048,10 @@ class Memphis {
       batchMaxTimeToWaitMs,
       maxMsgDeliveries,
       startConsumeFromSequence,
-      lastMessages
+      lastMessages,
+      partitionKey
     });
-    return await consumer.fetch({ batchSize });
+    return await consumer.fetch({ batchSize, partitionKey });
   }
 
   private getCachedProducer(key: string): Producer {
@@ -1214,9 +1227,29 @@ class Memphis {
 
     console.log(...args);
   }
-
-
+  async _getPartitionFromKey(key: string, stationName: string): Promise<number> {
+    // let partitionKey: number;
+    const seed = this.seed >>> 0
+    return new Promise(async (resolve, reject) => {
+      const seed = this.seed >>> 0;
+      mmh3.murmur32(key, seed, (err: any, hashValue: number) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        const stationPartitions = this.stationPartitions.get(stationName);
+        if (stationPartitions != null) {
+          const hasValueInt = hashValue >>> 0;
+          const partitionKey = hasValueInt % stationPartitions.length;
+          resolve(partitionKey);
+        } else {
+          reject(new Error("Station partitions not found"));
+        }
+      });
+    });
+  }
 }
+
 
 export class RoundRobinProducerConsumerGenerator {
   NumberOfPartitions: number;
