@@ -34,6 +34,7 @@
         "axios": "^0.26.1",
         "dotenv": "^16.0.1",
         "graphql": "^16.6.0",
+        "murmurhash3": "^0.5.0",
         "nats": "2.6.1",
         "prettier": "^2.7.1",
         "protobufjs": "^7.1.2",
