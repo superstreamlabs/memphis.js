@@ -32,7 +32,7 @@ export class Consumer {
     private dlsCurrentIndex: number;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
     private subscription: Subscription;
-    private partitionKey: string;
+    private consumerPartitionKey: string;
 
     constructor(
         connection: Memphis,
@@ -48,7 +48,7 @@ export class Consumer {
         lastMessages: number,
         realName: string,
         partitions: number[],
-        partitionkey: string,
+        consumerPartitionKey: string,
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -72,7 +72,7 @@ export class Consumer {
         this.realName = realName;
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
-        this.partitionKey = partitionkey;
+        this.consumerPartitionKey = consumerPartitionKey;
         let partitionsLen = 1;
         if (partitions !== null) {
             partitionsLen = partitions.length
@@ -104,7 +104,7 @@ export class Consumer {
         if (event === 'message') {
             const fetchAndHandleMessages = async () => {
                 try {
-                    const messages = await this.fetch({ batchSize: this.batchSize, partitionKey: this.partitionKey });
+                    const messages = await this.fetch({ batchSize: this.batchSize, consumerPartitionKey: this.consumerPartitionKey });
                     this._handleAsyncConsumedMessages(messages, false);
                 } catch (error) {
                     this.eventEmitter.emit('error', MemphisError(error));
@@ -127,19 +127,21 @@ export class Consumer {
     /**
      * Fetch a batch of messages.
      */
-    public async fetch({ batchSize = 10, partitionKey = null }: { batchSize?: number, partitionKey?: string }): Promise<Message[]> {
+    public async fetch({ batchSize = 10, consumerPartitionKey = null }: { batchSize?: number, consumerPartitionKey?: string }): Promise<Message[]> {
         try {
             if (batchSize > maxBatchSize) {
                 throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
             }
             let streamName = `${this.internalStationName}`;
-            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName)
-            if (partitionKey != null) {
-                const partitionNumberKey = await this.connection._getPartitionFromKey(partitionKey, this.internalStationName)
-                streamName = `${this.internalStationName}$${partitionNumberKey.toString()}`
-            } else if ((stationPartitions != null && stationPartitions.length > 0) || (partitionKey == null)) {
-                let partitionNumber = this.partitionsGenerator.Next()
-                streamName = `${this.internalStationName}$${partitionNumber.toString()}`
+            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName);
+            if (stationPartitions != null && stationPartitions.length > 0) {
+                if (consumerPartitionKey != null) {
+                    const partitionNumberKey = await this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
+                    streamName = `${this.internalStationName}$${partitionNumberKey.toString()}`;
+                } else {
+                    let partitionNumber = this.partitionsGenerator.Next();
+                    streamName = `${this.internalStationName}$${partitionNumber.toString()}`;
+                }
             }
             this.batchSize = batchSize
             let messages: Message[] = [];

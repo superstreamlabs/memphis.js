@@ -794,7 +794,7 @@ class Memphis {
     genUniqueSuffix = false,
     startConsumeFromSequence = 1,
     lastMessages = -1,
-    partitionKey = null,
+    consumerPartitionKey = null,
   }: {
     stationName: string;
     consumerName: string;
@@ -807,7 +807,7 @@ class Memphis {
     genUniqueSuffix?: boolean;
     startConsumeFromSequence?: number;
     lastMessages?: number;
-    partitionKey?: string;
+    consumerPartitionKey?: string;
   }): Promise<Consumer> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -856,7 +856,7 @@ class Memphis {
         req_version: 3,
         username: this.username,
         app_id: appId,
-        partitionKey: partitionKey,
+        consumerPartitionKey: consumerPartitionKey,
       };
       const data = this.JSONC.encode(createConsumerReq);
 
@@ -898,7 +898,7 @@ class Memphis {
         lastMessages,
         realName,
         partitions,
-        partitionKey
+        consumerPartitionKey
       );
       this.setCachedConsumer(consumer);
 
@@ -1006,7 +1006,7 @@ class Memphis {
     maxMsgDeliveries = 10,
     startConsumeFromSequence = 1,
     lastMessages = -1,
-    partitionKey = null,
+    consumerPartitionKey = null,
   }: {
     stationName: string;
     consumerName: string;
@@ -1018,7 +1018,7 @@ class Memphis {
     maxMsgDeliveries?: number;
     startConsumeFromSequence?: number;
     lastMessages?: number;
-    partitionKey?: string;
+    consumerPartitionKey?: string;
   }): Promise<Message[]> {
     let consumer: Consumer;
     if (!this.isConnectionActive)
@@ -1036,7 +1036,7 @@ class Memphis {
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);
-    if (consumer) return await consumer.fetch({ batchSize, partitionKey });
+    if (consumer) return await consumer.fetch({ batchSize, consumerPartitionKey });
 
     consumer = await this.consumer({
       stationName,
@@ -1049,9 +1049,9 @@ class Memphis {
       maxMsgDeliveries,
       startConsumeFromSequence,
       lastMessages,
-      partitionKey
+      consumerPartitionKey
     });
-    return await consumer.fetch({ batchSize, partitionKey });
+    return await consumer.fetch({ batchSize, consumerPartitionKey });
   }
 
   private getCachedProducer(key: string): Producer {
