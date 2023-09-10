@@ -131,7 +131,7 @@ class Memphis {
     this.consumeHandlers = [];
     this.suppressLogs = false;
     this.stationPartitions = new Map<string, number[]>();
-    this.seed  = 1234
+    this.seed = 1234
   }
 
   /**
@@ -1230,9 +1230,9 @@ class Memphis {
 
     console.log(...args);
   }
-  async _getPartitionFromKey(key: string, stationName: string): Promise<number> {
-    return new Promise(async (resolve, reject) => {
-      const seed = this.seed >>> 0;
+  _getPartitionFromKey(key: string, stationName: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const seed = this.seed;
       mmh3.murmur32(key, seed, (err: any, hashValue: number) => {
         if (err) {
           reject(err);

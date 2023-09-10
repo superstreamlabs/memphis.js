@@ -134,7 +134,10 @@ export class Consumer {
             }
             let streamName = `${this.internalStationName}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internalStationName);
-            if (stationPartitions != null && stationPartitions.length > 0) {
+            if (stationPartitions != null && stationPartitions.length === 1) {
+                let partitionNumber = stationPartitions[0]
+                streamName = `${this.internalStationName}$${partitionNumber.toString()}`
+            } else if (stationPartitions != null && stationPartitions.length > 0) {
                 if (consumerPartitionKey != null) {
                     const partitionNumberKey = await this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
                     streamName = `${this.internalStationName}$${partitionNumberKey.toString()}`;
@@ -207,7 +210,7 @@ export class Consumer {
             }
 
         } catch (ex) {
-            if (ex.message.includes('consumer not found') || ex.message.includes('stream not found')){
+            if (ex.message.includes('consumer not found') || ex.message.includes('stream not found')) {
                 this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
             }
         }
