@@ -131,6 +131,7 @@ class Memphis {
     this.consumeHandlers = [];
     this.suppressLogs = false;
     this.stationPartitions = new Map<string, number[]>();
+    this.seed  = 1234
   }
 
   /**
@@ -781,6 +782,7 @@ class Memphis {
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
+   * @param {String} consumerPartitionKey - consume by specific partition key. Default is null (round robin)
    */
   async consumer({
     stationName,
@@ -994,6 +996,7 @@ class Memphis {
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
+   * @param {String} consumerPartitionKey - consume by specific partition key. Default is null (round robin)
    */
   public async fetchMessages({
     stationName,
@@ -1228,8 +1231,6 @@ class Memphis {
     console.log(...args);
   }
   async _getPartitionFromKey(key: string, stationName: string): Promise<number> {
-    // let partitionKey: number;
-    const seed = this.seed >>> 0
     return new Promise(async (resolve, reject) => {
       const seed = this.seed >>> 0;
       mmh3.murmur32(key, seed, (err: any, hashValue: number) => {

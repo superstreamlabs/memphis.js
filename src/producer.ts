@@ -53,6 +53,7 @@ export class Producer {
      * @param {Boolean} asyncProduce - for better performance. The client won't block requests while waiting for an acknowledgment. Defaults to true.
      * @param {Object} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
      * @param {String} msgId - Message ID - for idempotent message production
+     * @param {String} producerPartitionKey - produce to specific partition key. Default is null (round robin)
      */
     async produce({
         message,
@@ -60,7 +61,7 @@ export class Producer {
         asyncProduce = true,
         headers = new MsgHeaders(),
         msgId = null,
-        producerPartitionKey,
+        producerPartitionKey = null,
     }: {
         message: any;
         ackWaitSec?: number;
