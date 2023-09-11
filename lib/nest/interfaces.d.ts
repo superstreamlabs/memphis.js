@@ -30,4 +30,5 @@ export interface MemphisConsumerOptions {
     genUniqueSuffix?: boolean;
     startConsumeFromSequence?: number;
     lastMessages?: number;
+    consumerPartitionKey?: string;
 }

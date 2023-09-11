@@ -50,6 +50,7 @@ declare class Memphis {
     private consumeHandlers;
     private suppressLogs;
     stationPartitions: Map<string, number[]>;
+    seed: number;
     constructor();
     connect({ host, port, username, accountId, connectionToken, password, reconnect, maxReconnect, reconnectIntervalMs, timeoutMs, keyFile, certFile, caFile, suppressLogs }: {
         host: string;
@@ -106,7 +107,7 @@ declare class Memphis {
         producerName: string;
         genUniqueSuffix?: boolean;
     }): Promise<Producer>;
-    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix, startConsumeFromSequence, lastMessages }: {
+    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix, startConsumeFromSequence, lastMessages, consumerPartitionKey, }: {
         stationName: string;
         consumerName: string;
         consumerGroup?: string;
@@ -118,9 +119,10 @@ declare class Memphis {
         genUniqueSuffix?: boolean;
         startConsumeFromSequence?: number;
         lastMessages?: number;
+        consumerPartitionKey?: string;
     }): Promise<Consumer>;
     headers(): MsgHeaders;
-    produce({ stationName, producerName, genUniqueSuffix, message, ackWaitSec, asyncProduce, headers, msgId }: {
+    produce({ stationName, producerName, genUniqueSuffix, message, ackWaitSec, asyncProduce, headers, msgId, producerPartitionKey }: {
         stationName: string;
         producerName: string;
         genUniqueSuffix?: boolean;
@@ -129,8 +131,9 @@ declare class Memphis {
         asyncProduce?: boolean;
         headers?: any;
         msgId?: string;
+        producerPartitionKey?: string;
     }): Promise<void>;
-    fetchMessages({ stationName, consumerName, consumerGroup, genUniqueSuffix, batchSize, maxAckTimeMs, batchMaxTimeToWaitMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages }: {
+    fetchMessages({ stationName, consumerName, consumerGroup, genUniqueSuffix, batchSize, maxAckTimeMs, batchMaxTimeToWaitMs, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerPartitionKey, }: {
         stationName: string;
         consumerName: string;
         consumerGroup?: string;
@@ -141,6 +144,7 @@ declare class Memphis {
         maxMsgDeliveries?: number;
         startConsumeFromSequence?: number;
         lastMessages?: number;
+        consumerPartitionKey?: string;
     }): Promise<Message[]>;
     private getCachedProducer;
     private setCachedProducer;
@@ -159,6 +163,7 @@ declare class Memphis {
         schemaFilePath: string;
     }): Promise<void>;
     private log;
+    _getPartitionFromKey(key: string, stationName: string): Promise<number>;
 }
 export declare class RoundRobinProducerConsumerGenerator {
     NumberOfPartitions: number;

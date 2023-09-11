@@ -25,11 +25,13 @@ export declare class Consumer {
     private dlsCurrentIndex;
     private partitionsGenerator;
     private subscription;
-    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string, partitions: number[]);
+    private consumerPartitionKey;
+    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string, partitions: number[], consumerPartitionKey: string);
     setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
-    fetch({ batchSize }: {
+    fetch({ batchSize, consumerPartitionKey }: {
         batchSize?: number;
+        consumerPartitionKey?: string;
     }): Promise<Message[]>;
     private _handleAsyncIterableSubscriber;
     private _handleAsyncConsumedMessages;
