@@ -11,7 +11,7 @@ export class Producer {
     private connection: Memphis;
     private producerName: string;
     private stationName: string;
-    private internal_station: string;
+    private internalStation: string;
     private realName: string;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
 
@@ -19,9 +19,9 @@ export class Producer {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
-        this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
+        this.internalStation = this.stationName.replace(/\./g, '#').toLowerCase();
         this.realName = realName;
-        if (partitions?.length > 0){
+        if (partitions?.length > 0) {
             this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
         }
     }
@@ -53,19 +53,22 @@ export class Producer {
      * @param {Boolean} asyncProduce - for better performance. The client won't block requests while waiting for an acknowledgment. Defaults to true.
      * @param {Object} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
      * @param {String} msgId - Message ID - for idempotent message production
+     * @param {String} producerPartitionKey - produce to specific partition key. Default is null (round robin)
      */
     async produce({
         message,
         ackWaitSec = 15,
         asyncProduce = true,
         headers = new MsgHeaders(),
-        msgId = null
+        msgId = null,
+        producerPartitionKey = null,
     }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: any;
         msgId?: string;
+        producerPartitionKey?: string;
     }): Promise<void> {
         try {
             headers = this._handleHeaders(headers);
@@ -73,18 +76,23 @@ export class Producer {
             headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.set('$memphis_producedBy', this.producerName);
             if (msgId) headers.set('msg-id', msgId);
-            let streamName = `${this.internal_station}`;
-            let stationPartitions = this.connection.stationPartitions.get(this.internal_station)
-            if (stationPartitions.length === 1){
+            let streamName = `${this.internalStation}`;
+            let stationPartitions = this.connection.stationPartitions.get(this.internalStation)
+            if (stationPartitions != null && stationPartitions.length === 1) {
                 let partitionNumber = stationPartitions[0]
-                streamName = `${this.internal_station}$${partitionNumber.toString()}`
+                streamName = `${this.internalStation}$${partitionNumber.toString()}`
+            } else if (stationPartitions != null && stationPartitions.length > 0) {
+                if (producerPartitionKey != null) {
+                    const partitionNumberKey = await this.connection._getPartitionFromKey(producerPartitionKey, this.internalStation)
+                    streamName = `${this.internalStation}$${partitionNumberKey.toString()}`
+                }
+                else {
+                    let partitionNumber = this.partitionsGenerator.Next()
+                    streamName = `${this.internalStation}$${partitionNumber.toString()}`
+                }
             }
-            else if(stationPartitions != null && stationPartitions.length > 0){
-                let partitionNumber = this.partitionsGenerator.Next()
-                streamName = `${this.internal_station}$${partitionNumber.toString()}`
-            }
-            
-            if (asyncProduce)
+
+            if (asyncProduce) 
                 this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
@@ -110,7 +118,7 @@ export class Producer {
 
     private _validateJsonMessage(msg: any): any {
         try {
-            let validate = this.connection.jsonSchemas.get(this.internal_station);
+            let validate = this.connection.jsonSchemas.get(this.internalStation);
             let msgObj: Object;
             let msgToSend = new Uint8Array();
             const isBuffer = Buffer.isBuffer(msg);
@@ -146,7 +154,7 @@ export class Producer {
 
     private _validateAvroMessage(msg: any): any {
         try {
-            let schema = this.connection.avroSchemas.get(this.internal_station);
+            let schema = this.connection.avroSchemas.get(this.internalStation);
             let msgObj;
             let msgToSend = new Uint8Array();
             const isBuffer = Buffer.isBuffer(msg);
@@ -157,7 +165,7 @@ export class Producer {
                     throw MemphisError(new Error('Expecting Avro format: ' + ex));
                 }
                 msgToSend = msg;
-                const type = avro.parse(schema); 
+                const type = avro.parse(schema);
                 var buf = type.toBuffer(msgObj);
                 const valid = type.isValid(msgObj);
                 if (!valid) {
@@ -169,7 +177,7 @@ export class Producer {
                 let enc = new TextEncoder();
                 const msgString = JSON.stringify(msg);
                 msgToSend = enc.encode(msgString);
-                const type = avro.parse(schema); 
+                const type = avro.parse(schema);
                 var buf = type.toBuffer(msgObj);
                 const valid = type.isValid(msgObj);
                 if (!valid) {
@@ -186,7 +194,7 @@ export class Producer {
     }
 
     private _validateProtobufMessage(msg: any): any {
-        let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+        let meassageDescriptor = this.connection.meassageDescriptors.get(this.internalStation);
         if (meassageDescriptor) {
             if (msg instanceof Uint8Array) {
                 try {
@@ -231,7 +239,7 @@ export class Producer {
             } else {
                 throw MemphisError(new Error('Unsupported message type'));
             }
-            const schema = this.connection.graphqlSchemas.get(this.internal_station);
+            const schema = this.connection.graphqlSchemas.get(this.internalStation);
             const validateRes = validateGraphQl(schema, message);
             if (validateRes.length > 0) {
                 throw MemphisError(new Error('Schema validation has failed: ' + validateRes));
@@ -247,7 +255,7 @@ export class Producer {
     }
 
     private _validateMessage(msg: any): any {
-        let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
+        let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internalStation);
         if (stationSchemaData) {
             switch (stationSchemaData['type']) {
                 case 'protobuf':
@@ -275,7 +283,7 @@ export class Producer {
             }
         }
     }
-    
+
     private async _hanldeProduceError(ex: any, message: any, headers?: MsgHeaders) {
         if (ex.code === '503') {
             throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
@@ -288,7 +296,7 @@ export class Producer {
             } else {
                 failedMsg = JSON.stringify(message);
             }
-            if (this.connection.stationSchemaverseToDlsMap.get(this.internal_station)) {
+            if (this.connection.stationSchemaverseToDlsMap.get(this.internalStation)) {
                 const unixTime = Date.now();
                 let headersObject = {
                     $memphis_connectionId: this.connection.connectionId,
@@ -300,7 +308,7 @@ export class Producer {
                     headersObject[key] = value[0];
                 }
                 const buf = this.connection.JSONC.encode({
-                    station_name: this.internal_station,
+                    station_name: this.internalStation,
                     producer: {
                         name: this.producerName,
                         connection_id: this.connection.connectionId
@@ -377,6 +385,6 @@ export class Producer {
      * @returns {string} producer key
      */
     public _getProducerStation(): string {
-        return this.internal_station;
+        return this.internalStation;
     }
 }

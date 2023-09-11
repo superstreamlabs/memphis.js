@@ -33,6 +33,7 @@ import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
 const avro = require('avro-js')
+const mmh3 = require('murmurhash3');
 
 const appId = uuidv4();
 
@@ -99,6 +100,7 @@ class Memphis {
   }[];
   private suppressLogs: boolean;
   public stationPartitions: Map<string, number[]>;
+  public seed: number;
 
   constructor() {
     this.isConnectionActive = false;
@@ -129,6 +131,7 @@ class Memphis {
     this.consumeHandlers = [];
     this.suppressLogs = false;
     this.stationPartitions = new Map<string, number[]>();
+    this.seed = 1234
   }
 
   /**
@@ -779,6 +782,7 @@ class Memphis {
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
+   * @param {String} consumerPartitionKey - consume by specific partition key. Default is null (round robin)
    */
   async consumer({
     stationName,
@@ -791,7 +795,8 @@ class Memphis {
     maxMsgDeliveries = 10,
     genUniqueSuffix = false,
     startConsumeFromSequence = 1,
-    lastMessages = -1
+    lastMessages = -1,
+    consumerPartitionKey = null,
   }: {
     stationName: string;
     consumerName: string;
@@ -804,6 +809,7 @@ class Memphis {
     genUniqueSuffix?: boolean;
     startConsumeFromSequence?: number;
     lastMessages?: number;
+    consumerPartitionKey?: string;
   }): Promise<Consumer> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -852,6 +858,7 @@ class Memphis {
         req_version: 3,
         username: this.username,
         app_id: appId,
+        consumerPartitionKey: consumerPartitionKey,
       };
       const data = this.JSONC.encode(createConsumerReq);
 
@@ -892,7 +899,8 @@ class Memphis {
         startConsumeFromSequence,
         lastMessages,
         realName,
-        partitions
+        partitions,
+        consumerPartitionKey
       );
       this.setCachedConsumer(consumer);
 
@@ -925,7 +933,8 @@ class Memphis {
     ackWaitSec,
     asyncProduce,
     headers,
-    msgId
+    msgId,
+    producerPartitionKey = null
   }: {
     stationName: string;
     producerName: string;
@@ -935,6 +944,7 @@ class Memphis {
     asyncProduce?: boolean;
     headers?: any;
     msgId?: string;
+    producerPartitionKey?: string;
   }): Promise<void> {
     let producer: Producer;
     if (!this.isConnectionActive)
@@ -955,7 +965,8 @@ class Memphis {
         ackWaitSec,
         asyncProduce,
         headers,
-        msgId
+        msgId,
+        producerPartitionKey
       });
 
     producer = await this.producer({
@@ -968,7 +979,8 @@ class Memphis {
       ackWaitSec,
       asyncProduce,
       headers,
-      msgId
+      msgId,
+      producerPartitionKey
     });
   }
 
@@ -984,6 +996,7 @@ class Memphis {
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
+   * @param {String} consumerPartitionKey - consume by specific partition key. Default is null (round robin)
    */
   public async fetchMessages({
     stationName,
@@ -995,7 +1008,8 @@ class Memphis {
     batchMaxTimeToWaitMs = 5000,
     maxMsgDeliveries = 10,
     startConsumeFromSequence = 1,
-    lastMessages = -1
+    lastMessages = -1,
+    consumerPartitionKey = null,
   }: {
     stationName: string;
     consumerName: string;
@@ -1007,6 +1021,7 @@ class Memphis {
     maxMsgDeliveries?: number;
     startConsumeFromSequence?: number;
     lastMessages?: number;
+    consumerPartitionKey?: string;
   }): Promise<Message[]> {
     let consumer: Consumer;
     if (!this.isConnectionActive)
@@ -1024,7 +1039,7 @@ class Memphis {
     const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
     const consumerMapKey: string = `${internalStationName}_${consumerName.toLowerCase()}`;
     consumer = this.getCachedConsumer(consumerMapKey);
-    if (consumer) return await consumer.fetch({ batchSize });
+    if (consumer) return await consumer.fetch({ batchSize, consumerPartitionKey });
 
     consumer = await this.consumer({
       stationName,
@@ -1036,9 +1051,10 @@ class Memphis {
       batchMaxTimeToWaitMs,
       maxMsgDeliveries,
       startConsumeFromSequence,
-      lastMessages
+      lastMessages,
+      consumerPartitionKey
     });
-    return await consumer.fetch({ batchSize });
+    return await consumer.fetch({ batchSize, consumerPartitionKey });
   }
 
   private getCachedProducer(key: string): Producer {
@@ -1214,9 +1230,27 @@ class Memphis {
 
     console.log(...args);
   }
-
-
+  _getPartitionFromKey(key: string, stationName: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const seed = this.seed;
+      mmh3.murmur32(key, seed, (err: any, hashValue: number) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        const stationPartitions = this.stationPartitions.get(stationName);
+        if (stationPartitions != null) {
+          const hasValueInt = hashValue >>> 0;
+          const partitionKey = hasValueInt % stationPartitions.length;
+          resolve(partitionKey);
+        } else {
+          reject(new Error("Station partitions not found"));
+        }
+      });
+    });
+  }
 }
+
 
 export class RoundRobinProducerConsumerGenerator {
   NumberOfPartitions: number;

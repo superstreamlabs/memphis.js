@@ -32,6 +32,7 @@ export class Consumer {
     private dlsCurrentIndex: number;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
     private subscription: Subscription;
+    private consumerPartitionKey: string;
 
     constructor(
         connection: Memphis,
@@ -46,7 +47,8 @@ export class Consumer {
         startConsumeFromSequence: number,
         lastMessages: number,
         realName: string,
-        partitions: number[]
+        partitions: number[],
+        consumerPartitionKey: string,
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -70,17 +72,18 @@ export class Consumer {
         this.realName = realName;
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
+        this.consumerPartitionKey = consumerPartitionKey;
         let partitionsLen = 1;
         if (partitions !== null) {
             partitionsLen = partitions.length
         }
         if (partitions.length > 0) {
             this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
-        }        
+        }
         this.subscription = this.connection.brokerManager
-          .subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
-            queue: `$memphis_${this.internalStationName}_${this.internalConsumerGroupName}`
-        });
+            .subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
+                queue: `$memphis_${this.internalStationName}_${this.internalConsumerGroupName}`
+            });
         this._handleAsyncIterableSubscriber(this.subscription, true);
     }
 
@@ -101,7 +104,7 @@ export class Consumer {
         if (event === 'message') {
             const fetchAndHandleMessages = async () => {
                 try {
-                    const messages = await this.fetch({ batchSize: this.batchSize });
+                    const messages = await this.fetch({ batchSize: this.batchSize, consumerPartitionKey: this.consumerPartitionKey });
                     this._handleAsyncConsumedMessages(messages, false);
                 } catch (error) {
                     this.eventEmitter.emit('error', MemphisError(error));
@@ -124,16 +127,24 @@ export class Consumer {
     /**
      * Fetch a batch of messages.
      */
-    public async fetch({ batchSize = 10 }: { batchSize?: number }): Promise<Message[]> {
+    public async fetch({ batchSize = 10, consumerPartitionKey = null }: { batchSize?: number, consumerPartitionKey?: string }): Promise<Message[]> {
         try {
             if (batchSize > maxBatchSize) {
                 throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
             }
             let streamName = `${this.internalStationName}`;
-            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName)
-            if (stationPartitions != null && stationPartitions.length > 0) {
-                let partitionNumber = this.partitionsGenerator.Next()
+            let stationPartitions = this.connection.stationPartitions.get(this.internalStationName);
+            if (stationPartitions != null && stationPartitions.length === 1) {
+                let partitionNumber = stationPartitions[0]
                 streamName = `${this.internalStationName}$${partitionNumber.toString()}`
+            } else if (stationPartitions != null && stationPartitions.length > 0) {
+                if (consumerPartitionKey != null) {
+                    const partitionNumberKey = await this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
+                    streamName = `${this.internalStationName}$${partitionNumberKey.toString()}`;
+                } else {
+                    let partitionNumber = this.partitionsGenerator.Next();
+                    streamName = `${this.internalStationName}$${partitionNumber.toString()}`;
+                }
             }
             this.batchSize = batchSize
             let messages: Message[] = [];
@@ -199,7 +210,7 @@ export class Consumer {
             }
 
         } catch (ex) {
-            if (ex.message.includes('consumer not found') || ex.message.includes('stream not found')){
+            if (ex.message.includes('consumer not found') || ex.message.includes('stream not found')) {
                 this.eventEmitter.emit('error', MemphisError(new Error('station/consumer were not found')));
             }
         }
