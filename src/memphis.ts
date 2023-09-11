@@ -597,7 +597,7 @@ class Memphis {
       const res = await this.brokerManager.request(
         '$memphis_station_creations',
         data,
-        { timeout: 10000 }
+        { timeout: 20000 }
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -653,7 +653,7 @@ class Memphis {
       const res = await this.brokerManager.request(
         '$memphis_schema_attachments',
         data,
-        { timeout: 10000 }
+        { timeout: 20000 }
       );
       const errMsg = res.data.toString();
       if (errMsg != '') {
@@ -681,7 +681,8 @@ class Memphis {
       let data = this.JSONC.encode(detachSchemaReq);
       let errMsg = await this.brokerManager.request(
         '$memphis_schema_detachments',
-        data
+        data,
+        { timeout: 20000 }
       );
       errMsg = errMsg.data.toString();
       if (errMsg != '') {
@@ -736,7 +737,8 @@ class Memphis {
       const data = this.JSONC.encode(createProducerReq);
       let createRes = await this.brokerManager.request(
         '$memphis_producer_creations',
-        data
+        data,
+        { timeout: 20000 }
       );
       createRes = this.JSONC.decode(createRes.data);
       if (createRes.error != '') {
@@ -858,14 +860,13 @@ class Memphis {
         req_version: 3,
         username: this.username,
         app_id: appId,
-        consumerPartitionKey: consumerPartitionKey,
       };
       const data = this.JSONC.encode(createConsumerReq);
 
       let createRes = await this.brokerManager.request(
         '$memphis_consumer_creations',
         data,
-        { timeout: 10000 }
+        { timeout: 20000 }
       );
       const internal_station = stationName.replace(/\./g, '#')
       let partitions = []
@@ -1209,7 +1210,8 @@ class Memphis {
       var data = this.JSONC.encode(createSchemaReq);
       let createRes = await this.brokerManager.request(
         '$memphis_schema_creations',
-        data
+        data,
+        { timeout: 20000 }
       );
 
       createRes = this.JSONC.decode(createRes.data);
