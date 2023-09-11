@@ -47,7 +47,7 @@ Highly resilient, distributed architecture, cloud-native, and run on any Kuberne
 $ npm install memphis-dev
 ```
 
-Notice: you may recive an error about the "murmurhash3" package, to solve it please install g++
+Notice: you may receive an error about the "murmurhash3" package, to solve it please install g++
 ```sh
 $ sudo yum install -y /usr/bin/g++
 ```
