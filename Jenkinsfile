@@ -17,6 +17,7 @@ node ("small-ec2-fleet") {
       sh """
         curl -sL https://rpm.nodesource.com/setup_16.x | sudo bash -
         sudo yum install -y nodejs
+        sudo yum install -y /usr/bin/g++
       """
     }
 
