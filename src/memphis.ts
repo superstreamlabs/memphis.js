@@ -131,7 +131,7 @@ class Memphis {
     this.consumeHandlers = [];
     this.suppressLogs = false;
     this.stationPartitions = new Map<string, number[]>();
-    this.seed = 1234
+    this.seed = 31
   }
 
   /**
