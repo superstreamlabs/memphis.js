@@ -15,7 +15,7 @@ node ("small-ec2-fleet") {
   
     stage('Install NPM') {
       sh """
-        sudo dnf install https://rpm.nodesource.com/pub_18.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
+        sudo dnf install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
         sudo dnf install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
         sudo dnf install -y /usr/bin/g++
       """
