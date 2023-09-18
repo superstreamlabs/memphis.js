@@ -546,6 +546,7 @@ class Memphis {
    * @param {Boolean} sendPoisonMsgToDls - whether unacked(poison) messages (reached the max deliveries) should be sent into the DLS.
    * @param {Boolean} sendSchemaFailedMsgToDls - whether schema violation messages should be sent into the DLS.
    * @param {Boolean} tieredStorageEnabled - if true + tiered storage configured - messages hit the retention will be moved into tier 2 storage
+   * @param {String} dlsStation - If selected DLS events will be sent to selected station as well
    */
   async station({
     name,
@@ -559,6 +560,7 @@ class Memphis {
     sendSchemaFailedMsgToDls = true,
     tieredStorageEnabled = false,
     partitionsNumber = 1,
+    dlsStation = '',
   }: {
     name: string;
     retentionType?: string;
@@ -571,6 +573,7 @@ class Memphis {
     sendSchemaFailedMsgToDls?: boolean;
     tieredStorageEnabled?: boolean;
     partitionsNumber?: number;
+    dlsStation?: string;
   }): Promise<Station> {
     try {
       if (partitionsNumber < 1) {
@@ -592,6 +595,7 @@ class Memphis {
         username: this.username,
         tiered_storage_enabled: tieredStorageEnabled,
         partitions_number: partitionsNumber,
+        dls_station: dlsStation,
       };
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(

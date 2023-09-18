@@ -153,7 +153,8 @@ const station = await memphis.station({
     sendPoisonMsgToDls: true, // defaults to true
     sendSchemaFailedMsgToDls: true, // defaults to true
     tieredStorageEnabled: false, // defaults to false
-    partitionsNumber: 1 // defaults to 1
+    partitionsNumber: 1, // defaults to 1
+    dlsStation:'<station-name>' // defaults to "" (no DLS station) - If selected DLS events will be sent to selected station as well
 });
 ```
 
@@ -179,7 +180,8 @@ class stationModule {
                         idempotencyWindowMs: 0, // defaults to 120000
                         sendPoisonMsgToDls: true, // defaults to true
                         sendSchemaFailedMsgToDls: true, // defaults to true
-                        tieredStorageEnabled: false // defaults to false
+                        tieredStorageEnabled: false, // defaults to false
+                        dlsStation:'<station-name>' // defaults to "" (no DLS station) - If selected DLS events will be sent to selected station as well
                   });
         })();
     }
