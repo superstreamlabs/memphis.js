@@ -546,6 +546,7 @@ class Memphis {
    * @param {Boolean} sendPoisonMsgToDls - whether unacked(poison) messages (reached the max deliveries) should be sent into the DLS.
    * @param {Boolean} sendSchemaFailedMsgToDls - whether schema violation messages should be sent into the DLS.
    * @param {Boolean} tieredStorageEnabled - if true + tiered storage configured - messages hit the retention will be moved into tier 2 storage
+   * @param {String} dlsStation - If selected DLS events will be sent to selected station as well
    */
   async station({
     name,
