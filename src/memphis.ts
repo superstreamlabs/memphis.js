@@ -559,6 +559,7 @@ class Memphis {
     sendSchemaFailedMsgToDls = true,
     tieredStorageEnabled = false,
     partitionsNumber = 1,
+    dlsStation = '',
   }: {
     name: string;
     retentionType?: string;
@@ -571,6 +572,7 @@ class Memphis {
     sendSchemaFailedMsgToDls?: boolean;
     tieredStorageEnabled?: boolean;
     partitionsNumber?: number;
+    dlsStation?: string;
   }): Promise<Station> {
     try {
       if (partitionsNumber < 1) {
@@ -592,6 +594,7 @@ class Memphis {
         username: this.username,
         tiered_storage_enabled: tieredStorageEnabled,
         partitions_number: partitionsNumber,
+        dls_station: dlsStation,
       };
       const data = this.JSONC.encode(createStationReq);
       const res = await this.brokerManager.request(
