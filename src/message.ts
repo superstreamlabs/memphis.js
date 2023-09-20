@@ -9,12 +9,11 @@ export class Message {
     private cgName: string;
     private stationName: string;
     private internal_station: string;
-    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, stationName: string) {
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, internalStationName: string) {
         this.message = message;
         this.connection = connection;
         this.cgName = cgName;
-        this.stationName = stationName;
-        this.internal_station = this.stationName.replace(/\./g, '#').toLowerCase();
+        this.internal_station = internalStationName;
     }
 
     /**
@@ -49,7 +48,7 @@ export class Message {
     /**
      * Returns the message payload deserialized.
     */
-    getDataDeserialized(): Uint8Array {
+    getDataDeserialized(): any {
         let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
 
         let message
@@ -73,7 +72,6 @@ export class Message {
                     msgObj = JSON.parse(message.toString());
                     return msgObj
                 case 'graphql':
-                    console.log('g')
                     return message.toString()
                 case 'avro':
                     msgObj = JSON.parse(message.toString());

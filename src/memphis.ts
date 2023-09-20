@@ -83,7 +83,7 @@ class Memphis {
   public JSONC: any;
   public stationSchemaDataMap: Map<string, Object>;
   public schemaUpdatesSubs: Map<string, broker.Subscription>;
-  public producersPerStation: Map<string, number>;
+  public clientsPerStation: Map<string, number>;
   public meassageDescriptors: Map<string, protobuf.Type>;
   public jsonSchemas: Map<string, Function>;
   public avroSchemas: Map<string, Function>;
@@ -119,7 +119,7 @@ class Memphis {
     this.JSONC = broker.JSONCodec();
     this.stationSchemaDataMap = new Map();
     this.schemaUpdatesSubs = new Map();
-    this.producersPerStation = new Map();
+    this.clientsPerStation = new Map();
     this.meassageDescriptors = new Map();
     this.jsonSchemas = new Map();
     this.avroSchemas = new Map();
@@ -349,9 +349,9 @@ class Memphis {
       let schemaUpdateSubscription =
         this.schemaUpdatesSubs.has(internalStationName);
       if (schemaUpdateSubscription) {
-        this.producersPerStation.set(
+        this.clientsPerStation.set(
           internalStationName,
-          this.producersPerStation.get(internalStationName) + 1
+          this.clientsPerStation.get(internalStationName) + 1
         );
         return;
       }
@@ -378,7 +378,7 @@ class Memphis {
       const sub = this.brokerManager.subscribe(
         `$memphis_schema_updates_${internalStationName}`
       );
-      this.producersPerStation.set(internalStationName, 1);
+      this.clientsPerStation.set(internalStationName, 1);
       this.schemaUpdatesSubs.set(internalStationName, sub);
       this._listenForSchemaUpdates(sub, internalStationName);
     } catch (ex) {
@@ -1116,7 +1116,7 @@ class Memphis {
       sub?.unsubscribe?.();
       this.stationSchemaDataMap.delete(key);
       this.schemaUpdatesSubs.delete(key);
-      this.producersPerStation.delete(key);
+      this.clientsPerStation.delete(key);
       this.meassageDescriptors.delete(key);
       this.jsonSchemas.delete(key);
     }

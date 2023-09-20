@@ -8,7 +8,7 @@ export declare class Message {
     constructor(message: broker.JsMsg, connection: Memphis, cgName: string, stationName: string);
     ack(): void;
     getData(): Uint8Array;
-    getDataDeserialized(): Uint8Array;
+    getDataDeserialized(): any;
     getDataAsJson(): Object;
     getHeaders(): Object;
     getSequenceNumber(): number;

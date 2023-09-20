@@ -38,7 +38,7 @@ declare class Memphis {
     JSONC: any;
     stationSchemaDataMap: Map<string, Object>;
     schemaUpdatesSubs: Map<string, broker.Subscription>;
-    producersPerStation: Map<string, number>;
+    clientsPerStation: Map<string, number>;
     meassageDescriptors: Map<string, protobuf.Type>;
     jsonSchemas: Map<string, Function>;
     avroSchemas: Map<string, Function>;
