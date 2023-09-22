@@ -355,7 +355,7 @@ class Memphis {
         );
         return;
       }
-      if (schemaUpdateData['schema_name'] !== '') {
+      if (schemaUpdateData && schemaUpdateData['schema_name'] !== '') {
         this.stationSchemaDataMap.set(internalStationName, schemaUpdateData);
         switch (schemaUpdateData['type']) {
           case 'protobuf':
