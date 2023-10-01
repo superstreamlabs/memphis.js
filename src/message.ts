@@ -7,10 +7,13 @@ export class Message {
     private message: broker.JsMsg;
     private connection: Memphis;
     private cgName: string;
-    constructor(message: broker.JsMsg, connection: Memphis, cgName: string) {
+    private stationName: string;
+    private internal_station: string;
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, internalStationName: string) {
         this.message = message;
         this.connection = connection;
         this.cgName = cgName;
+        this.internal_station = internalStationName;
     }
 
     /**
@@ -39,6 +42,45 @@ export class Message {
             return Buffer.from(this.message.data);
         } else {
             return this.message.data;
+        }
+    }
+
+    /**
+     * Returns the message payload deserialized.
+    */
+    getDataDeserialized(): any {
+        let stationSchemaData = this.connection.stationSchemaDataMap.get(this.internal_station);
+
+        let message
+        const isBuffer = Buffer.isBuffer(this.message.data);
+        if (!isBuffer) {
+            message = Buffer.from(this.message.data);
+        } else {
+            message = this.message.data;
+        }
+
+        let msgObj
+        if (stationSchemaData) {
+            switch (stationSchemaData['type']) {
+                case 'protobuf':
+                    let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
+                    if (meassageDescriptor) {
+                        msgObj = meassageDescriptor.decode(message);
+                        return msgObj
+                    }
+                case 'json':
+                    msgObj = JSON.parse(message.toString());
+                    return msgObj
+                case 'graphql':
+                    return message.toString()
+                case 'avro':
+                    msgObj = JSON.parse(message.toString());
+                    return msgObj
+                default:
+                    return message;
+            }
+        } else {
+            return message;
         }
     }
 

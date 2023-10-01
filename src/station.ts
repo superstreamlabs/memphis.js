@@ -26,7 +26,7 @@ export class Station {
             sub?.unsubscribe?.();
             this.connection.stationSchemaDataMap.delete(stationName);
             this.connection.schemaUpdatesSubs.delete(stationName);
-            this.connection.producersPerStation.delete(stationName);
+            this.connection.clientsPerStation.delete(stationName);
             this.connection.meassageDescriptors.delete(stationName);
             this.connection.jsonSchemas.delete(stationName);
             const data = this.connection.JSONC.encode(removeStationReq);

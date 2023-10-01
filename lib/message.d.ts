@@ -4,9 +4,11 @@ export declare class Message {
     private message;
     private connection;
     private cgName;
-    constructor(message: broker.JsMsg, connection: Memphis, cgName: string);
+    private stationName;
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, stationName: string);
     ack(): void;
     getData(): Uint8Array;
+    getDataDeserialized(): any;
     getDataAsJson(): Object;
     getHeaders(): Object;
     getSequenceNumber(): number;

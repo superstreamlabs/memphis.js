@@ -352,9 +352,9 @@ export class Producer {
                 throw MemphisError(new Error(errMsg));
             }
             const stationName = this.stationName.replace(/\./g, '#').toLowerCase();
-            let prodNumber = this.connection.producersPerStation.get(stationName) - 1;
-            this.connection.producersPerStation.set(stationName, prodNumber);
-            if (prodNumber === 0) {
+            let clientNumber = this.connection.clientsPerStation.get(stationName) - 1;
+            this.connection.clientsPerStation.set(stationName, clientNumber);
+            if (clientNumber === 0) {
                 let sub = this.connection.schemaUpdatesSubs.get(stationName);
                 if (sub) sub.unsubscribe();
                 this.connection.stationSchemaDataMap.delete(stationName);

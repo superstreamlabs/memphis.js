@@ -164,7 +164,7 @@ export class Consumer {
                 { batch: batchSize, expires: this.batchMaxTimeToWaitMs });
 
             for await (const m of batch)
-                messages.push(new Message(m, this.connection, this.consumerGroup));
+                messages.push(new Message(m, this.connection, this.consumerGroup, this.internalStationName));
 
             return messages;
         } catch (ex) {
@@ -179,11 +179,11 @@ export class Consumer {
                 if (this.dlsCurrentIndex >= 10000) {
                     indexToInsert %= 10000;
                 }
-                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup);
+                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup,  this.internalStationName);
                 this.dlsCurrentIndex++;
             }
 
-            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup), this.context);
+            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup,  this.internalStationName), this.context);
         }
     }
 
@@ -247,6 +247,17 @@ export class Consumer {
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
+            }
+            const stationName = this.stationName.replace(/\./g, '#').toLowerCase();
+            let clientNumber = this.connection.clientsPerStation.get(stationName) - 1;
+            this.connection.clientsPerStation.set(stationName, clientNumber);
+            if (clientNumber === 0) {
+                let sub = this.connection.schemaUpdatesSubs.get(stationName);
+                if (sub) sub.unsubscribe();
+                this.connection.stationSchemaDataMap.delete(stationName);
+                this.connection.schemaUpdatesSubs.delete(stationName);
+                this.connection.meassageDescriptors.delete(stationName);
+                this.connection.jsonSchemas.delete(stationName);
             }
             this.connection._unSetCachedConsumer(this);
         } catch (ex) {
