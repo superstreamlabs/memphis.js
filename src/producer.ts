@@ -54,6 +54,7 @@ export class Producer {
      * @param {Object} headers - Message headers - javascript object or using the memphis interface for headers (memphis.headers()).
      * @param {String} msgId - Message ID - for idempotent message production
      * @param {String} producerPartitionKey - produce to specific partition key. Default is null (round robin)
+     * @param {Number} producerPartitionNumber - produce to specific partition number. Default is -1 (round robin on all partitions)
      */
     async produce({
         message,
@@ -62,6 +63,7 @@ export class Producer {
         headers = new MsgHeaders(),
         msgId = null,
         producerPartitionKey = null,
+        producerPartitionNumber = -1
     }: {
         message: any;
         ackWaitSec?: number;
@@ -69,6 +71,7 @@ export class Producer {
         headers?: any;
         msgId?: string;
         producerPartitionKey?: string;
+        producerPartitionNumber?: number;
     }): Promise<void> {
         try {
             headers = this._handleHeaders(headers);
@@ -82,11 +85,16 @@ export class Producer {
                 let partitionNumber = stationPartitions[0]
                 streamName = `${this.internalStation}$${partitionNumber.toString()}`
             } else if (stationPartitions != null && stationPartitions.length > 0) {
+                if (producerPartitionNumber > 0 && producerPartitionKey != null) {
+                    throw MemphisError(new Error('Can not use both partition number and partition key'));
+                }
                 if (producerPartitionKey != null) {
                     const partitionNumberKey = await this.connection._getPartitionFromKey(producerPartitionKey, this.internalStation)
                     streamName = `${this.internalStation}$${partitionNumberKey.toString()}`
-                }
-                else {
+                } else if (producerPartitionNumber > 0) {
+                    this.connection._validatePartitionNumber(producerPartitionNumber, this.internalStation)
+                    streamName = `${this.internalStation}$${producerPartitionNumber.toString()}`
+                } else {
                     let partitionNumber = this.partitionsGenerator.Next()
                     streamName = `${this.internalStation}$${partitionNumber.toString()}`
                 }

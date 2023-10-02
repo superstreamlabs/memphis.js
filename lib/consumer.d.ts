@@ -26,12 +26,14 @@ export declare class Consumer {
     private partitionsGenerator;
     private subscription;
     private consumerPartitionKey;
-    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string, partitions: number[], consumerPartitionKey: string);
+    private consumerPartitionNumber;
+    constructor(connection: Memphis, stationName: string, consumerName: string, consumerGroup: string, pullIntervalMs: number, batchSize: number, batchMaxTimeToWaitMs: number, maxAckTimeMs: number, maxMsgDeliveries: number, startConsumeFromSequence: number, lastMessages: number, realName: string, partitions: number[], consumerPartitionKey: string, consumerPartitionNumber: number);
     setContext(context: Object): void;
     on(event: String, cb: (...args: any[]) => void): void;
-    fetch({ batchSize, consumerPartitionKey }: {
+    fetch({ batchSize, consumerPartitionKey, consumerPartitionNumber }: {
         batchSize?: number;
         consumerPartitionKey?: string;
+        consumerPartitionNumber?: number;
     }): Promise<Message[]>;
     private _handleAsyncIterableSubscriber;
     private _handleAsyncConsumedMessages;
