@@ -5,7 +5,8 @@ export declare class Message {
     private connection;
     private cgName;
     private stationName;
-    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, stationName: string);
+    private internal_station;
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, internalStationName: string);
     ack(): void;
     getData(): Uint8Array;
     getDataDeserialized(): any;

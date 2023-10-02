@@ -9,13 +9,14 @@ export declare class Producer {
     private partitionsGenerator;
     constructor(connection: Memphis, producerName: string, stationName: string, realName: string, partitions: number[]);
     _handleHeaders(headers: any): broker.MsgHdrs;
-    produce({ message, ackWaitSec, asyncProduce, headers, msgId, producerPartitionKey, }: {
+    produce({ message, ackWaitSec, asyncProduce, headers, msgId, producerPartitionKey, producerPartitionNumber }: {
         message: any;
         ackWaitSec?: number;
         asyncProduce?: boolean;
         headers?: any;
         msgId?: string;
         producerPartitionKey?: string;
+        producerPartitionNumber?: number;
     }): Promise<void>;
     private _parseJsonValidationErrors;
     private _validateJsonMessage;
