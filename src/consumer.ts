@@ -33,6 +33,7 @@ export class Consumer {
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
     private subscription: Subscription;
     private consumerPartitionKey: string;
+    private consumerPartitionNumber: number;
 
     constructor(
         connection: Memphis,
@@ -49,6 +50,7 @@ export class Consumer {
         realName: string,
         partitions: number[],
         consumerPartitionKey: string,
+        consumerPartitionNumber: number,
     ) {
         this.connection = connection;
         this.stationName = stationName.toLowerCase();
@@ -73,6 +75,7 @@ export class Consumer {
         this.dlsMessages = []; // cyclic array
         this.dlsCurrentIndex = 0;
         this.consumerPartitionKey = consumerPartitionKey;
+        this.consumerPartitionNumber = consumerPartitionNumber;
         let partitionsLen = 1;
         if (partitions !== null) {
             partitionsLen = partitions.length
@@ -104,7 +107,7 @@ export class Consumer {
         if (event === 'message') {
             const fetchAndHandleMessages = async () => {
                 try {
-                    const messages = await this.fetch({ batchSize: this.batchSize, consumerPartitionKey: this.consumerPartitionKey });
+                    const messages = await this.fetch({ batchSize: this.batchSize, consumerPartitionKey: this.consumerPartitionKey, consumerPartitionNumber: this.consumerPartitionNumber });
                     this._handleAsyncConsumedMessages(messages, false);
                 } catch (error) {
                     this.eventEmitter.emit('error', MemphisError(error));
@@ -127,7 +130,7 @@ export class Consumer {
     /**
      * Fetch a batch of messages.
      */
-    public async fetch({ batchSize = 10, consumerPartitionKey = null }: { batchSize?: number, consumerPartitionKey?: string }): Promise<Message[]> {
+    public async fetch({ batchSize = 10, consumerPartitionKey = null, consumerPartitionNumber = -1 }: { batchSize?: number, consumerPartitionKey?: string, consumerPartitionNumber?: number }): Promise<Message[]> {
         try {
             if (batchSize > maxBatchSize) {
                 throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
@@ -138,9 +141,15 @@ export class Consumer {
                 let partitionNumber = stationPartitions[0]
                 streamName = `${this.internalStationName}$${partitionNumber.toString()}`
             } else if (stationPartitions != null && stationPartitions.length > 0) {
+                if (consumerPartitionNumber > 0 && consumerPartitionKey != null) {
+                    throw MemphisError(new Error('Can not use both partition number and partition key'));
+                }
                 if (consumerPartitionKey != null) {
                     const partitionNumberKey = await this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
                     streamName = `${this.internalStationName}$${partitionNumberKey.toString()}`;
+                } else if (consumerPartitionNumber > 0) {
+                    this.connection._validatePartitionNumber(consumerPartitionNumber, this.internalStationName)
+                    streamName = `${this.internalStationName}$${consumerPartitionNumber.toString()}`
                 } else {
                     let partitionNumber = this.partitionsGenerator.Next();
                     streamName = `${this.internalStationName}$${partitionNumber.toString()}`;
