@@ -1,9 +1,8 @@
-import { parse as parseGraphQl, validate as validateGraphQl } from 'graphql';
 import * as broker from 'nats';
 
 import { Memphis, MsgHeaders, RoundRobinProducerConsumerGenerator } from '.';
 import { MemphisError, stringToHex } from './utils';
-const avro = require('avro-js')
+import { Station } from './station';
 
 const schemaVFailAlertType = 'schema_validation_fail_alert';
 
@@ -13,6 +12,7 @@ export class Producer {
     private stationName: string;
     private internalStation: string;
     private realName: string;
+    private station: Station;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
 
     constructor(connection: Memphis, producerName: string, stationName: string, realName: string, partitions: number[]) {
@@ -20,6 +20,7 @@ export class Producer {
         this.producerName = producerName.toLowerCase();
         this.stationName = stationName.toLowerCase();
         this.internalStation = this.stationName.replace(/\./g, '#').toLowerCase();
+        this.station = new Station(connection, stationName)
         this.realName = realName;
         if (partitions?.length > 0) {
             this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
@@ -75,7 +76,7 @@ export class Producer {
     }): Promise<void> {
         try {
             headers = this._handleHeaders(headers);
-            let messageToSend = this._validateMessage(message);
+            let messageToSend = this.station._validateMessage(message);
             headers.set('$memphis_connectionId', this.connection.connectionId);
             headers.set('$memphis_producedBy', this.producerName);
             if (msgId) headers.set('msg-id', msgId);

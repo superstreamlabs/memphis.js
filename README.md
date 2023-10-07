@@ -443,6 +443,19 @@ consumer.on('message', (message, context) => {
 });
 ```
 
+#### Processing schema deserialized messages
+To get messages deserialized, use `message.getDataDeserialized()`.  
+
+```js
+consumer.on('message', (message, context) => {
+    // processing
+    console.log(message.getDataDeserialized());
+    message.ack();
+});
+```
+
+if you have ingested data into station in one format, afterwards you apply a schema on the station, the consumer won't deserialize the previously ingested data. For example, you have ingested string into the station and attached a protobuf schema on the station. In this case, consumer won't deserialize the string and it would throw an error.
+
 ### Fetch a single batch of messages
 
 ```js
