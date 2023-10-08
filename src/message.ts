@@ -2,6 +2,7 @@ import { Memphis } from "./memphis";
 
 import * as broker from 'nats';
 import { MemphisError } from "./utils";
+import { Station } from "./station";
 
 export class Message {
     private message: broker.JsMsg;
@@ -9,11 +10,13 @@ export class Message {
     private cgName: string;
     private stationName: string;
     private internal_station: string;
+    private station: Station;
     constructor(message: broker.JsMsg, connection: Memphis, cgName: string, internalStationName: string) {
         this.message = message;
         this.connection = connection;
         this.cgName = cgName;
         this.internal_station = internalStationName;
+        this.station = new Station(connection, internalStationName);
     }
 
     /**
@@ -61,6 +64,12 @@ export class Message {
 
         let msgObj
         if (stationSchemaData) {
+            try {
+                this.station._validateMessage(message)
+            }
+            catch (ex) {
+                throw MemphisError(new Error(`Deserialization has been failed since the message format does not align with the currently attached schema: ${ex.message}`));
+            }
             switch (stationSchemaData['type']) {
                 case 'protobuf':
                     let meassageDescriptor = this.connection.meassageDescriptors.get(this.internal_station);
