@@ -127,6 +127,64 @@ class ConsumerModule {
 }
 ```
 
+What arguments are used with the Memphis.connect function change depending on the type of connection being made. A standard password-based connection would look like this (using the defualt root memphis login with Memphis open-source):
+
+```typescript
+async function connectPassword(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({
+                host: "localhost",
+                username: "root", // (root/application type user)
+                password: "memphis" 
+                });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+A JWT, token-based connection would look like this:
+
+```typescript
+async function connectToken(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({
+                host: "localhost",
+                username: "root", // (root/application type user)
+                connectionToken: "token"
+                });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+Memphis needs to be configured to use token based connection. See the [docs](https://docs.memphis.dev/memphis/memphis-broker/concepts/security) for help doing this.
+
+A TLS based connection would look like this:
+
+```typescript
+async function connectTLS(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({
+                host: "localhost",
+                username: "root", // (root/application type user)
+                keyFile: "~/tls_file_path.key",
+                certFile: "~/tls_cert_file_path.crt",
+                caFile: "~/tls_ca_file_path.crt"
+                });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+Memphis needs to configured for these use cases. To configure memphis to use TLS see the [docs](https://docs.memphis.dev/memphis/open-source-installation/kubernetes/production-best-practices#memphis-metadata-tls-connection-configuration). 
+
+
 Once connected, the entire functionalities offered by Memphis are available.
 
 ### Disconnecting from Memphis
@@ -138,7 +196,7 @@ memphisConnection.close();
 ```
 
 ### Creating a Station
-**Unexist stations will be created automatically through the SDK on the first producer/consumer connection with default values.**<br><br>
+**A station will be automatically created for the user when a consumer or producer is used if no stations with the given station name exist.**<br><br>
 _If a station already exists nothing happens, the new configuration will not be applied_
 
 ```js
@@ -157,6 +215,8 @@ const station = await memphis.station({
     dlsStation:'<station-name>' // defaults to "" (no DLS station) - If selected DLS events will be sent to selected station as well
 });
 ```
+
+The station function is used to create a station. Using the different arguemnts, one can programically create many different types of stations. The Memphis UI can also be used to create stations to the same effect. 
 
 Creating a station with Nestjs dependency injection
 
@@ -187,6 +247,191 @@ class stationModule {
     }
 }
 ```
+
+A minimal example, using all default values would simply create a station with the given name:
+
+```typescript
+async function stationDefault(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation"
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+To change what criteria the station uses to decide if a message should be retained in the station, change the retention type. The different types of retention are documented [here](https://github.com/memphisdev/memphis.js#retention-types) in the node README. 
+
+The unit of the rentention value will vary depending on the RetentionType. The [previous link](https://github.com/memphisdev/memphis.js#retention-types) also describes what units will be used. 
+
+Here is an example of a station which will only hold up to 10 messages:
+
+```typescript
+async function stationRetentionType(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            retentionType: memphis.retentionTypes.MESSAGES
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+Memphis stations can either store Messages on disk or in memory. A comparison of those types of storage can be found [here](https://docs.memphis.dev/memphis/memphis-broker/concepts/storage-and-redundancy#tier-1-local-storage).
+
+Here is an example of how to create a station that uses Memory as its storage type:
+
+```typescript
+async function stationMemoryStorage(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            storageType: memphis.storageTypes.MEMORY
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+In order to make a station more redundant, replicas can be used. Read more about replicas [here](https://docs.memphis.dev/memphis/memphis-broker/concepts/storage-and-redundancy#replicas-mirroring). Note that replicas are only available in cluster mode. Cluster mode can be enabled in the [Helm settings](https://docs.memphis.dev/memphis/open-source-installation/kubernetes/1-installation#appendix-b-helm-deployment-options) when deploying Memphis with Kubernetes.
+
+Here is an example of creating a station with 3 replicas:
+
+```typescript
+async function stationWithReplicas(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            replicas: 3
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+Idempotency defines how Memphis will prevent duplicate messages from being stored or consumed. The duration of time the message ID's will be stored in the station can be set with idempotencyWindowsMs. If the environment Memphis is deployed in has unreliably connection and/or a lot of latency, increasing this value might be desiriable. The default duration of time is set to two minutes. Read more about idempotency [here](https://docs.memphis.dev/memphis/memphis-broker/concepts/idempotency).
+
+Here is an example of changing the idempotency window to 3 seconds:
+
+```typescript
+async function stationIdempotency(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            idempotencyWindowMs: 180000
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+The schema name is used to set a schema to be enforced by the station. The default value of "" ensures that no schema is enforced. Here is an example of changing the schema to a defined schema in schemaverse called "sensorLogs":
+
+```typescript
+async function stationWithSchema(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            schemaName: "sensorLogs"
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+There are two parameters for sending messages to the [dead-letter station(DLS)](https://docs.memphis.dev/memphis/memphis-broker/concepts/dead-letter#terminology). These are sendPoisonMsgToDls and sendSchemaFailedMsgToDls. 
+
+Here is an example of sending poison messages to the DLS but not messages which fail to conform to the given schema.
+
+```typescript
+async function stationWithDeadLetter(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            sendPoisonMsgToDls: true,
+            sendSchemaFailedMsgToDls: false
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+When either of the DLS flags are set to True, a station can also be set to handle these events. To set a station as the station to where schema failed or poison messages will be set to, use the DlsStation parameter:
+
+```typescript
+async function stationWithDeadLetterToStation(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            sendPoisonMsgToDls: true,
+            sendSchemaFailedMsgToDls: false,
+            dlsStation: "badSensorLogsStation"
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+When the retention value is met, Memphis by default will delete old messages. If tiered storage is setup, Memphis can instead move messages to tier 2 storage. Read more about tiered storage [here](https://docs.memphis.dev/memphis/memphis-broker/concepts/storage-and-redundancy#storage-tiering). Enable this setting with the respective flag:
+
+```typescript
+async function stationWithTieredStorage(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            tieredStorageEnabled: true
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+[Partitioning](https://docs.memphis.dev/memphis/memphis-broker/concepts/station#partitions) might be useful for a station. To have a station partitioned, simply change the partitions number:
+
+```typescript
+async function stationWithPartitions(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.station({
+            name: "myStation",
+            partitionsNumber: 3
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
 
 ### Retention types
 
@@ -219,13 +464,14 @@ Means that after a message is getting acked by all interested consumer groups it
 
 ### Retention Values
 
-The `retention values` are directly related to the `retention types` mentioned above, where the values vary according to the type of retention chosen.
+The unit of the `retention value` changes depending on the `retention type` specified. 
 
-All retention values are of type `int` but with different representations as follows:
+All retention values are of type `int`. The following units are used based on the respective retention type:
 
-`memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS` is represented **in seconds**, `memphis.retentionTypes.MESSAGES` in a **number of messages**, `memphis.retentionTypes.BYTES` in a **number of bytes** and finally `memphis.retentionTypes.ACK_BASED` is not using the retentionValue param at all.
-
-After these limits are reached oldest messages will be deleted.
+`memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS` is **in seconds**, <br>
+`memphis.retentionTypes.MESSAGES` is a **number of messages**, <br>
+`memphis.retentionTypes.BYTES` is a **number of bytes** <br>
+With `memphis.retentionTypes.ACK_BASED`, the `retentionValue` is ignored.
 
 ### Storage types
 
@@ -235,13 +481,13 @@ Memphis currently supports the following types of messages storage:
 memphis.storageTypes.DISK;
 ```
 
-Means that messages persist on disk
+When storage is set to DISK, messages are stored on disk.
 
 ```js
 memphis.storageTypes.MEMORY;
 ```
 
-Means that messages persist on the main memory
+When storage is set to MEMORY, messages are stored in the system memory.
 
 ### Destroying a Station
 
@@ -285,8 +531,7 @@ Consumers are pull based and consume all the messages in a station unless you ar
 
 Memphis messages are payload agnostic. Payloads are `Uint8Arrays`.
 
-In order to stop getting messages, you have to call `consumer.destroy()`. Destroy will terminate regardless
-of whether there are messages in flight for the client.
+In order to stop getting messages, you have to call `consumer.destroy()`. Destroy will terminate regardless of whether there are messages in flight for the client.
 
 ### Creating a Producer
 
@@ -321,8 +566,8 @@ class ProducerModule {
 ### Producing a message
 
 Without creating a producer.
-In cases where extra performance is needed, the recommended way is to create a producer first
-and produce messages by using the produce function of it
+
+The produce function allows for the user to produce a message without discretely creating a producer. Because this pulls a producer from the cache for every message, it is better to create a producer if many message need to be produced. 
 
 ```js
 await memphisConnection.produce({
@@ -352,6 +597,91 @@ await producer.produce({
 Note:
 When producing to a station with more than one partition, the producer will produce messages in a Round Robin fashion between the different partitions.
 
+For message data formats see [here](https://docs.memphis.dev/memphis/memphis-schemaverse/formats/produce-consume). 
+
+When producing many messages with a producer, asyncProduce may be used to help increase the performance of the producer. By default, a producer will produce messages asynchronously. This can be set to false to increase reliability. 
+
+Here is an example of a produce function call that waits up to 30 seconds for an acknowledgement from the memphis broker and does so in an async manner:
+
+```typescript
+async function produceAsync(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.produce({
+            stationName: "myStation",
+            producerName: "tempProducer",
+            message: {some: "message"},
+            ackWaitSec: 30,
+            asyncProduce: true
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+As discussed before in the station section, idempotency is an important feature of memphis. To achieve idempotency, an id must be assigned to messages that are being produced. Use the msgId parameter for this purpose.
+
+```typescript
+async function produceWithIdempotency(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.produce({
+            stationName: "myStation",
+            producerName: "tempProducer",
+            message: {some: "message"},
+            msgId: "42"
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+To add message headers to the message, use the headers function to create a headers object which you can add headers to. Headers can help with observability when using certain 3rd party to help monitor the behavior of memphis. See [here](https://docs.memphis.dev/memphis/memphis-broker/comparisons/aws-sqs-vs-memphis#observability) for more details.
+
+```typescript
+async function produceWithHeaders(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+
+        let headers = memphis.headers()
+        headers.add("trace_header_example", "track_me_123")
+
+        await memphisConnection.produce({
+            stationName: "myStation",
+            producerName: "tempProducer",
+            message: {some: "message"},
+            headers: headers
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+Lastly, memphis can produce to a specific partition in a station. To do so, use the producerPartitionKey parameter:
+
+```typescript
+async function produceWithPartition(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.produce({
+            stationName: "myStation",
+            producerName: "tempProducer",
+            message: {some: "message"},
+            producerPartitionKey: "somePartition"
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
 ### Add Headers
 
 ```js
@@ -370,32 +700,6 @@ const headers = { key: 'value' };
 await producer.produce({
     message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema) or Uint8Arrays/object (schema validated station - avro schema)
     headers: headers
-});
-```
-
-### Async produce
-
-For better performance. The client won't block requests while waiting for an acknowledgment. Defaults to true.
-
-```js
-await producer.produce({
-    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema) or Uint8Arrays/object (schema validated station - avro schema)
-    ackWaitSec: 15, // defaults to 15
-    asyncProduce: true, // defaults to true. For better performance. The client won't block requests while waiting for an acknowledgment
-    producerPartitionKey: "key", // produce to specific partition. defaults to null
-    producerPartitionNumber: -1 // produce to specific partition number. defaults to -1
-});
-```
-
-### Message ID
-
-Stations are idempotent by default for 2 minutes (can be configured). Idempotency is achieved by adding a message-id
-
-```js
-await producer.produce({
-    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema) or Uint8Arrays/object (schema validated station - avro schema)
-    ackWaitSec: 15, // defaults to 15
-    msgId: 'id' // defaults to null
 });
 ```
 
@@ -426,6 +730,102 @@ const consumer = await memphisConnection.consumer({
 
 Note:
 When consuming from a station with more than one partition, the consumer will consume messages in Round Robin fashion from the different partitions.
+
+Here is an example on how to create a consumer with all of the default options:
+
+```typescript
+async function consumerDefualt(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.consumer({
+            stationName: "myStation",
+            consumerName: "newConsumer"
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+To create a consumer in a consumer group, add the consumerGroup parameter:
+
+```typescript
+async function consumerGroup(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.consumer({
+            stationName: "myStation",
+            consumerName: "newConsumer",
+            consumerGroup: "consumerGroup1"
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+When using Consumer.consume, the consumer will continue to consume in an infinite loop. To change the rate at which the consumer polls, change the pullIntervalMs parameter:
+
+```typescript
+async function consumerPollInterval(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.consumer({
+            stationName: "myStation",
+            consumerName: "newConsumer",
+            pullIntervalMs: 2000
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+Every time the consumer polls, the consumer will try to take batchSize number of elements from the station. However, sometimes there are not enough messages in the station for the consumer to consume a full batch. In this case, the consumer will continue to wait until either batchSize messages are gathered or the time in milliseconds specified by batchMaxTimeToWaitMs is reached. 
+
+Here is an example of a consumer that will try to poll 100 messages every 10 seconds while waiting up to 15 seconds for all messages to reach the consumer.
+
+```typescript
+async function consumerBatched(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.consumer({
+            stationName: "myStation",
+            consumerName: "newConsumer",
+            pullIntervalMs: 10000,
+            batchSize: 100,
+            batchMaxTimeToWaitMs: 15000
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+The maxMsgDeliveries parameter allows the user how many messages the consumer is able to consume before consuming more. 
+
+```typescript
+async function consumerMaxMessages(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+        await memphisConnection.consumer({
+            stationName: "myStation",
+            consumerName: "newConsumer",
+            pullIntervalMs: 10000,
+            batchSize: 100,
+            batchMaxTimeToWaitMs: 15000,
+            maxMsgDeliveries: 100
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
 
 ### Passing context to message handlers
 
