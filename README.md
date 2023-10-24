@@ -87,6 +87,8 @@ await memphis.connect({
       });
 ```
 
+The connect function in the Memphis class allows for the connection to Memphis. Connecting to Memphis (cloud or open-source) will be needed in order to use any of the other functionality of the Memphis class. Upon connection, all of Memphis' features are available.
+
 Nest injection
 
 ```js
@@ -116,7 +118,7 @@ class ConsumerModule {
 }
 ```
 
-What arguments are used with the Memphis.connect function change depending on the type of connection being made. A standard password-based connection would look like this (using the defualt root memphis login with Memphis open-source):
+What arguments are used with the Memphis.connect function change depending on the type of connection being made. Memphis uses password-based connections by default. An example of a password-based connection would look like this (using the defualt root memphis login with Memphis open-source):
 
 ```typescript
 async function connectPassword(){
@@ -133,7 +135,25 @@ async function connectPassword(){
 }
 ```
 
-A JWT, token-based connection would look like this:
+If you wanted to connect to Memphis cloud instead, simply add your account ID and change the host. The host and account_id can be found on the Overview page in the Memphis cloud UI under your name at the top. Here is an example to connecting to a cloud broker that is located in US East:  
+
+```typescript
+async function connectPasswordCloud(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({
+                host: "aws-us-east-1.cloud.memphis.dev",
+                username: "my_client_username", // (root/application type user)
+                password: "my_client_password",
+                accountId: 123456789
+                });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+It is possible to use a token-based connection to memphis as well, where multiple users can share the same token to connect to memphis. Here is an example of using memphis.connect with a token:
 
 ```typescript
 async function connectToken(){
@@ -149,6 +169,8 @@ async function connectToken(){
     }
 }
 ```
+
+The token will be presented when creating new users.
 
 Memphis needs to be configured to use token based connection. See the [docs](https://docs.memphis.dev/memphis/memphis-broker/concepts/security) for help doing this.
 
@@ -173,9 +195,6 @@ async function connectTLS(){
 
 Memphis needs to configured for these use cases. To configure memphis to use TLS see the [docs](https://docs.memphis.dev/memphis/open-source-installation/kubernetes/production-best-practices#memphis-metadata-tls-connection-configuration). 
 
-
-Once connected, the entire functionalities offered by Memphis are available.
-
 ### Disconnecting from Memphis
 
 To disconnect from Memphis, call `close()` on the memphis object.
@@ -185,8 +204,11 @@ memphisConnection.close();
 ```
 
 ### Creating a Station
+
+Stations are distributed units that store messages. Producers add messages to stations and Consumers take messages from them. Each station stores messages until their retention policy causes them to either delete the messages or move them to [remote storage](https://docs.memphis.dev/memphis/integrations-center/storage/s3-compatible). 
+
 **A station will be automatically created for the user when a consumer or producer is used if no stations with the given station name exist.**<br><br>
-_If a station already exists nothing happens, the new configuration will not be applied_
+_If the station trying to be created exists when this function is called, nothing will change with the exisitng station_
 
 ```js
 const station = await memphis.station({
@@ -424,32 +446,31 @@ async function stationWithPartitions(){
 
 ### Retention types
 
-Memphis currently supports the following types of retention:
+Retention types define the methodology behind how a station behaves with its messages. Memphis currently supports the following retention types:
 
 ```js
 memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS;
 ```
 
-Means that every message persists for the value set in retention value field (in seconds)
+When the retention type is set to MAX_MESSAGE_AGE_SECONDS, messages will persist in the station for the number of seconds specified in the retention_value. 
 
 ```js
 memphis.retentionTypes.MESSAGES;
 ```
 
-Means that after max amount of saved messages (set in retention value), the oldest messages will be deleted
+When the retention type is set to MESSAGES, the station will only hold up to retention_value messages. The station will delete the oldest messsages to maintain a retention_value number of messages.
 
 ```js
 memphis.retentionTypes.BYTES;
 ```
 
-Means that after max amount of saved bytes (set in retention value), the oldest messages will be deleted
+When the retention type is set to BYTES, the station will only hold up to retention_value BYTES. The oldest messages will be deleted in order to maintain at maximum retention_vlaue BYTES in the station.
 
 ```js
 memphis.retentionTypes.ACK_BASED; // for cloud users only
 ```
 
-Means that after a message is getting acked by all interested consumer groups it will be deleted from the Station.
-
+When the retention type is set to ACK_BASED, messages in the station will be deleted after they are acked by all subscribed consumer groups.
 
 ### Retention Values
 
@@ -512,15 +533,18 @@ await memphisConnection.detachSchema({ stationName: '<station-name>' });
 
 ### Produce and Consume messages
 
-The most common client operations are `produce` to send messages and `consume` to
+The most common client operations are using `produce` to send messages and `consume` to
 receive messages.
 
-Messages are published to a station and consumed from it by creating a consumer.
-Consumers are pull based and consume all the messages in a station unless you are using a consumers group, in this case messages are spread across all members in this group.
+Messages are published to a station with a Producer and consumed from it by a Consumer. 
 
-Memphis messages are payload agnostic. Payloads are `Uint8Arrays`.
+Consumers are poll based and consume all the messages in a station. Consumers can also be grouped into consumer groups. When consuming with a consumer group, all consumers in the group will receive each message.
 
-In order to stop getting messages, you have to call `consumer.destroy()`. Destroy will terminate regardless of whether there are messages in flight for the client.
+Memphis messages are payload agnostic. Payloads are always `bytearray`s.
+
+In order to stop getting messages, you have to call `consumer.destroy()`. Destroy will terminate the consumer even if messages are currently being sent to the consumer.
+
+If a station is created with more than one partition, producing to and consuming from the station will happen in a round robin fashion. 
 
 ### Creating a Producer
 
@@ -554,9 +578,7 @@ class ProducerModule {
 
 ### Producing a message
 
-Without creating a producer.
-
-The produce function allows for the user to produce a message without discretely creating a producer. Because this pulls a producer from the cache for every message, it is better to create a producer if many message need to be produced. 
+Both producers and connections can use the produce function. To produce a message from a connection, simply call `memphis.produce`. This function will create a producer if none with the given name exists, otherwise it will pull the producer from a cache and use it to produce the message. 
 
 ```js
 await memphisConnection.produce({
@@ -572,7 +594,7 @@ await memphisConnection.produce({
 });
 ```
 
-Creating a producer first
+Creating a producer and calling produce on it will increase the performance of producing messages as it removes the overhead of pulling created producers from the cache.
 
 ```js
 await producer.produce({
@@ -638,7 +660,29 @@ async function produceWithHeaders(){
         memphisConnection = await memphis.connect({...});
 
         let headers = memphis.headers()
-        headers.add("trace_header_example", "track_me_123")
+        headers.add("trace_header_example", "track_me_123");
+
+        await memphisConnection.produce({
+            stationName: "myStation",
+            producerName: "tempProducer",
+            message: {some: "message"},
+            headers: headers
+        });
+    }catch(exception){
+        // Handle exception
+    }
+}
+```
+
+or:
+
+```typescript
+async function produceWithHeaders(){
+    let memphisConnection;
+    try{
+        memphisConnection = await memphis.connect({...});
+
+        let headers = {trace_header_example, "track_me_123"};
 
         await memphisConnection.produce({
             stationName: "myStation",
@@ -669,27 +713,6 @@ async function produceWithPartition(){
         // Handle exception
     }
 }
-```
-
-### Add Headers
-
-```js
-const headers = memphis.headers();
-headers.add('<key>', '<value>');
-await producer.produce({
-    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema)
-    headers: headers // defults to empty
-});
-```
-
-or
-
-```js
-const headers = { key: 'value' };
-await producer.produce({
-    message: 'Uint8Arrays/object/string/DocumentNode graphql', // Uint8Arrays/object (schema validated station - protobuf) or Uint8Arrays/object (schema validated station - json schema) or Uint8Arrays/string/DocumentNode graphql (schema validated station - graphql schema) or Uint8Arrays/object (schema validated station - avro schema)
-    headers: headers
-});
 ```
 
 ### Destroying a Producer
@@ -773,9 +796,9 @@ async function consumerPollInterval(){
 }
 ```
 
-Every time the consumer polls, the consumer will try to take batchSize number of elements from the station. However, sometimes there are not enough messages in the station for the consumer to consume a full batch. In this case, the consumer will continue to wait until either batchSize messages are gathered or the time in milliseconds specified by batchMaxTimeToWaitMs is reached. 
+Every time the consumer pulls messages from a station, the consumer will try to take batchSize number of elements from the station. However, sometimes there are not enough messages in the station for the consumer to consume a full batch. In this case, the consumer will continue to wait until either batchSize messages are gathered or the time in milliseconds specified by batchMaxTimeToWaitMs is reached. 
 
-Here is an example of a consumer that will try to poll 100 messages every 10 seconds while waiting up to 15 seconds for all messages to reach the consumer.
+Here is an example of a consumer that will try to pull 100 messages every 10 seconds while waiting up to 15 seconds for all messages to reach the consumer.
 
 ```typescript
 async function consumerBatched(){
@@ -843,9 +866,11 @@ consumer.on('message', (message, context) => {
 });
 ```
 
-if you have ingested data into station in one format, afterwards you apply a schema on the station, the consumer won't deserialize the previously ingested data. For example, you have ingested string into the station and attached a protobuf schema on the station. In this case, consumer won't deserialize the string and it would throw an error.
+There may be some instances where you apply a schema *after* a station has received some messages. In order to consume those messages get_data_deserialized may be used to consume the messages without trying to apply the schema to them. As an example, if you produced a string to a station and then attached a protobuf schema, using get_data_deserialized will not try to deserialize the string as a protobuf-formatted message.
 
 ### Fetch a single batch of messages
+
+Using fetch_messages or fetch will allow the user to remove a specific number of messages from a given station. This behavior could be beneficial if the user does not want to have a consumer actively poll from a station indefinetly.
 
 ```js
 const msgs = await memphis.fetchMessages({
