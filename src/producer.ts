@@ -101,13 +101,25 @@ export class Producer {
                 }
             }
 
+            let fullSubjectName = ''
+            if (this.connection.stationFunctionsMap.has(this.internalStation)) {
+                const partitionNumber = parseInt(streamName.split('$')[1])
+                if(this.connection.stationFunctionsMap.get(this.internalStation).has(partitionNumber)) {
+                    fullSubjectName = `${streamName}.functions.${this.connection.stationFunctionsMap.get(this.internalStation).get(partitionNumber)}`
+                } else {
+                    fullSubjectName = `${streamName}.final`
+                }
+            } else {
+                fullSubjectName = `${streamName}.final`
+            }
+
             if (asyncProduce) 
-                this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
+                this.connection.brokerConnection.publish(fullSubjectName, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
             else
-                await this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
+                await this.connection.brokerConnection.publish(fullSubjectName, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });

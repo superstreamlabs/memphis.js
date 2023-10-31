@@ -32,6 +32,7 @@ import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
+import { isEmpty } from 'rxjs';
 const avro = require('avro-js')
 const mmh3 = require('murmurhash3');
 
@@ -85,6 +86,9 @@ class Memphis {
   public stationSchemaDataMap: Map<string, Object>;
   public schemaUpdatesSubs: Map<string, broker.Subscription>;
   public clientsPerStation: Map<string, number>;
+  public stationFunctionsMap: Map<string, Object>;
+  public functionsUpdateSubs: Map<string, broker.Subscription>;
+  public functionsClientsMap: Map<string, number>;
   public meassageDescriptors: Map<string, protobuf.Type>;
   public jsonSchemas: Map<string, Function>;
   public avroSchemas: Map<string, Function>;
@@ -122,6 +126,9 @@ class Memphis {
     this.stationSchemaDataMap = new Map();
     this.schemaUpdatesSubs = new Map();
     this.clientsPerStation = new Map();
+    this.stationFunctionsMap = new Map();
+    this.functionsUpdateSubs = new Map();
+    this.functionsClientsMap = new Map();
     this.meassageDescriptors = new Map();
     this.jsonSchemas = new Map();
     this.avroSchemas = new Map();
@@ -343,6 +350,33 @@ class Memphis {
     this.meassageDescriptors.set(stationName, meassageDescriptor);
   }
 
+  private async _functionUpdatesListener(
+    stationName: string,
+    functionUpdateData: Object
+  ): Promise<void> {
+    try {
+      const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+      let functionUpdateSubscription = this.functionsUpdateSubs.has(internalStationName);
+      if (functionUpdateSubscription) {
+        this.functionsClientsMap.set(
+          internalStationName,
+          this.functionsClientsMap.get(internalStationName) + 1
+        );
+        return;
+      }
+
+      this.stationFunctionsMap.set(internalStationName, functionUpdateData);
+      const sub = this.brokerManager.subscribe(
+        `$memphis_function_updates_${internalStationName}`
+      );
+      this.functionsClientsMap.set(internalStationName, 1);
+      this.functionsUpdateSubs.set(internalStationName, sub);
+      this._listenForFunctionUpdates(sub, internalStationName);
+    } catch (ex) {
+      throw MemphisError(ex);
+    }
+  }
+
   private async _scemaUpdatesListener(
     stationName: string,
     schemaUpdateData: Object
@@ -444,6 +478,26 @@ class Memphis {
     const graphQlSchema = buildGraphQlSchema(schemaContent);
     return graphQlSchema;
   }
+
+  private async _listenForFunctionUpdates(
+    sub: any,
+    stationName: string
+  ): Promise<void> {
+    for await (const m of sub) {
+      const data = this.JSONC.decode(m._rdata);
+      if (data['update_type'] === 'modify') {
+        for(const [key, value] of Object.entries(data['functions'])) {
+          this.stationFunctionsMap.get(stationName)[key] = value;
+        }
+      }
+      if (data['update_type'] === 'drop') {
+        for(const [key, value] of Object.entries(data['functions'])) {
+          delete this.stationFunctionsMap.get(stationName)[key];
+        }
+      }
+    }
+  }
+  
 
   private async _listenForSchemaUpdates(
     sub: any,
@@ -749,6 +803,14 @@ class Memphis {
         throw MemphisError(new Error(createRes.error));
       }
       const internal_station = stationName.replace(/\./g, '#').toLowerCase();
+
+      if (createRes.station_version !== undefined) {
+        if (createRes.station_version > 0) {
+          await this._functionUpdatesListener(stationName, createRes.station_partitions_first_functions);
+        }
+      }
+
+
       this.stationSchemaverseToDlsMap.set(
         internal_station,
         createRes.schemaverse_to_dls
