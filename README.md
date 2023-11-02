@@ -732,7 +732,7 @@ const consumer = await memphisConnection.consumer({
     batchSize: 10, // defaults to 10
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
-    maxMsgDeliveries: 10, // defaults to 10
+    maxMsgDeliveries: 2, // defaults to 2
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
     lastMessages: -1, // consume the last N messages, defaults to -1 (all messages in the station)
     consumerPartitionKey: "key", // consume by specific partition key. Defaults to null
@@ -831,7 +831,7 @@ async function consumerMaxMessages(){
             pullIntervalMs: 10000,
             batchSize: 100,
             batchMaxTimeToWaitMs: 15000,
-            maxMsgDeliveries: 100
+            maxMsgDeliveries: 2
         });
     }catch(exception){
         // Handle exception
@@ -880,7 +880,7 @@ const msgs = await memphis.fetchMessages({
     batchSize: 10, // defaults to 10
     batchMaxTimeToWaitMs: 5000, // defaults to 5000
     maxAckTimeMs: 30000, // defaults to 30000
-    maxMsgDeliveries: 10, // defaults to 10
+    maxMsgDeliveries: 2, // defaults to 2
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
     lastMessages: -1, // consume the last N messages, defaults to -1 (all messages in the station)
     consumerPartitionKey: "key", // consume by specific partition key. Defaults to null

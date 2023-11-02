@@ -6,6 +6,7 @@ export declare class Producer {
     private stationName;
     private internalStation;
     private realName;
+    private station;
     private partitionsGenerator;
     constructor(connection: Memphis, producerName: string, stationName: string, realName: string, partitions: number[]);
     _handleHeaders(headers: any): broker.MsgHdrs;
@@ -18,12 +19,6 @@ export declare class Producer {
         producerPartitionKey?: string;
         producerPartitionNumber?: number;
     }): Promise<void>;
-    private _parseJsonValidationErrors;
-    private _validateJsonMessage;
-    private _validateAvroMessage;
-    private _validateProtobufMessage;
-    private _validateGraphqlMessage;
-    private _validateMessage;
     private _hanldeProduceError;
     destroy(): Promise<void>;
     _getProducerKey(): string;

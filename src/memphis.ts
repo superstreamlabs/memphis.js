@@ -784,7 +784,7 @@ class Memphis {
    * @param {Number} batchSize - pull batch size.
    * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
-   * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
+   * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 2
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
@@ -799,7 +799,7 @@ class Memphis {
     batchSize = 10,
     batchMaxTimeToWaitMs = 5000,
     maxAckTimeMs = 30000,
-    maxMsgDeliveries = 10,
+    maxMsgDeliveries = 2,
     genUniqueSuffix = false,
     startConsumeFromSequence = 1,
     lastMessages = -1,
@@ -1007,7 +1007,7 @@ class Memphis {
    * @param {Number} batchSize - pull batch size.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000. 
-   * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 10
+   * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 2
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
    * @param {String} consumerPartitionKey - consume by specific partition key. Default is null (round robin)
@@ -1021,7 +1021,7 @@ class Memphis {
     batchSize = 10,
     maxAckTimeMs = 30000,
     batchMaxTimeToWaitMs = 5000,
-    maxMsgDeliveries = 10,
+    maxMsgDeliveries = 2,
     startConsumeFromSequence = 1,
     lastMessages = -1,
     consumerPartitionKey = null,
