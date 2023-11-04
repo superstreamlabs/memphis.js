@@ -101,13 +101,25 @@ export class Producer {
                 }
             }
 
+            let fullSubjectName = ''
+            if (this.connection.stationFunctionsMap.has(this.internalStation)) {
+                const partitionNumber = parseInt(streamName.split('$')[1])
+                if(this.connection.stationFunctionsMap.get(this.internalStation).has(partitionNumber)) {
+                    fullSubjectName = `${streamName}.functions.${this.connection.stationFunctionsMap.get(this.internalStation).get(partitionNumber)}`
+                } else {
+                    fullSubjectName = `${streamName}.final`
+                }
+            } else {
+                fullSubjectName = `${streamName}.final`
+            }
+
             if (asyncProduce) 
-                this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
+                this.connection.brokerConnection.publish(fullSubjectName, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
             else
-                await this.connection.brokerConnection.publish(`${streamName}.final`, messageToSend, {
+                await this.connection.brokerConnection.publish(fullSubjectName, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
                 });
@@ -194,6 +206,17 @@ export class Producer {
                 this.connection.meassageDescriptors.delete(stationName);
                 this.connection.jsonSchemas.delete(stationName);
             }
+
+            let functionClients = this.connection.functionsClientsMap.get(stationName) - 1;
+            this.connection.functionsClientsMap.set(stationName, functionClients);
+            if (functionClients === 0) {
+                this.connection.stationFunctionsMap.delete(stationName);
+                this.connection.functionsClientsMap.delete(stationName);
+                let functionSub = this.connection.functionsUpdateSubs.get(stationName);
+                if (functionSub) functionSub.unsubscribe();
+                this.connection.functionsUpdateSubs.delete(stationName);
+            }
+
             this.connection._unSetCachedProducer(this);
         } catch (ex) {
             if (ex.message?.includes('not exist')) {

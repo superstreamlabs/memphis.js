@@ -208,6 +208,11 @@ export class Station {
             this.connection.clientsPerStation.delete(stationName);
             this.connection.meassageDescriptors.delete(stationName);
             this.connection.jsonSchemas.delete(stationName);
+            this.connection.stationFunctionsMap.delete(stationName);
+            this.connection.functionsClientsMap.delete(stationName);
+            let functionSub = this.connection.functionsUpdateSubs.get(stationName);
+            if (functionSub) functionSub.unsubscribe();
+            this.connection.functionsUpdateSubs.delete(stationName);
             const data = this.connection.JSONC.encode(removeStationReq);
             const res = await this.connection.brokerManager.request('$memphis_station_destructions', data);
             const errMsg = res.data.toString();
