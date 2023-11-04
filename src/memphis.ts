@@ -85,7 +85,7 @@ class Memphis {
   public stationSchemaDataMap: Map<string, Object>;
   public schemaUpdatesSubs: Map<string, broker.Subscription>;
   public clientsPerStation: Map<string, number>;
-  public stationFunctionsMap: Map<string, Map<number, number>>;
+  public stationFunctionsMap: Map<string, Map<string, number>>;
   public functionsUpdateSubs: Map<string, broker.Subscription>;
   public functionsClientsMap: Map<string, number>;
   public meassageDescriptors: Map<string, protobuf.Type>;
@@ -352,7 +352,7 @@ class Memphis {
 
   private async _functionUpdatesListener(
     stationName: string,
-    functionUpdateData: Map<number, number>
+    functionUpdateData: Map<string, number>
   ): Promise<void> {
     try {
       const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
@@ -805,10 +805,17 @@ class Memphis {
 
       if (createRes.station_version !== undefined) {
         if (createRes.station_version > 0) {
-          await this._functionUpdatesListener(stationName, createRes.station_partitions_first_functions);
+          const station_partitions_first_functions = createRes.station_partitions_first_functions;
+          const stationMap = new Map<string, number>();
+
+          for (const key of Object.keys(station_partitions_first_functions)) {
+            stationMap.set(key, station_partitions_first_functions[key]);
+          }
+
+          await this._functionUpdatesListener(stationName, stationMap);
         }
       }
-      
+
       this.stationSchemaverseToDlsMap.set(
         internal_station,
         createRes.schemaverse_to_dls

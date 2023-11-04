@@ -103,7 +103,7 @@ export class Producer {
 
             let fullSubjectName = ''
             if (this.connection.stationFunctionsMap.has(this.internalStation)) {
-                const partitionNumber = parseInt(streamName.split('$')[1])
+                const partitionNumber = streamName.split('$')[1]
                 if(this.connection.stationFunctionsMap.get(this.internalStation).has(partitionNumber)) {
                     fullSubjectName = `${streamName}.functions.${this.connection.stationFunctionsMap.get(this.internalStation).get(partitionNumber)}`
                 } else {
