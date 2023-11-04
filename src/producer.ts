@@ -383,6 +383,17 @@ export class Producer {
                 this.connection.meassageDescriptors.delete(stationName);
                 this.connection.jsonSchemas.delete(stationName);
             }
+
+            let functionClients = this.connection.functionsClientsMap.get(stationName) - 1;
+            this.connection.functionsClientsMap.set(stationName, functionClients);
+            if (functionClients === 0) {
+                this.connection.stationFunctionsMap.delete(stationName);
+                this.connection.functionsClientsMap.delete(stationName);
+                let functionSub = this.connection.functionsUpdateSubs.get(stationName);
+                if (functionSub) functionSub.unsubscribe();
+                this.connection.functionsUpdateSubs.delete(stationName);
+            }
+            
             this.connection._unSetCachedProducer(this);
         } catch (ex) {
             if (ex.message?.includes('not exist')) {

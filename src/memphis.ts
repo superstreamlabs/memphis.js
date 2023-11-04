@@ -32,7 +32,6 @@ import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
-import { isEmpty } from 'rxjs';
 const avro = require('avro-js')
 const mmh3 = require('murmurhash3');
 
@@ -86,7 +85,7 @@ class Memphis {
   public stationSchemaDataMap: Map<string, Object>;
   public schemaUpdatesSubs: Map<string, broker.Subscription>;
   public clientsPerStation: Map<string, number>;
-  public stationFunctionsMap: Map<string, Object>;
+  public stationFunctionsMap: Map<string, Map<number, number>>;
   public functionsUpdateSubs: Map<string, broker.Subscription>;
   public functionsClientsMap: Map<string, number>;
   public meassageDescriptors: Map<string, protobuf.Type>;
@@ -352,7 +351,7 @@ class Memphis {
 
   private async _functionUpdatesListener(
     stationName: string,
-    functionUpdateData: Object
+    functionUpdateData: Map<number, number>
   ): Promise<void> {
     try {
       const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
