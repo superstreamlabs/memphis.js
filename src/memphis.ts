@@ -367,10 +367,11 @@ class Memphis {
 
       this.stationFunctionsMap.set(internalStationName, functionUpdateData);
       const sub = this.brokerManager.subscribe(
-        `$memphis_function_updates_${internalStationName}`
+        `$memphis_functions_updates_${internalStationName}`
       );
       this.functionsClientsMap.set(internalStationName, 1);
       this.functionsUpdateSubs.set(internalStationName, sub);
+      console.log("listening for function updates")
       this._listenForFunctionUpdates(sub, internalStationName);
     } catch (ex) {
       throw MemphisError(ex);
@@ -383,16 +384,14 @@ class Memphis {
   ): Promise<void> {
     for await (const m of sub) {
       const data = this.JSONC.decode(m._rdata);
-      if (data['update_type'] === 'modify') {
-        for(const [key, value] of Object.entries(data['functions'])) {
-          this.stationFunctionsMap.get(stationName)[key] = value;
-        }
+
+      const station_partitions_first_functions = data.functions;
+      const stationMap = new Map<string, number>();
+
+      for (const key of Object.keys(station_partitions_first_functions)) {
+        stationMap.set(key, station_partitions_first_functions[key]);
       }
-      if (data['update_type'] === 'drop') {
-        for(const [key, value] of Object.entries(data['functions'])) {
-          delete this.stationFunctionsMap.get(stationName)[key];
-        }
-      }
+      this.stationFunctionsMap.set(stationName, stationMap)
     }
   }
 
