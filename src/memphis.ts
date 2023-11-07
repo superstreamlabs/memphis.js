@@ -85,6 +85,9 @@ class Memphis {
   public stationSchemaDataMap: Map<string, Object>;
   public schemaUpdatesSubs: Map<string, broker.Subscription>;
   public clientsPerStation: Map<string, number>;
+  public stationFunctionsMap: Map<string, Map<string, number>>;
+  public functionsUpdateSubs: Map<string, broker.Subscription>;
+  public functionsClientsMap: Map<string, number>;
   public meassageDescriptors: Map<string, protobuf.Type>;
   public jsonSchemas: Map<string, Function>;
   public avroSchemas: Map<string, Function>;
@@ -122,6 +125,9 @@ class Memphis {
     this.stationSchemaDataMap = new Map();
     this.schemaUpdatesSubs = new Map();
     this.clientsPerStation = new Map();
+    this.stationFunctionsMap = new Map();
+    this.functionsUpdateSubs = new Map();
+    this.functionsClientsMap = new Map();
     this.meassageDescriptors = new Map();
     this.jsonSchemas = new Map();
     this.avroSchemas = new Map();
@@ -341,6 +347,52 @@ class Memphis {
       `${stationSchemaData['active_version']['message_struct_name']}`
     );
     this.meassageDescriptors.set(stationName, meassageDescriptor);
+  }
+
+
+  private async _functionUpdatesListener(
+    stationName: string,
+    functionUpdateData: Map<string, number>
+  ): Promise<void> {
+    try {
+      const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+      let functionUpdateSubscription = this.functionsUpdateSubs.has(internalStationName);
+      if (functionUpdateSubscription) {
+        this.functionsClientsMap.set(
+          internalStationName,
+          this.functionsClientsMap.get(internalStationName) + 1
+        );
+        return;
+      }
+
+      this.stationFunctionsMap.set(internalStationName, functionUpdateData);
+      const sub = this.brokerManager.subscribe(
+        `$memphis_functions_updates_${internalStationName}`
+      );
+      this.functionsClientsMap.set(internalStationName, 1);
+      this.functionsUpdateSubs.set(internalStationName, sub);
+      console.log("listening for function updates")
+      this._listenForFunctionUpdates(sub, internalStationName);
+    } catch (ex) {
+      throw MemphisError(ex);
+    }
+  }
+
+  private async _listenForFunctionUpdates(
+    sub: any,
+    stationName: string
+  ): Promise<void> {
+    for await (const m of sub) {
+      const data = this.JSONC.decode(m._rdata);
+
+      const station_partitions_first_functions = data.functions;
+      const stationMap = new Map<string, number>();
+
+      for (const key of Object.keys(station_partitions_first_functions)) {
+        stationMap.set(key, station_partitions_first_functions[key]);
+      }
+      this.stationFunctionsMap.set(stationName, stationMap)
+    }
   }
 
   private async _scemaUpdatesListener(
@@ -749,6 +801,20 @@ class Memphis {
         throw MemphisError(new Error(createRes.error));
       }
       const internal_station = stationName.replace(/\./g, '#').toLowerCase();
+
+      if (createRes.station_version !== undefined) {
+        if (createRes.station_version > 0) {
+          const station_partitions_first_functions = createRes.station_partitions_first_functions;
+          const stationMap = new Map<string, number>();
+
+          for (const key of Object.keys(station_partitions_first_functions)) {
+            stationMap.set(key, station_partitions_first_functions[key]);
+          }
+
+          await this._functionUpdatesListener(stationName, stationMap);
+        }
+      }
+
       this.stationSchemaverseToDlsMap.set(
         internal_station,
         createRes.schemaverse_to_dls
