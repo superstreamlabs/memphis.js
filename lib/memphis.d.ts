@@ -39,6 +39,9 @@ declare class Memphis {
     stationSchemaDataMap: Map<string, Object>;
     schemaUpdatesSubs: Map<string, broker.Subscription>;
     clientsPerStation: Map<string, number>;
+    stationFunctionsMap: Map<string, Map<string, number>>;
+    functionsUpdateSubs: Map<string, broker.Subscription>;
+    functionsClientsMap: Map<string, number>;
     meassageDescriptors: Map<string, protobuf.Type>;
     jsonSchemas: Map<string, Function>;
     avroSchemas: Map<string, Function>;
@@ -70,6 +73,8 @@ declare class Memphis {
     }): Promise<Memphis>;
     private _getBrokerManagerConnection;
     private _compileProtobufSchema;
+    private _functionUpdatesListener;
+    private _listenForFunctionUpdates;
     private _scemaUpdatesListener;
     private _compileJsonSchema;
     private _compileAvroSchema;
