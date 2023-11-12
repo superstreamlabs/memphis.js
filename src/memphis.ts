@@ -803,7 +803,7 @@ class Memphis {
       const internal_station = stationName.replace(/\./g, '#').toLowerCase();
 
       if (createRes.station_version !== undefined) {
-        if (createRes.station_version > 0) {
+        if (createRes.station_version >= 2) {
           const station_partitions_first_functions = createRes.station_partitions_first_functions;
           const stationMap = new Map<string, number>();
 
