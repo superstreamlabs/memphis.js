@@ -2,7 +2,7 @@ const createFunction = (memphis_event, eventHandler) => {
     const handler = (memphis_event) => {
     const processedEvents = {
         messages: [],
-        failedMessages: []
+        failed_messages: []
     };
 
     for (const message of memphis_event.messages) {
@@ -25,7 +25,7 @@ const createFunction = (memphis_event, eventHandler) => {
                 throw new Error(errMsg);
             }
         } catch (e) {
-            processedEvents.failedMessages.push({
+            processedEvents.failed_messages.push({
                 headers: message.headers,
                 payload: message.payload,
                 error: e.message
