@@ -12,8 +12,8 @@ const createFunction = (memphis_event, eventHandler) => {
 
             if (processedMessage instanceof Uint8Array && processedHeaders instanceof Object) {
                 processedEvents.messages.push({
-                headers: processedHeaders,
-                payload: Buffer.from(processedMessage).toString('base64')
+                    headers: processedHeaders,
+                    payload: Buffer.from(processedMessage).toString('base64')
                 });
             } else if (processedMessage === null && processedHeaders === null) {
                 continue;
