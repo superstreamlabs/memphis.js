@@ -20,7 +20,7 @@ export declare class Producer {
         producerPartitionNumber?: number;
     }): Promise<void>;
     private _hanldeProduceError;
-    destroy(): Promise<void>;
+    destroy(timeoutRetry?: number): Promise<void>;
     _getProducerKey(): string;
     _getProducerStation(): string;
 }

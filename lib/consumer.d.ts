@@ -39,7 +39,7 @@ export declare class Consumer {
     private _handleAsyncConsumedMessages;
     private _pingConsumer;
     stop(): void;
-    destroy(): Promise<void>;
+    destroy(timeoutRetry?: number): Promise<void>;
     _getConsumerKey(): string;
     _getConsumerStation(): string;
 }
