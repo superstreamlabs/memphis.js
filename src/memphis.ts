@@ -282,15 +282,15 @@ class Memphis {
                 this.isConnectionActive = false;
                 break;
               case 'error':
-                  let err = s.data;
-                  if (err.includes("AUTHORIZATION_VIOLATION")) {
-                    this.log("to continue using Memphis, please upgrade your plan to a paid plan")
-                  } else {
-                    this.log(MemphisErrorString(err));
-                  }
-                  this.isConnectionActive = false;
-                  await this.brokerManager.close();
-                  break;
+                let err = s.data;
+                if (err.includes("AUTHORIZATION_VIOLATION")) {
+                  this.log("to continue using Memphis, please upgrade your plan to a paid plan")
+                } else {
+                  this.log(MemphisErrorString(err));
+                }
+                this.isConnectionActive = false;
+                await this.brokerManager.close();
+                break;
               default:
                 this.isConnectionActive = true;
             }
@@ -585,6 +585,16 @@ class Memphis {
     else return host;
   }
 
+  async request(subject: string, data: any, timeoutRetry: number, options?: any): Promise<any> {
+    try {
+      return await this.brokerManager.request(subject, data, options);
+    } catch (ex) {
+      if (timeoutRetry > 0 && ex.message?.includes('timeout')) {
+        return await this.request(subject, data, options, timeoutRetry - 1)
+      }
+      throw MemphisError(ex);
+    }
+  }
 
   /**
    * Creates a station.
@@ -613,6 +623,7 @@ class Memphis {
     tieredStorageEnabled = false,
     partitionsNumber = 1,
     dlsStation = '',
+    timeoutRetry = 5
   }: {
     name: string;
     retentionType?: string;
@@ -626,6 +637,7 @@ class Memphis {
     tieredStorageEnabled?: boolean;
     partitionsNumber?: number;
     dlsStation?: string;
+    timeoutRetry?: number;
   }): Promise<Station> {
     try {
       if (partitionsNumber < 1) {
@@ -650,9 +662,10 @@ class Memphis {
         dls_station: dlsStation,
       };
       const data = this.JSONC.encode(createStationReq);
-      const res = await this.brokerManager.request(
+      const res = await this.request(
         '$memphis_station_creations',
         data,
+        timeoutRetry,
         { timeout: 20000 }
       );
       const errMsg = res.data.toString();
@@ -690,10 +703,12 @@ class Memphis {
    */
   async enforceSchema({
     name,
-    stationName
+    stationName,
+    timeoutRetry = 5
   }: {
     name: string;
     stationName: string;
+    timeoutRetry?: number;
   }): Promise<void> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -706,9 +721,10 @@ class Memphis {
         username: this.username,
       };
       const data = this.JSONC.encode(enforceSchemaReq);
-      const res = await this.brokerManager.request(
+      const res = await this.request(
         '$memphis_schema_attachments',
         data,
+        timeoutRetry,
         { timeout: 20000 }
       );
       const errMsg = res.data.toString();
@@ -724,7 +740,7 @@ class Memphis {
    * Detaches a schema from station.
    * @param {String} stationName - station name to attach schema to.
    */
-  async detachSchema({ stationName }: { stationName: string }): Promise<void> {
+  async detachSchema({ stationName, timeoutRetry = 5 }: { stationName: string, timeoutRetry?: number }): Promise<void> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
       if (stationName === '') {
@@ -735,9 +751,10 @@ class Memphis {
         username: this.username,
       };
       let data = this.JSONC.encode(detachSchemaReq);
-      let errMsg = await this.brokerManager.request(
+      let errMsg = await this.request(
         '$memphis_schema_detachments',
         data,
+        timeoutRetry,
         { timeout: 20000 }
       );
       errMsg = errMsg.data.toString();
@@ -758,11 +775,13 @@ class Memphis {
   async producer({
     stationName,
     producerName,
-    genUniqueSuffix = false
+    genUniqueSuffix = false,
+    timeoutRetry = 5
   }: {
     stationName: string;
     producerName: string;
     genUniqueSuffix?: boolean;
+    timeoutRetry?: number;
   }): Promise<Producer> {
     try {
       if (!this.isConnectionActive)
@@ -791,9 +810,10 @@ class Memphis {
         app_id: appId,
       };
       const data = this.JSONC.encode(createProducerReq);
-      let createRes = await this.brokerManager.request(
+      let createRes = await this.request(
         '$memphis_producer_creations',
         data,
+        timeoutRetry,
         { timeout: 20000 }
       );
       createRes = this.JSONC.decode(createRes.data);
@@ -871,6 +891,7 @@ class Memphis {
     lastMessages = -1,
     consumerPartitionKey = null,
     consumerPartitionNumber = -1,
+    timeoutRetry = 5
   }: {
     stationName: string;
     consumerName: string;
@@ -885,6 +906,7 @@ class Memphis {
     lastMessages?: number;
     consumerPartitionKey?: string;
     consumerPartitionNumber?: number;
+    timeoutRetry?: number;
   }): Promise<Consumer> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
@@ -936,9 +958,10 @@ class Memphis {
       };
       const data = this.JSONC.encode(createConsumerReq);
 
-      let createRes = await this.brokerManager.request(
+      let createRes = await this.request(
         '$memphis_consumer_creations',
         data,
+        timeoutRetry,
         { timeout: 20000 }
       );
       const internal_station = stationName.replace(/\./g, '#')
@@ -1254,11 +1277,13 @@ class Memphis {
   async createSchema({
     schemaName,
     schemaType,
-    schemaFilePath
+    schemaFilePath,
+    timeoutRetry = 5
   }: {
     schemaName: string;
     schemaType: string;
     schemaFilePath: string;
+    timeoutRetry?: number;
   }): Promise<void> {
     try {
 
@@ -1291,9 +1316,11 @@ class Memphis {
       };
 
       var data = this.JSONC.encode(createSchemaReq);
-      let createRes = await this.brokerManager.request(
+     
+      let createRes = await this.request(
         '$memphis_schema_creations',
         data,
+        timeoutRetry,
         { timeout: 20000 }
       );
 
