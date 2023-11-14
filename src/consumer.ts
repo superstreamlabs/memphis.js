@@ -240,7 +240,7 @@ export class Consumer {
     /**
      * Destroy the consumer.
      */
-    async destroy(): Promise<void> {
+    async destroy(timeoutRetry: number = 5): Promise<void> {
         clearInterval(this.pullInterval);
         clearInterval(this.pingConsumerInvterval);
         try {
@@ -252,7 +252,7 @@ export class Consumer {
                 req_version: 1,
             };
             let data = this.connection.JSONC.encode(removeConsumerReq);
-            let errMsg = await this.connection.brokerManager.request('$memphis_consumer_destructions', data);
+            let errMsg = await this.connection.request('$memphis_consumer_destructions', data, timeoutRetry);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));
