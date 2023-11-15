@@ -349,7 +349,6 @@ class Memphis {
     this.meassageDescriptors.set(stationName, meassageDescriptor);
   }
 
-
   private async _functionUpdatesListener(
     stationName: string,
     functionUpdateData: Map<string, number>
