@@ -83,7 +83,8 @@ declare class Memphis {
     private _sdkClientUpdatesListener;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
-    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled, partitionsNumber, dlsStation, }: {
+    request(subject: string, data: any, timeoutRetry: number, options?: any): Promise<any>;
+    station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled, partitionsNumber, dlsStation, timeoutRetry }: {
         name: string;
         retentionType?: string;
         retentionValue?: number;
@@ -96,24 +97,28 @@ declare class Memphis {
         tieredStorageEnabled?: boolean;
         partitionsNumber?: number;
         dlsStation?: string;
+        timeoutRetry?: number;
     }): Promise<Station>;
     attachSchema({ name, stationName }: {
         name: string;
         stationName: string;
     }): Promise<void>;
-    enforceSchema({ name, stationName }: {
+    enforceSchema({ name, stationName, timeoutRetry }: {
         name: string;
         stationName: string;
+        timeoutRetry?: number;
     }): Promise<void>;
-    detachSchema({ stationName }: {
+    detachSchema({ stationName, timeoutRetry }: {
         stationName: string;
+        timeoutRetry?: number;
     }): Promise<void>;
-    producer({ stationName, producerName, genUniqueSuffix }: {
+    producer({ stationName, producerName, genUniqueSuffix, timeoutRetry }: {
         stationName: string;
         producerName: string;
         genUniqueSuffix?: boolean;
+        timeoutRetry?: number;
     }): Promise<Producer>;
-    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix, startConsumeFromSequence, lastMessages, consumerPartitionKey, consumerPartitionNumber, }: {
+    consumer({ stationName, consumerName, consumerGroup, pullIntervalMs, batchSize, batchMaxTimeToWaitMs, maxAckTimeMs, maxMsgDeliveries, genUniqueSuffix, startConsumeFromSequence, lastMessages, consumerPartitionKey, consumerPartitionNumber, timeoutRetry }: {
         stationName: string;
         consumerName: string;
         consumerGroup?: string;
@@ -127,6 +132,7 @@ declare class Memphis {
         lastMessages?: number;
         consumerPartitionKey?: string;
         consumerPartitionNumber?: number;
+        timeoutRetry?: number;
     }): Promise<Consumer>;
     headers(): MsgHeaders;
     produce({ stationName, producerName, genUniqueSuffix, message, ackWaitSec, asyncProduce, headers, msgId, producerPartitionKey, producerPartitionNumber }: {
@@ -166,10 +172,11 @@ declare class Memphis {
     close(): Promise<void>;
     isConnected(): boolean;
     _setConsumeHandler(options: MemphisConsumerOptions, handler: (...args: any) => void, context: object): void;
-    createSchema({ schemaName, schemaType, schemaFilePath }: {
+    createSchema({ schemaName, schemaType, schemaFilePath, timeoutRetry }: {
         schemaName: string;
         schemaType: string;
         schemaFilePath: string;
+        timeoutRetry?: number;
     }): Promise<void>;
     private log;
     _getPartitionFromKey(key: string, stationName: string): Promise<number>;

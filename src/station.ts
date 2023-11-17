@@ -194,7 +194,7 @@ export class Station {
     /**
      * Destroy the station.
      */
-    async destroy(): Promise<void> {
+    async destroy(timeoutRetry:number = 5): Promise<void> {
         try {
             const removeStationReq = {
                 station_name: this.name,
@@ -214,7 +214,7 @@ export class Station {
             if (functionSub) functionSub.unsubscribe();
             this.connection.functionsUpdateSubs.delete(stationName);
             const data = this.connection.JSONC.encode(removeStationReq);
-            const res = await this.connection.brokerManager.request('$memphis_station_destructions', data);
+            const res = await this.connection.request('$memphis_station_destructions', data, timeoutRetry);
             const errMsg = res.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));

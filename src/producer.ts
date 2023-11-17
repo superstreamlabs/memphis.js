@@ -180,7 +180,7 @@ export class Producer {
     /**
      * Destroy the producer.
      */
-    async destroy(): Promise<void> {
+    async destroy(timeoutRetry: number = 5): Promise<void> {
         try {
             let removeProducerReq = {
                 name: this.producerName,
@@ -190,7 +190,7 @@ export class Producer {
                 req_version: 1,
             };
             let data = this.connection.JSONC.encode(removeProducerReq);
-            let errMsg = await this.connection.brokerManager.request('$memphis_producer_destructions', data);
+            let errMsg = await this.connection.request('$memphis_producer_destructions', data, timeoutRetry);
             errMsg = errMsg.data.toString();
             if (errMsg != '') {
                 throw MemphisError(new Error(errMsg));

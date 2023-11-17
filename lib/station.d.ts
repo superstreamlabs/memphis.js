@@ -10,5 +10,5 @@ export declare class Station {
     private _validateGraphqlMessage;
     _validateMessage(msg: any): any;
     private _parseJsonValidationErrors;
-    destroy(): Promise<void>;
+    destroy(timeoutRetry?: number): Promise<void>;
 }
