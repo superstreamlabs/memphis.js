@@ -27,7 +27,7 @@
  * @throws {Error} - Throws an exception if the returned processedMessage or processedHeaders are not in the expected format.
  */
 
-export function createFunction(memphis_event, eventHandler) {
+export async function createFunction(memphis_event, eventHandler) {
     /**
      * The Memphis function handler which iterates over the messages in the event and passes them to the user-provided event handler.
      *
@@ -53,7 +53,7 @@ export function createFunction(memphis_event, eventHandler) {
      *     ]
      * }
      */
-    function handler(memphis_event) {
+    async function handler(memphis_event) {
         const processedEvents = {
             messages: [],
             failed_messages: []
@@ -62,7 +62,17 @@ export function createFunction(memphis_event, eventHandler) {
         for (const message of memphis_event.messages) {
             try {
                 const payload = Buffer.from(message.payload, 'base64');
-                const { processedMessage, processedHeaders } = eventHandler(payload, message.headers, message.inputs);
+                const maybeAsyncEvent = eventHandler(payload, message.headers, message.inputs);
+                
+                let processedMessage, processedHeaders;
+                if (maybeAsyncEvent instanceof Promise){
+                   const response = await maybeAsyncEvent;
+                    processedMessage = response.processedMessage;
+                    processedHeaders = response.processedHeaders;
+                }else{
+                    processedMessage = maybeAsyncEvent.processedMessage;
+                    processedHeaders = maybeAsyncEvent.processedHeaders;
+                }
 
                 if (processedMessage instanceof Uint8Array && processedHeaders instanceof Object) {
                     processedEvents.messages.push({
