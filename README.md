@@ -1017,7 +1017,7 @@ memphisConnection.isConnected();
 ```
 
 ### Creating a Memphis function
-Memphis provides a `createFunction` utility for more easily creating Memphis Functions.
+Memphis provides a `createFunction` utility for more easily creating Memphis Functions. 
 
 The user-created `eventHandler` will be called for every message in the given batch of events. The user's `eventHandler` will take in a `payload` as a Uint8Array, `headers` as an object, and `inputs` as an object, and should return an object with keys `{ processedMessage, processedHeaders }`. The returned `processedMessage` should be a Uint8Array, and `processedHeaders` should be an object.
 
@@ -1031,10 +1031,29 @@ This example function takes the Uint8Array object `payload` and decodes it from 
 
 ```javascript
 export const handler = async (event) => {
-    return createFunction(event, eventHandler);
+    return await createFunction(event, eventHandler);
 };
 
 function eventHandler(payload, headers, inputs) {
+    const decodedPayload = payload.toString('utf-8');
+    const asJson = JSON.parse(decodedPayload);
+    asJson.modified = true;
+
+    return {
+        processedMessage: Buffer.from(JSON.stringify(asJson), 'utf-8'),
+        processedHeaders: headers
+    };
+}
+```
+
+A user created `eventHandler` may also be async:
+
+```javascript
+export const handler = async (event) => {
+    return await createFunction(event, eventHandler);
+};
+
+async function eventHandler(payload, headers, inputs) {
     const decodedPayload = payload.toString('utf-8');
     const asJson = JSON.parse(decodedPayload);
     asJson.modified = true;
@@ -1050,10 +1069,10 @@ If the user wants to have a message that they would like to validate and send to
 
 ```javascript
 export const handler = async (event) => {
-    return createFunction(event, eventHandler);
+    return await createFunction(event, eventHandler);
 };
 
-function eventHandler(payload, headers, inputs) {
+async function eventHandler(payload, headers, inputs) {
     const decodedPayload = payload.toString('utf-8');
     const asJson = JSON.parse(decodedPayload);
 
@@ -1072,7 +1091,7 @@ If a user would rather just skip the message and not have it be sent to the stat
 
 ```javascript
 export const handler = async (event) => {
-    return createFunction(event, eventHandler);
+    return await createFunction(event, eventHandler);
 };
 
 function eventHandler(payload, headers, inputs) {
@@ -1088,4 +1107,42 @@ function eventHandler(payload, headers, inputs) {
         processedHeaders: headers
     };
 }
+```
+
+LLastly, if the user is using another data format like Protocol Buffers, the user may simply decode the `payload` into that format instead of JSON. The following example will be using the [protobufjs](https://github.com/protobufjs/protobuf.js/) package. Assuming we have a .proto definition like this: 
+
+```proto
+syntax = "proto3";
+package protobuf_example;
+
+message Message{
+    string data_field = 1;
+}
+```
+
+We can decode this and get the data_field out like this:
+
+```javascript
+export const handler = async (event) => {
+    return await createFunction(event, eventHandler);
+};
+
+function eventHandler(payload, headers, inputs) {
+    const root = await protobuf.load("./message.proto");
+    const Message = root.lookupType('protobuf_example.Message');
+
+    const my_message = Message.decode(payload)
+
+    // data_field gets translated to dataField by the library...
+    // Arbitrarily changing the data field
+    my_message.dataField = "My new data"
+    
+    // .finish() returns a Uint8Array so it may just be returned as the processedMessage
+    return {
+      "processedMessage" : Message.encode(my_message).finish(),
+      "processedHeaders" : headers
+    }
+}
+
+
 ```
