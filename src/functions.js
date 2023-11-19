@@ -63,13 +63,13 @@ export async function createFunction(memphis_event, eventHandler) {
             try {
                 const payload = Buffer.from(message.payload, 'base64');
                 const maybeAsyncEvent = eventHandler(payload, message.headers, message.inputs);
-                
+
                 let processedMessage, processedHeaders;
-                if (maybeAsyncEvent instanceof Promise){
-                   const response = await maybeAsyncEvent;
+                if (maybeAsyncEvent instanceof Promise) {
+                    const response = await maybeAsyncEvent;
                     processedMessage = response.processedMessage;
                     processedHeaders = response.processedHeaders;
-                }else{
+                } else {
                     processedMessage = maybeAsyncEvent.processedMessage;
                     processedHeaders = maybeAsyncEvent.processedHeaders;
                 }
