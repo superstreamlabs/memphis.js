@@ -715,6 +715,36 @@ async function produceWithPartition(){
 }
 ```
 
+### Produce to multiple stations
+
+Producing to multiple stations can be done by creating a producer with multiple stations and then calling produce on that producer.
+
+```js
+const producer = await memphisConnection.producer({
+    stationName: ['<station-name>', '<station-name>'],
+    producerName: '<producer-name>',
+});
+
+await producer.produce({
+    message: {some: "message"},
+    ackWaitSec: 15,
+    producerPartitionKey: "key", 
+    producerPartitionNumber: -1 
+});
+```
+
+Alternatively, it also possible to produce to multiple stations using the connection:
+
+```js
+await memphisConnection.produce({
+    stationName: ['<station-name>', '<station-name>'],
+    producerName: '<producer-name>',
+    message: {some: "message"},
+    ackWaitSec: 15,
+    asyncProduce: true 
+});
+```
+
 ### Destroying a Producer
 
 ```js
