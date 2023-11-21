@@ -196,21 +196,21 @@ export class Producer {
                 producerPartitionNumber?: number;
             }
     ): Promise<void> {
-        const tasks = this.stationNames.map(stationName => this.connection.produce(
-            {
-                stationName,
-                producerName: this.producerName,
-                message,
-                ackWaitSec,
-                asyncProduce,
-                headers,
-                msgId,
-                producerPartitionKey,
-                producerPartitionNumber
-            }
-        ));
-
-        await Promise.all(tasks);
+        for (const stationName of this.stationNames) {
+            await this.connection.produce(
+                {
+                    stationName,
+                    producerName: this.producerName,
+                    message,
+                    ackWaitSec,
+                    asyncProduce,
+                    headers,
+                    msgId,
+                    producerPartitionKey,
+                    producerPartitionNumber
+                }
+            )
+        }
     }
 
     private async _hanldeProduceError(ex: any, message: any, headers?: MsgHeaders) {
@@ -320,21 +320,14 @@ export class Producer {
     }
 
     private async _destroyMultiStationProducer(timeoutRetry: number): Promise<void> {
-        try {
-            const internalStationNames = this.stationNames.map(stationName => stationName.replace(/\./g, '#').toLowerCase());
-            const producerKeys = internalStationNames.map(internalStationName => `${internalStationName}_${this.realName.toLowerCase()}`);
-            const producers = producerKeys
-                .map(producerKey => this.connection._getCachedProducer(producerKey))
-                .filter(producer => producer);
-            
-            const tasks = producers.map(producer => producer._destroySingleStationProducer(timeoutRetry));
-            await Promise.all(tasks);
-        }
-        catch (ex) {
-            if (ex.message?.includes('not exist')) {
-                return;
-            }
-            throw MemphisError(ex);
+        const internalStationNames = this.stationNames.map(stationName => stationName.replace(/\./g, '#').toLowerCase());
+        const producerKeys = internalStationNames.map(internalStationName => `${internalStationName}_${this.realName.toLowerCase()}`);
+        const producers = producerKeys
+            .map(producerKey => this.connection._getCachedProducer(producerKey))
+            .filter(producer => producer);
+
+        for (const producer of producers) {
+            await producer._destroySingleStationProducer(timeoutRetry)
         }
     }
 
