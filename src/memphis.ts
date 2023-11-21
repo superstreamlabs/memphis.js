@@ -370,7 +370,6 @@ class Memphis {
       );
       this.functionsClientsMap.set(internalStationName, 1);
       this.functionsUpdateSubs.set(internalStationName, sub);
-      console.log("listening for function updates")
       this._listenForFunctionUpdates(sub, internalStationName);
     } catch (ex) {
       throw MemphisError(ex);
