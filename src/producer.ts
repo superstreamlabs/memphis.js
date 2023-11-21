@@ -10,17 +10,25 @@ export class Producer {
     private connection: Memphis;
     private producerName: string;
     private stationName: string;
+    private stationNames: string[];
+    private isMultiStationProducer: boolean = false;
     private internalStation: string;
     private realName: string;
     private station: Station;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
 
-    constructor(connection: Memphis, producerName: string, stationName: string, realName: string, partitions: number[]) {
+    constructor(connection: Memphis, producerName: string, stationName: string | string[], realName: string, partitions: number[]) {
         this.connection = connection;
         this.producerName = producerName.toLowerCase();
-        this.stationName = stationName.toLowerCase();
-        this.internalStation = this.stationName.replace(/\./g, '#').toLowerCase();
-        this.station = new Station(connection, stationName)
+        if (Array.isArray(stationName)) {
+            this.stationNames = stationName;
+            this.isMultiStationProducer = true;
+        }
+        if (typeof stationName === 'string') {
+            this.stationName = stationName.toLowerCase();
+            this.internalStation = this.stationName.replace(/\./g, '#').toLowerCase();
+            this.station = new Station(connection, stationName)
+        }
         this.realName = realName;
         if (partitions?.length > 0) {
             this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
@@ -74,6 +82,46 @@ export class Producer {
         producerPartitionKey?: string;
         producerPartitionNumber?: number;
     }): Promise<void> {
+        if (this.isMultiStationProducer) {
+            await this._multiStationProduce({
+                message,
+                ackWaitSec,
+                asyncProduce,
+                headers,
+                msgId,
+                producerPartitionKey,
+                producerPartitionNumber
+            })
+        } else {
+            await this._singleStationProduce({
+                message,
+                ackWaitSec,
+                asyncProduce,
+                headers,
+                msgId,
+                producerPartitionKey,
+                producerPartitionNumber
+            })
+        }
+    }
+
+    private async _singleStationProduce({
+        message,
+        ackWaitSec = 15,
+        asyncProduce = true,
+        headers = new MsgHeaders(),
+        msgId = null,
+        producerPartitionKey = null,
+        producerPartitionNumber = -1
+    }: {
+        message: any;
+        ackWaitSec?: number;
+        asyncProduce?: boolean;
+        headers?: any;
+        msgId?: string;
+        producerPartitionKey?: string;
+        producerPartitionNumber?: number;
+    }): Promise<void> {
         try {
             headers = this._handleHeaders(headers);
             let messageToSend = this.station._validateMessage(message);
@@ -104,7 +152,7 @@ export class Producer {
             let fullSubjectName = ''
             if (this.connection.stationFunctionsMap.has(this.internalStation)) {
                 const partitionNumber = streamName.split('$')[1]
-                if(this.connection.stationFunctionsMap.get(this.internalStation).has(partitionNumber)) {
+                if (this.connection.stationFunctionsMap.get(this.internalStation).has(partitionNumber)) {
                     fullSubjectName = `${streamName}.functions.${this.connection.stationFunctionsMap.get(this.internalStation).get(partitionNumber)}`
                 } else {
                     fullSubjectName = `${streamName}.final`
@@ -113,7 +161,7 @@ export class Producer {
                 fullSubjectName = `${streamName}.final`
             }
 
-            if (asyncProduce) 
+            if (asyncProduce)
                 this.connection.brokerConnection.publish(fullSubjectName, messageToSend, {
                     headers: headers,
                     ackWait: ackWaitSec * 1000 * 1000000
@@ -125,6 +173,43 @@ export class Producer {
                 });
         } catch (ex: any) {
             await this._hanldeProduceError(ex, message, headers);
+        }
+    }
+
+    private async _multiStationProduce(
+        {
+            message,
+            ackWaitSec = 15,
+            asyncProduce = true,
+            headers = new MsgHeaders(),
+            msgId = null,
+            producerPartitionKey = null,
+            producerPartitionNumber = -1
+        }:
+            {
+                message: any;
+                ackWaitSec?: number;
+                asyncProduce?: boolean;
+                headers?: any;
+                msgId?: string;
+                producerPartitionKey?: string;
+                producerPartitionNumber?: number;
+            }
+    ): Promise<void> {
+        for (const stationName of this.stationNames) {
+            await this.connection.produce(
+                {
+                    stationName,
+                    producerName: this.producerName,
+                    message,
+                    ackWaitSec,
+                    asyncProduce,
+                    headers,
+                    msgId,
+                    producerPartitionKey,
+                    producerPartitionNumber
+                }
+            )
         }
     }
 
@@ -181,6 +266,14 @@ export class Producer {
      * Destroy the producer.
      */
     async destroy(timeoutRetry: number = 5): Promise<void> {
+        if (this.isMultiStationProducer) {
+            await this._destroyMultiStationProducer(timeoutRetry)
+        } else {
+            await this._destroySingleStationProducer(timeoutRetry)
+        }
+    }
+
+    private async _destroySingleStationProducer(timeoutRetry: number): Promise<void> {
         try {
             let removeProducerReq = {
                 name: this.producerName,
@@ -223,6 +316,18 @@ export class Producer {
                 return;
             }
             throw MemphisError(ex);
+        }
+    }
+
+    private async _destroyMultiStationProducer(timeoutRetry: number): Promise<void> {
+        const internalStationNames = this.stationNames.map(stationName => stationName.replace(/\./g, '#').toLowerCase());
+        const producerKeys = internalStationNames.map(internalStationName => `${internalStationName}_${this.realName.toLowerCase()}`);
+        const producers = producerKeys
+            .map(producerKey => this.connection._getCachedProducer(producerKey))
+            .filter(producer => producer);
+
+        for (const producer of producers) {
+            await producer._destroySingleStationProducer(timeoutRetry)
         }
     }
 

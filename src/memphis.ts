@@ -587,7 +587,7 @@ class Memphis {
     try {
       return await this.brokerManager.request(subject, data, options);
     } catch (ex) {
-      if (timeoutRetry > 0 && ex.message?.includes('timeout')) {
+      if (timeoutRetry > 0 && ex.message?.toLowerCase().includes('timeout')) {
         return await this.request(subject, data, options, timeoutRetry - 1)
       }
       throw MemphisError(ex);
@@ -766,7 +766,7 @@ class Memphis {
 
   /**
    * Creates a producer.
-   * @param {String} stationName - station name to produce messages into.
+   * @param {String | String[]} stationName - station name to produce messages into.
    * @param {String} producerName - name for the producer.
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    */
@@ -776,7 +776,7 @@ class Memphis {
     genUniqueSuffix = false,
     timeoutRetry = 5
   }: {
-    stationName: string;
+    stationName: string | string[];
     producerName: string;
     genUniqueSuffix?: boolean;
     timeoutRetry?: number;
@@ -786,6 +786,9 @@ class Memphis {
         throw MemphisError(new Error('Connection is dead'));
 
       const realName = producerName.toLowerCase();
+      if (Array.isArray(stationName)) {
+        return new Producer(this, producerName, stationName,realName, []);
+      }
       if (genUniqueSuffix === true) {
         console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
         producerName = generateNameSuffix(`${producerName}_`)
@@ -1013,7 +1016,7 @@ class Memphis {
 
   /**
    * Produce a message.
-   * @param {String} stationName - station name to produce messages into.
+   * @param {String | String[]} stationName - station name to produce messages into.
    * @param {String} producerName - name for the producer.
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
    * @param {any} message - message to send into the station (Uint8Arrays/object/string/DocumentNode graphql).
@@ -1034,7 +1037,7 @@ class Memphis {
     producerPartitionKey = null,
     producerPartitionNumber = -1
   }: {
-    stationName: string;
+    stationName: string | string[];
     producerName: string;
     genUniqueSuffix?: boolean;
     message: any;
@@ -1050,9 +1053,12 @@ class Memphis {
       throw MemphisError(
         new Error('Cant produce a message without being connected!')
       );
-    const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
-    const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
-    producer = this.getCachedProducer(producerMapKey);
+
+    if (typeof stationName === 'string') {
+      const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
+      const producerMapKey: string = `${internalStationName}_${producerName.toLowerCase()}`;
+      producer = this.getCachedProducer(producerMapKey);
+    }
 
     if (genUniqueSuffix) {
       console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
@@ -1165,6 +1171,14 @@ class Memphis {
   private getCachedProducer(key: string): Producer {
     if (key === '' || key === null) return null;
     return this.producersMap.get(key);
+  }
+
+  /**
+   * for internal usage
+   * @param key - key
+   */
+  public _getCachedProducer(key: string): Producer {
+    return this.getCachedProducer(key);
   }
 
   private setCachedProducer(producer: Producer): void {
@@ -1314,7 +1328,7 @@ class Memphis {
       };
 
       var data = this.JSONC.encode(createSchemaReq);
-     
+
       let createRes = await this.request(
         '$memphis_schema_creations',
         data,

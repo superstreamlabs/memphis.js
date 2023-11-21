@@ -113,7 +113,7 @@ declare class Memphis {
         timeoutRetry?: number;
     }): Promise<void>;
     producer({ stationName, producerName, genUniqueSuffix, timeoutRetry }: {
-        stationName: string;
+        stationName: string | string[];
         producerName: string;
         genUniqueSuffix?: boolean;
         timeoutRetry?: number;
@@ -136,7 +136,7 @@ declare class Memphis {
     }): Promise<Consumer>;
     headers(): MsgHeaders;
     produce({ stationName, producerName, genUniqueSuffix, message, ackWaitSec, asyncProduce, headers, msgId, producerPartitionKey, producerPartitionNumber }: {
-        stationName: string;
+        stationName: string | string[];
         producerName: string;
         genUniqueSuffix?: boolean;
         message: any;
@@ -162,6 +162,7 @@ declare class Memphis {
         consumerPartitionNumber?: number;
     }): Promise<Message[]>;
     private getCachedProducer;
+    _getCachedProducer(key: string): Producer;
     private setCachedProducer;
     _unSetCachedProducer(producer: Producer): void;
     _unSetCachedProducerStation(stationName: string): void;
