@@ -1060,8 +1060,10 @@ If the returned `processedMessage` and `processedHeaders` are `null`, then the m
 This example function takes the Uint8Array object `payload` and decodes it from base64 encoding so that it may be processed.
 
 ```javascript
+const { memphis } = require("memphis-dev");
+
 export const handler = async (event) => {
-    return await createFunction(event, eventHandler);
+    return await memphis.createFunction(event, eventHandler);
 };
 
 function eventHandler(payload, headers, inputs) {
@@ -1079,8 +1081,10 @@ function eventHandler(payload, headers, inputs) {
 A user created `eventHandler` may also be async:
 
 ```javascript
+const { memphis } = require("memphis-dev");
+
 export const handler = async (event) => {
-    return await createFunction(event, eventHandler);
+    return await memphis.createFunction(event, eventHandler);
 };
 
 async function eventHandler(payload, headers, inputs) {
@@ -1098,8 +1102,10 @@ async function eventHandler(payload, headers, inputs) {
 If the user wants to have a message that they would like to validate and send to the dead letter station if the validation fails, then the user can throw an exception. In the following example, the field `check` is a boolean. The following function will send any messages that fail the `check` to the dead letter station.
 
 ```javascript
+const { memphis } = require("memphis-dev");
+
 export const handler = async (event) => {
-    return await createFunction(event, eventHandler);
+    return await memphis.createFunction(event, eventHandler);
 };
 
 async function eventHandler(payload, headers, inputs) {
@@ -1120,8 +1126,10 @@ async function eventHandler(payload, headers, inputs) {
 If a user would rather just skip the message and not have it be sent to the station or dead letter station, the user could instead return `{ processedMessage: null, processedHeaders: null }`.
 
 ```javascript
+const { memphis } = require("memphis-dev");
+
 export const handler = async (event) => {
-    return await createFunction(event, eventHandler);
+    return await memphis.createFunction(event, eventHandler);
 };
 
 function eventHandler(payload, headers, inputs) {
@@ -1153,8 +1161,10 @@ message Message{
 We can decode this and get the data_field out like this:
 
 ```javascript
+const { memphis } = require("memphis-dev");
+
 export const handler = async (event) => {
-    return await createFunction(event, eventHandler);
+    return await memphis.createFunction(event, eventHandler);
 };
 
 function eventHandler(payload, headers, inputs) {
