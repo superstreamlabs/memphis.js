@@ -214,7 +214,7 @@ const station = await memphis.station({
     name: '<station-name>',
     schemaName: '<schema-name>',
     retentionType: memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS, // defaults to memphis.retentionTypes.MAX_MESSAGE_AGE_SECONDS
-    retentionValue: 604800, // defaults to 604800
+    retentionValue: 3600, // defaults to 3600
     storageType: memphis.storageTypes.DISK, // defaults to memphis.storageTypes.DISK
     replicas: 1, // defaults to 1
     idempotencyWindowMs: 0, // defaults to 120000

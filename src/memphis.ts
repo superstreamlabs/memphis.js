@@ -611,7 +611,7 @@ class Memphis {
   async station({
     name,
     retentionType = retentionTypes.MAX_MESSAGE_AGE_SECONDS,
-    retentionValue = 604800,
+    retentionValue = 3600,
     storageType = storageTypes.DISK,
     replicas = 1,
     idempotencyWindowMs = 120000,
