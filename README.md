@@ -507,6 +507,7 @@ await station.destroy();
 ```
 
 ### Creating a new schema 
+In case schema is already exist a new version will be created
 
 ```js
 await memphisConnection.createSchema({schemaName: "<schema-name>", schemaType: "<schema-type>", schemaFilePath: "<schema-file-path>" });

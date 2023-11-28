@@ -1281,7 +1281,7 @@ class Memphis {
   }
 
   /**
-   * Creates a schema.
+   * Creates a schema. In case schema is already exist a new version will be created.
    * @param {String} schemaName - schema name.
    * @param {String} schemaType - schema type (json/ graphql/ protobuf).
    * @param {String} schemaFilePath - the path of the schema file.
