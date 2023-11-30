@@ -180,7 +180,7 @@ declare class Memphis {
         timeoutRetry?: number;
     }): Promise<void>;
     private log;
-    _getPartitionFromKey(key: string, stationName: string): Promise<number>;
+    _getPartitionFromKey(key: string, stationName: string): number;
     _validatePartitionNumber(partitionNumber: number, stationName: string): Promise<void>;
 }
 export declare class RoundRobinProducerConsumerGenerator {

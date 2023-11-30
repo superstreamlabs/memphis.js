@@ -145,7 +145,7 @@ export class Consumer {
                     throw MemphisError(new Error('Can not use both partition number and partition key'));
                 }
                 if (consumerPartitionKey != null) {
-                    const partitionNumberKey = await this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
+                    const partitionNumberKey = this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
                     streamName = `${this.internalStationName}$${partitionNumberKey.toString()}`;
                 } else if (consumerPartitionNumber > 0) {
                     this.connection._validatePartitionNumber(consumerPartitionNumber, this.internalStationName)

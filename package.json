@@ -1,6 +1,6 @@
 {
     "name": "memphis-dev",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "A powerful messaging platform for modern developers",
     "exports": {
         ".": "./lib/index.js"
@@ -33,7 +33,7 @@
         "avro-js": "^1.11.2",
         "dotenv": "^16.0.1",
         "graphql": "^16.6.0",
-        "murmurhash3": "^0.5.0",
+        "murmurhash": "^2.0.1",
         "nats": "2.6.1",
         "prettier": "^2.7.1",
         "protobufjs": "^7.1.2",

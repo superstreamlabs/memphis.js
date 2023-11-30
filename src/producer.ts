@@ -138,7 +138,7 @@ export class Producer {
                     throw MemphisError(new Error('Can not use both partition number and partition key'));
                 }
                 if (producerPartitionKey != null) {
-                    const partitionNumberKey = await this.connection._getPartitionFromKey(producerPartitionKey, this.internalStation)
+                    const partitionNumberKey = this.connection._getPartitionFromKey(producerPartitionKey, this.internalStation)
                     streamName = `${this.internalStation}$${partitionNumberKey.toString()}`
                 } else if (producerPartitionNumber > 0) {
                     this.connection._validatePartitionNumber(producerPartitionNumber, this.internalStation)

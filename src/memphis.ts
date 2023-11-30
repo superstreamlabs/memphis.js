@@ -33,7 +33,8 @@ import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
 const avro = require('avro-js')
-const mmh3 = require('murmurhash3');
+const murmurhash = require('murmurhash');
+
 
 const appId = uuidv4();
 
@@ -787,7 +788,7 @@ class Memphis {
 
       const realName = producerName.toLowerCase();
       if (Array.isArray(stationName)) {
-        return new Producer(this, producerName, stationName,realName, []);
+        return new Producer(this, producerName, stationName, realName, []);
       }
       if (genUniqueSuffix === true) {
         console.log("Deprecation warning: genUniqueSuffix will be stopped to be supported after November 1'st, 2023.")
@@ -1354,24 +1355,17 @@ class Memphis {
 
     console.log(...args);
   }
-  _getPartitionFromKey(key: string, stationName: string): Promise<number> {
-    return new Promise((resolve, reject) => {
-      const seed = this.seed;
-      mmh3.murmur32(key, seed, (err: any, hashValue: number) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        const stationPartitions = this.stationPartitions.get(stationName);
-        if (stationPartitions != null) {
-          const hasValueInt = hashValue >>> 0;
-          const partitionKey = hasValueInt % stationPartitions.length;
-          resolve(partitionKey);
-        } else {
-          reject(new Error("Station partitions not found"));
-        }
-      });
-    });
+  _getPartitionFromKey(key: string, stationName: string): number {
+    const seed = this.seed;
+    const hashValue = murmurhash.v3(key, seed)
+    const stationPartitions = this.stationPartitions.get(stationName);
+    if (stationPartitions != null) {
+      const hasValueInt = hashValue >>> 0;
+      const partitionKey = hasValueInt % stationPartitions.length;
+      return partitionKey;
+    } else {
+      throw new Error("Station partitions not found");
+    }
   }
 
   _validatePartitionNumber(partitionNumber: number, stationName: string): Promise<void> {

@@ -35,11 +35,6 @@ real-time and streaming apps fast.
 $ npm install memphis-dev
 ```
 
-Notice: you may receive an error about the "murmurhash3" package, to solve it please install g++
-```sh
-$ sudo yum install -y /usr/bin/g++
-```
-
 ## Importing
 
 For Javascript, you can choose to use the import or required keyword. This library exports a singleton instance of `memphis` with which you can consume and produce messages.
