@@ -589,7 +589,7 @@ class Memphis {
       return await this.brokerManager.request(subject, data, options);
     } catch (ex) {
       if (timeoutRetry > 0 && ex.message?.toLowerCase().includes('timeout')) {
-        return await this.request(subject, data, options, timeoutRetry - 1)
+        return await this.request(subject, data, timeoutRetry - 1, options)
       }
       throw MemphisError(ex);
     }
