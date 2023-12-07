@@ -70,7 +70,7 @@ await memphis.connect({
             connectionToken: "<broker-token>", // you will get it on application type user creation
             password: "<string>", // depends on how Memphis deployed - default is connection token-based authentication
             reconnect: true, // defaults to true
-            maxReconnect: 10, // defaults to -1
+            maxReconnect: 10, // The default value is -1 which means reconnect indefinitely
             reconnectIntervalMs: 1500, // defaults to 1500
             timeoutMs: 15000, // defaults to 15000
             // for TLS connection:
