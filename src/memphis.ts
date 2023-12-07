@@ -114,7 +114,7 @@ class Memphis {
     this.accountId = 1;
     this.connectionToken = '';
     this.reconnect = true;
-    this.maxReconnect = 10;
+    this.maxReconnect = -1;
     this.reconnectIntervalMs = 1500;
     this.timeoutMs = 15000;
     this.brokerConnection = null;
@@ -150,7 +150,7 @@ class Memphis {
    * @param {String} connectionToken - connection token.
    * @param {String} password - depends on how Memphis deployed - default is connection token-based authentication
    * @param {Boolean} reconnect - whether to do reconnect while connection is lost.
-   * @param {Number} maxReconnect - The reconnect attempts.
+   * @param {Number} maxReconnect - is the maximum number of reconnection attempts. The default value is -1 which means reconnect indefinitely.
    * @param {Number} reconnectIntervalMs - Interval in miliseconds between reconnect attempts.
    * @param {Number} timeoutMs - connection timeout in miliseconds.
    * @param {string} keyFile - path to tls key file.
@@ -167,7 +167,7 @@ class Memphis {
     connectionToken = '',
     password = '',
     reconnect = true,
-    maxReconnect = 10,
+    maxReconnect = -1,
     reconnectIntervalMs = 1500,
     timeoutMs = 2000,
     keyFile = '',
