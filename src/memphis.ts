@@ -114,7 +114,7 @@ class Memphis {
     this.accountId = 1;
     this.connectionToken = '';
     this.reconnect = true;
-    this.maxReconnect = 10;
+    this.maxReconnect = -1;
     this.reconnectIntervalMs = 1500;
     this.timeoutMs = 15000;
     this.brokerConnection = null;
@@ -167,7 +167,7 @@ class Memphis {
     connectionToken = '',
     password = '',
     reconnect = true,
-    maxReconnect = 10,
+    maxReconnect = -1,
     reconnectIntervalMs = 1500,
     timeoutMs = 2000,
     keyFile = '',
