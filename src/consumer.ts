@@ -191,8 +191,6 @@ export class Consumer {
                 this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup,  this.internalStationName);
                 this.dlsCurrentIndex++;
             }
-
-            this.eventEmitter.emit('message', new Message(m, this.connection, this.consumerGroup,  this.internalStationName), this.context);
         }
     }
 
