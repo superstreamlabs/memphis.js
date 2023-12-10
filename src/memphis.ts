@@ -1338,7 +1338,7 @@ class Memphis {
       );
 
       createRes = this.JSONC.decode(createRes.data);
-      if (createRes.error != "" && !createRes.error.includes("already exist"))
+      if (createRes.error != "" && !createRes.error.includes("already exists"))
         throw MemphisError(new Error(createRes.error))
 
 
