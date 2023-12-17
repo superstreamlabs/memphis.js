@@ -441,7 +441,13 @@ class Memphis {
   }
 
   private _compileJsonSchema(stationName: string): any {
-    const ajv = new Ajv();
+    const ajv = new Ajv({
+      logger: {
+        log: () => { },
+        warn: () => { },
+        error: console.error,  // Suppress error messages
+      }
+    });
     let stationSchemaData = this.stationSchemaDataMap.get(stationName);
     const schema = stationSchemaData['active_version']['schema_content'];
     const schemaObj = JSON.parse(schema);
@@ -456,12 +462,24 @@ class Memphis {
         return validate;
       } catch (ex) {
         try {
-          const ajv = new jsonSchemaDraft04();
+          const ajv = new jsonSchemaDraft04({
+            logger: {
+              log: () => { },
+              warn: () => { },
+              error: console.error,  // Suppress error messages
+            }
+          });
           validate = ajv.compile(schemaObj);
           return validate;
         } catch (ex) {
           try {
-            const ajv = new Ajv2020();
+            const ajv = new Ajv2020({
+              logger: {
+                log: () => { },
+                warn: () => { },
+                error: console.error,  // Suppress error messages
+              }
+            });
             validate = ajv.compile(schemaObj);
             return validate;
           } catch (ex) {
