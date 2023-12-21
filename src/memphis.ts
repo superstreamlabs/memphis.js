@@ -888,7 +888,7 @@ class Memphis {
    * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
    * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
    * @param {Number} batchSize - pull batch size.
-   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000.
+   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000. The smallest possible value is 1000(1 second), and if the value is smaller than 1000, it will be set to 1000.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 2
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
@@ -930,8 +930,8 @@ class Memphis {
   }): Promise<Consumer> {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
-      if (batchSize > maxBatchSize) {
-        throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
+      if (batchSize > maxBatchSize || batchSize < 1) {
+        throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize} or less than 1`));
       }
       const realName = consumerName.toLowerCase();
 
@@ -1004,6 +1004,9 @@ class Memphis {
         }
       }
       this.stationPartitions.set(internal_station, partitions);
+
+      // the least possible value for batchMaxTimeToWaitMs is 1000 (1 second)
+      batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 1000 ? 1000 : batchMaxTimeToWaitMs;
       const consumer = new Consumer(
         this,
         stationName,
@@ -1117,8 +1120,8 @@ class Memphis {
    * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired consumer name.
    * @param {Number} batchSize - pull batch size.
-   * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
-   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 5000. 
+   * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it until reaches the maxMsgDeliveries value
+   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, default is 5000. The smallest possible value is 1000(1 second), and if the value is smaller than 1000, it will be set to 1000.
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 2
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
@@ -1157,8 +1160,8 @@ class Memphis {
       throw MemphisError(
         new Error('Cant fetch messages without being connected!')
       );
-    if (batchSize > maxBatchSize) {
-      throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
+    if (batchSize > maxBatchSize || batchSize < 1) {
+      throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize} or less than 1`));
     }
 
     if (genUniqueSuffix) {
