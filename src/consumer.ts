@@ -61,7 +61,7 @@ export class Consumer {
         this.internalConsumerGroupName = this.consumerGroup.replace(/\./g, '#');
         this.pullIntervalMs = pullIntervalMs;
         this.batchSize = batchSize;
-        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs;
+        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 1000 ? 1000 : batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
         this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events.EventEmitter();
@@ -132,8 +132,8 @@ export class Consumer {
      */
     public async fetch({ batchSize = 10, consumerPartitionKey = null, consumerPartitionNumber = -1 }: { batchSize?: number, consumerPartitionKey?: string, consumerPartitionNumber?: number }): Promise<Message[]> {
         try {
-            if (batchSize > maxBatchSize) {
-                throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize}`));
+            if (batchSize > maxBatchSize || batchSize < 1) {
+                throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize} or less than 1`));
             }
             let streamName = `${this.internalStationName}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internalStationName);
