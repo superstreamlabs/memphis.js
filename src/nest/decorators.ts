@@ -1,5 +1,5 @@
 import { EventPattern } from '@nestjs/microservices';
-import { memphis } from 'src';
+import { memphis } from '..';
 import { MemphisConsumerOptions } from './interfaces';
 
 export const MemphisConsume = (
