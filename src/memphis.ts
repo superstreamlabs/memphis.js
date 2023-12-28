@@ -825,9 +825,10 @@ class Memphis {
         station_name: stationName,
         connection_id: this.connectionId,
         producer_type: 'application',
-        req_version: 3,
+        req_version: 4,
         username: this.username,
         app_id: appId,
+        sdk_lang: 'node.js'
       };
       const data = this.JSONC.encode(createProducerReq);
       let createRes = await this.request(
@@ -972,9 +973,10 @@ class Memphis {
         max_msg_deliveries: maxMsgDeliveries,
         start_consume_from_sequence: startConsumeFromSequence,
         last_messages: lastMessages,
-        req_version: 3,
+        req_version: 4,
         username: this.username,
         app_id: appId,
+        sdk_lang: 'node.js'
       };
       const data = this.JSONC.encode(createConsumerReq);
 
