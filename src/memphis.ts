@@ -828,7 +828,7 @@ class Memphis {
         req_version: 4,
         username: this.username,
         app_id: appId,
-        sdk_lang: 'js'
+        sdk_lang: 'node.js'
       };
       const data = this.JSONC.encode(createProducerReq);
       let createRes = await this.request(
@@ -976,7 +976,7 @@ class Memphis {
         req_version: 4,
         username: this.username,
         app_id: appId,
-        sdk_lang: 'js'
+        sdk_lang: 'node.js'
       };
       const data = this.JSONC.encode(createConsumerReq);
 
