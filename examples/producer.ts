@@ -1,29 +1,31 @@
-import { memphis, Memphis } from 'memphis-dev';
+const { memphis } = require("memphis-dev");
 
 (async function () {
-    let memphisConnection: Memphis | null = null;
+    let memphisConnection;
 
-    try {
+    try {    
+        /* Javascript and typescript project */
         memphisConnection = await memphis.connect({
-            host: '<memphis-host>',
-            username: '<application type username>',
-            password: 'password',
-            accountId: '<account-id>' // for cloud usage
+            host: "aws-us-east-1.cloud.memphis.dev",
+            username: "test_user", // (root/application type user)
+            accountId: process.env.memphis_account_id, //You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored
+            password: process.env.memphis_pass
         });
-
-        const producer = await memphisConnection.producer({
-            stationName: '<station-name>',
-            producerName: '<producer-name>'
-        });
-
-            const headers = memphis.headers()
-            headers.add('<key>', '<value>');
+    
+        let producer = await memphis.producer({
+            stationName: "test_station",
+            producerName: "producer"
+        })
+    
+        for (let i = 0; i < 4; i++){
             await producer.produce({
-                message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
-                headers: headers
+                message: {
+                    "Hello": "World"
+                }
             });
-
-        memphisConnection.close();
+        }
+    
+        memphisConnection.close()
     } catch (ex) {
         console.log(ex);
         if (memphisConnection) memphisConnection.close();
