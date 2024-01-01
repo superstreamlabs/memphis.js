@@ -84,7 +84,7 @@ export class Consumer {
             this.partitionsGenerator = new RoundRobinProducerConsumerGenerator(partitions);
         }
         this.subscription = this.connection.brokerManager
-            .subscribe(`$memphis_dls_${this.internalStationName}_${this.internalConsumerGroupName}`, {
+            .subscribe(`$memphis_dls_${this.internalStationName}.${this.internalConsumerGroupName}`, {
                 queue: `$memphis_${this.internalStationName}_${this.internalConsumerGroupName}`
             });
         this._handleAsyncIterableSubscriber(this.subscription, true);
