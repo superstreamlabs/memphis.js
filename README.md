@@ -69,10 +69,10 @@ const { memphis } = require('memphis-dev');
 memphis = Memphis()
 
 let conn = await memphis.connect({
-        host: "aws-us-east-1.cloud.memphis.dev",
-        username: "test_user", // (root/application type user)
-        accountId: process.env.memphis_account_id, //You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored
-        password: process.env.memphis_pass
+        host: "<memphis-host>",
+        username: "<memphis-username>", // (root/application type user)
+        accountId: <memphis-accountid/>, // You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored
+        password: "<memphis-password>"
 });
 ```
 
@@ -80,8 +80,8 @@ Then, to produce a message, call the `memphis.produce` function or create a prod
 
 ```js
 await memphis.produce({
-        stationName:"test_station",
-        producerName:"producer",
+        stationName:"<station-name>",
+        producerName:"<producer-name>",
         message: {
             "Hello": "World"
         }
@@ -94,8 +94,8 @@ Lastly, to consume this message, call the `memphis.fetch_messages` function or c
 
 ```js
 let messages = await memphis.fetchMessages({
-    stationName:"test_station",
-    consumerName:"consumer",
+    stationName:"<station-name>",
+    consumerName:"<consumer-name>",
 });
 
 for (let message of messages){
