@@ -864,7 +864,6 @@ class Memphis {
         'send_notification',
         createRes.send_notification
       );
-      await this._scemaUpdatesListener(stationName, createRes.schema_update);
       var partitions: number[]
       if (createRes?.partitions_update === undefined || createRes?.partitions_update === null || createRes?.partitions_update?.partitions_list === null) {
         partitions = [];
@@ -872,8 +871,9 @@ class Memphis {
         partitions = createRes.partitions_update.partitions_list;
       }
       this.stationPartitions.set(internal_station, partitions);
-
+      
       const producer = new Producer(this, producerName, stationName, realName, partitions);
+      await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedProducer(producer);
 
       return producer;
@@ -990,7 +990,6 @@ class Memphis {
       let partitions = []
       try {
         createRes = this.JSONC.decode(createRes.data);
-        await this._scemaUpdatesListener(stationName, createRes.schema_update);
         if (createRes.error != '') {
           throw MemphisError(new Error(createRes.error));
         }
@@ -1006,7 +1005,7 @@ class Memphis {
         }
       }
       this.stationPartitions.set(internal_station, partitions);
-
+      
       // the least possible value for batchMaxTimeToWaitMs is 1000 (1 second)
       batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 1000 ? 1000 : batchMaxTimeToWaitMs;
       const consumer = new Consumer(
@@ -1025,7 +1024,8 @@ class Memphis {
         partitions,
         consumerPartitionKey,
         consumerPartitionNumber
-      );
+        );
+      await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedConsumer(consumer);
 
       return consumer;
