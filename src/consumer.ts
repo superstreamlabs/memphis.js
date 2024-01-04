@@ -1,9 +1,9 @@
 import * as events from 'events';
-import { Subscription } from 'nats';
-
+import { Subscription,  Consumer as JsConsumer } from 'nats';
 import { Memphis, RoundRobinProducerConsumerGenerator } from './memphis'
 import { Message } from './message';
 import { MemphisError } from './utils'
+import { getJetStreamConsumer } from './js-consumer';
 
 const maxBatchSize = 5000
 
@@ -34,6 +34,7 @@ export class Consumer {
     private subscription: Subscription;
     private consumerPartitionKey: string;
     private consumerPartitionNumber: number;
+    private consumer: JsConsumer; 
 
     constructor(
         connection: Memphis,
@@ -88,6 +89,14 @@ export class Consumer {
                 queue: `$memphis_${this.internalStationName}_${this.internalConsumerGroupName}`
             });
         this._handleAsyncIterableSubscriber(this.subscription, true);
+    }
+
+    async initJsConsumer() {
+        const result = await getJetStreamConsumer(this.connection.brokerManager, this.connection.brokerConnection, this.stationName, this.internalConsumerGroupName);
+        if (result.errors && result.errors.length > 0) {
+            throw MemphisError(new Error(result.errors.map((e) => e.message).join('\n')));
+        }
+        this.consumer = result.consumer;
     }
 
     /**
@@ -292,3 +301,4 @@ export class Consumer {
         return this.internalStationName;
     }
 }
+

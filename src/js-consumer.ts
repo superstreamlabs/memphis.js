@@ -72,7 +72,7 @@ type Result = {
     consumerinfo?: ConsumerInfo,
 }
 
-async function getJetStreamConsumer(connection: NatsConnection, jsc: JetStreamClient, streamName: string, durable: string) {
+export async function getJetStreamConsumer(connection: NatsConnection, jsc: JetStreamClient, streamName: string, durable: string) {
     let result: Result = {}  
     try
     {

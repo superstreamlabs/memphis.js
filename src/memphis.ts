@@ -1025,6 +1025,9 @@ class Memphis {
         consumerPartitionKey,
         consumerPartitionNumber
         );
+      
+      await consumer.initJsConsumer();
+      
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedConsumer(consumer);
 
