@@ -2,9 +2,9 @@ def gitBranch = env.BRANCH_NAME
 def gitURL = "git@github.com:Memphisdev/memphis.js.git"
 def repoUrlPrefix = "memphisos"
 
-node ("small-ec2-fleet") {
+node ("memphis-jenkins-small-fleet-agent") {
   git credentialsId: 'main-github', url: gitURL, branch: gitBranch
-  if (env.BRANCH_NAME ==~ /(master)/) { 
+  if (env.BRANCH_NAME ==~ /(change-jenkins-agent)/) { 
     versionTag = readFile "./version-beta.conf"
   }
   else {
@@ -22,7 +22,7 @@ node ("small-ec2-fleet") {
     }
 
    stage('Push to NPM') {
-      if (env.BRANCH_NAME ==~ /(master)/) {
+      if (env.BRANCH_NAME ==~ /(change-jenkins-agent)/) {
         sh """
           sed -i -r "s/memphis-dev/memphis-dev-beta/g" ./package.json
         """
