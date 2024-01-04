@@ -6,15 +6,15 @@ const { memphis } = require('memphis-dev');
     try {
         /* Javascript and typescript project */
         let memphisConnection = await memphis.connect({
-            host: "aws-us-east-1.cloud.memphis.dev",
-            username: "test_user", // (root/application type user)
-            accountId: process.env.memphis_account_id, //You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored
-            password: process.env.memphis_pass
+            host: "<memphis-host>",
+            username: "memphis-username", // (root/application type user)
+            accountId: <memphis-accountId/>, //You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored
+            password: "<memphis-password>"
         });
 
         let consumer = await memphis.consumer({
-            stationName: "test_station",
-            consumerName: "consume"
+            stationName: "<station-name>",
+            consumerName: "<consumer-name>"
         })
 
         let messages = consumer.fetch()
