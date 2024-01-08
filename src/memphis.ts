@@ -14,6 +14,7 @@
 
 import { Injectable } from '@nestjs/common';
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats'
 import jsonSchemaDraft04 from 'ajv-draft-04';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
@@ -448,6 +449,7 @@ class Memphis {
         error: console.error,  // Suppress error messages
       }
     });
+    addFormats(ajv);
     let stationSchemaData = this.stationSchemaDataMap.get(stationName);
     const schema = stationSchemaData['active_version']['schema_content'];
     const schemaObj = JSON.parse(schema);
