@@ -131,6 +131,15 @@ export class Message {
     }
 
     /**
+     * Returns time when the message was sent.
+     */
+    getTimeSent(){
+        const timestampNanos = this.message.info.timestampNanos;
+        let timestampMillis = timestampNanos / 1000000;
+        return new Date(timestampMillis);
+    }
+
+    /**
      * Delay and resend the message after N milliseconds
      */
     delay(millis: number) {
