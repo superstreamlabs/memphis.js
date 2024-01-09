@@ -14,5 +14,6 @@ export declare class Message {
     getDataAsJson(): Object;
     getHeaders(): Object;
     getSequenceNumber(): number;
+    getTimeSent(): Date;
     delay(millis: number): void;
 }

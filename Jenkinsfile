@@ -2,7 +2,7 @@ def gitBranch = env.BRANCH_NAME
 def gitURL = "git@github.com:Memphisdev/memphis.js.git"
 def repoUrlPrefix = "memphisos"
 
-node ("small-ec2-fleet") {
+node ("memphis-jenkins-small-fleet-agent") {
   git credentialsId: 'main-github', url: gitURL, branch: gitBranch
   if (env.BRANCH_NAME ==~ /(master)/) { 
     versionTag = readFile "./version-beta.conf"
@@ -15,8 +15,8 @@ node ("small-ec2-fleet") {
   
     stage('Install NPM') {
       sh """
-        sudo dnf install https://rpm.nodesource.com/pub_18.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
-        sudo dnf install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
+        curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+        sudo dnf install -y nodejs
         sudo dnf install -y /usr/bin/g++
       """
     }
