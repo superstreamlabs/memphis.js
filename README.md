@@ -1009,6 +1009,15 @@ Get message sequence number
 sequenceNumber = message.getSequenceNumber();
 ```
 
+### Get message sent time
+
+Get the time the message was sent
+
+```js
+sentTime = message.getTimeSent();
+```
+
+
 ### Catching async errors
 
 ```js
