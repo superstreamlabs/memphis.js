@@ -78,12 +78,12 @@ class Memphis {
   private maxReconnect: number;
   private reconnectIntervalMs: number;
   private timeoutMs: number;
-  public brokerConnection: any;
-  public brokerManager: any;
-  public brokerStats: any;
+  public brokerConnection: broker.JetStreamClient;
+  public brokerManager: broker.NatsConnection;
+  public brokerStats: broker.JetStreamManager;
   public retentionTypes!: IRetentionTypes;
   public storageTypes!: IStorageTypes;
-  public JSONC: any;
+  public JSONC: broker.Codec<any>;
   public stationSchemaDataMap: Map<string, Object>;
   public schemaUpdatesSubs: Map<string, broker.Subscription>;
   public clientsPerStation: Map<string, number>;
@@ -277,18 +277,18 @@ class Memphis {
                 this.isConnectionActive = true;
                 break;
               case 'reconnecting':
-                this.log(`trying to reconnect to memphis - ${MemphisErrorString(s.data)}`);
+                this.log(`trying to reconnect to memphis - ${MemphisErrorString(s.data?.toString())}`);
                 break;
               case 'disconnect':
-                this.log(`disconnected from memphis - ${MemphisErrorString(s.data)}`);
+                this.log(`disconnected from memphis - ${MemphisErrorString(s.data?.toString())}`);
                 this.isConnectionActive = false;
                 break;
               case 'error':
                 let err = s.data;
-                if (err.includes("AUTHORIZATION_VIOLATION")) {
+                if (err.toString().includes("AUTHORIZATION_VIOLATION")) {
                   this.log("to continue using Memphis, please upgrade your plan to a paid plan")
                 } else {
-                  this.log(MemphisErrorString(err));
+                  this.log(MemphisErrorString(err.toString()));
                 }
                 this.isConnectionActive = false;
                 await this.brokerManager.close();
@@ -560,7 +560,9 @@ class Memphis {
         `$memphis_sdk_clients_updates`
       );
       for await (const m of sub) {
-        let data = this.JSONC.decode(m._rdata);
+        //TODO: check if _rdata was intentional? 
+        //let data = this.JSONC.decode(m._rdata);
+        let data = this.JSONC.decode(m.data);
         switch (data['type']) {
           case 'send_notification':
             this.clusterConfigurations.set(data['type'], data['update']);
@@ -1027,6 +1029,8 @@ class Memphis {
         consumerPartitionKey,
         consumerPartitionNumber
         );
+
+        
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedConsumer(consumer);
 
@@ -1289,6 +1293,16 @@ class Memphis {
     this.producersMap = new Map<string, Producer>();
     this.consumersMap.forEach((consumer) => consumer.stop());
     this.consumersMap = new Map<string, Consumer>();
+  }
+
+  /**
+   * Get existing consumer.
+   * for internal usage
+   */
+  private jetStreamConsumer(
+    {internalStationName, internalConsumerGroupName}
+    : {internalStationName: string, internalConsumerGroupName: string}){
+    return this.brokerConnection.consumers.get(internalStationName, internalConsumerGroupName);
   }
 
   /**

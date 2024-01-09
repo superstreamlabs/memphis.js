@@ -1,5 +1,5 @@
 import * as events from 'events';
-import { Subscription } from 'nats';
+import { Subscription,  Consumer as JsConsumer } from 'nats';
 
 import { Memphis, RoundRobinProducerConsumerGenerator } from './memphis'
 import { Message } from './message';
@@ -32,6 +32,7 @@ export class Consumer {
     private dlsCurrentIndex: number;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
     private subscription: Subscription;
+    private jsConsumer: JsConsumer; 
     private consumerPartitionKey: string;
     private consumerPartitionNumber: number;
 
