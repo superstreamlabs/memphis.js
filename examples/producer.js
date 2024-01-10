@@ -15,7 +15,7 @@ const { memphis } = require("memphis-dev");
         let producer = await memphis.producer({
             stationName: "<station-name>",
             producerName: "<producer-name>"
-        })
+        });
     
         for (let i = 0; i < 4; i++){
             await producer.produce({
