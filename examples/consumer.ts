@@ -1,11 +1,11 @@
 import { memphis, Memphis } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection;
+    let memphisConnection: Memphis;
 
     try {
         /* Javascript and typescript project */
-        let memphisConnection = await memphis.connect({
+        memphisConnection = await memphis.connect({
             host: "<memphis-host>",
             username: "memphis-username", // (root/application type user)
             accountId: <memphis-accountId />, //You can find it on the profile page in the Memphis UI. This field should be sent only on the cloud version of Memphis, otherwise it will be ignored
