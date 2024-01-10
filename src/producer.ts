@@ -161,16 +161,16 @@ export class Producer {
                 fullSubjectName = `${streamName}.final`
             }
 
+            const publishOptions: Partial<broker.JetStreamPublishOptions> = {
+                headers: headers,
+                //@ts-ignore
+                ackWait: ackWaitSec * 1000 * 1000000,
+            }
+
             if (asyncProduce)
-                this.connection.brokerConnection.publish(fullSubjectName, messageToSend, {
-                    headers: headers,
-                    ackWait: ackWaitSec * 1000 * 1000000
-                });
+                this.connection._publish(fullSubjectName, messageToSend, publishOptions);
             else
-                await this.connection.brokerConnection.publish(fullSubjectName, messageToSend, {
-                    headers: headers,
-                    ackWait: ackWaitSec * 1000 * 1000000
-                });
+                await this.connection._publish(fullSubjectName, messageToSend, publishOptions);
         } catch (ex: any) {
             await this._hanldeProduceError(ex, message, headers);
         }

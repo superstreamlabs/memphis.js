@@ -29,7 +29,7 @@ describe("MemphisConsumer", () => {
     });
 
     test.each([
-        [ "consumer_test_station_b", "consumer_test_consumer_b", "consumer_test_cg", "consumer_test_producer_b"],
+        [ "consumer_test_station_b", "consumer_test_consumerb", "consumer_test_groupb", "consumer_test_producer_b"],
     ])("consume messages", async (stationName, consumerName, consumerGroup, producerName) => {
 
         let messagesAreConsumed = false;

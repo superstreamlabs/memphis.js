@@ -606,6 +606,14 @@ class Memphis {
     else return host;
   }
 
+  /**
+   * for internal use only
+   * 
+   */
+  async _publish(fullSubjectName: string, message: NonNullable<any>, publishOptions: Partial<broker.JetStreamPublishOptions>) {
+    return await this.brokerConnection.publish(fullSubjectName, message, publishOptions)
+  }
+
   async request(subject: string, data: any, timeoutRetry: number, options?: any): Promise<any> {
     try {
       return await this.brokerManager.request(subject, data, options);
@@ -875,7 +883,7 @@ class Memphis {
         partitions = createRes.partitions_update.partitions_list;
       }
       this.stationPartitions.set(internal_station, partitions);
-      
+
       const producer = new Producer(this, producerName, stationName, realName, partitions);
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedProducer(producer);
@@ -1009,7 +1017,7 @@ class Memphis {
         }
       }
       this.stationPartitions.set(internal_station, partitions);
-      
+
       // the least possible value for batchMaxTimeToWaitMs is 1000 (1 second)
       batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 1000 ? 1000 : batchMaxTimeToWaitMs;
       const consumer = new Consumer(
@@ -1028,9 +1036,9 @@ class Memphis {
         partitions,
         consumerPartitionKey,
         consumerPartitionNumber
-        );
+      );
 
-        
+
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedConsumer(consumer);
 
@@ -1299,10 +1307,8 @@ class Memphis {
    * Get existing consumer.
    * for internal usage
    */
-  private jetStreamConsumer(
-    {internalStationName, internalConsumerGroupName}
-    : {internalStationName: string, internalConsumerGroupName: string}){
-    return this.brokerConnection.consumers.get(internalStationName, internalConsumerGroupName);
+  _jsConsumer({ streamName, durableName }: { streamName: string, durableName: string }) {
+    return this.brokerConnection.consumers.get(streamName, durableName);
   }
 
   /**

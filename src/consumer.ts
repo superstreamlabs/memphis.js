@@ -1,5 +1,5 @@
 import * as events from 'events';
-import { Subscription,  Consumer as JsConsumer } from 'nats';
+import { Subscription, FetchOptions } from 'nats';
 
 import { Memphis, RoundRobinProducerConsumerGenerator } from './memphis'
 import { Message } from './message';
@@ -32,7 +32,6 @@ export class Consumer {
     private dlsCurrentIndex: number;
     private partitionsGenerator: RoundRobinProducerConsumerGenerator;
     private subscription: Subscription;
-    private jsConsumer: JsConsumer; 
     private consumerPartitionKey: string;
     private consumerPartitionNumber: number;
 
@@ -170,12 +169,13 @@ export class Consumer {
                 return messages;
             }
             const durableName = this.consumerGroup ? this.internalConsumerGroupName : this.internalConsumerName;
-            const batch = await this.connection.brokerConnection.fetch(streamName, durableName,
-                { batch: batchSize, expires: this.batchMaxTimeToWaitMs });
 
+            const jsConsumer = await this.connection._jsConsumer({streamName, durableName});
+
+            const fetchOpts: FetchOptions = { max_messages: batchSize, expires: this.batchMaxTimeToWaitMs }
+            const batch = await jsConsumer.fetch(fetchOpts);
             for await (const m of batch)
                 messages.push(new Message(m, this.connection, this.consumerGroup, this.internalStationName));
-
             return messages;
         } catch (ex) {
             throw MemphisError(ex)
@@ -189,7 +189,7 @@ export class Consumer {
                 if (this.dlsCurrentIndex >= 10000) {
                     indexToInsert %= 10000;
                 }
-                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup,  this.internalStationName);
+                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup, this.internalStationName);
                 this.dlsCurrentIndex++;
             }
         }
@@ -234,6 +234,7 @@ export class Consumer {
             this.subscription.unsubscribe();
             this.subscription = null;
         }
+
     }
 
     /**
