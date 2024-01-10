@@ -1,4 +1,4 @@
-const { memphis } = require("memphis-dev");
+import { memphis, Memphis } from 'memphis-dev';
 
 (async function () {
     let memphisConnection;
