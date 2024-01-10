@@ -560,8 +560,6 @@ class Memphis {
         `$memphis_sdk_clients_updates`
       );
       for await (const m of sub) {
-        //TODO: check if _rdata was intentional? 
-        //let data = this.JSONC.decode(m._rdata);
         let data = this.JSONC.decode(m.data);
         switch (data['type']) {
           case 'send_notification':
