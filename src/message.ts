@@ -4,6 +4,8 @@ import * as broker from 'nats';
 import { MemphisError } from "./utils";
 import { Station } from "./station";
 
+import { MemphisErrors } from './errors'
+
 export class Message {
     private message: broker.JsMsg;
     private connection: Memphis;
@@ -68,7 +70,7 @@ export class Message {
                 this.station._validateMessage(message)
             }
             catch (ex) {
-                throw MemphisError(new Error(`Deserialization has been failed since the message format does not align with the currently attached schema: ${ex.message}`));
+                throw MemphisErrors.DeserializationFailure(ex);
             }
             switch (stationSchemaData['type']) {
                 case 'protobuf':
@@ -146,6 +148,6 @@ export class Message {
         if (this.message.nak)
             this.message.nak(millis);
         else
-            throw MemphisError(new Error('cannot delay DLS message'));
+            throw MemphisErrors.CannotDelayDLSMsg;
     }
 }

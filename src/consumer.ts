@@ -1,6 +1,7 @@
 import * as events from 'events';
 import { Subscription } from 'nats';
 
+import { MemphisErrors } from './errors'
 import { Memphis, RoundRobinProducerConsumerGenerator } from './memphis'
 import { Message } from './message';
 import { MemphisError } from './utils'
@@ -133,7 +134,7 @@ export class Consumer {
     public async fetch({ batchSize = 10, consumerPartitionKey = null, consumerPartitionNumber = -1 }: { batchSize?: number, consumerPartitionKey?: string, consumerPartitionNumber?: number }): Promise<Message[]> {
         try {
             if (batchSize > maxBatchSize || batchSize < 1) {
-                throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize} or less than 1`));
+                throw MemphisErrors.IncorrectBatchSize(maxBatchSize);
             }
             let streamName = `${this.internalStationName}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internalStationName);
@@ -142,7 +143,7 @@ export class Consumer {
                 streamName = `${this.internalStationName}$${partitionNumber.toString()}`
             } else if (stationPartitions != null && stationPartitions.length > 0) {
                 if (consumerPartitionNumber > 0 && consumerPartitionKey != null) {
-                    throw MemphisError(new Error('Can not use both partition number and partition key'));
+                    throw MemphisErrors.GivenBothPartitionNumAndKey;
                 }
                 if (consumerPartitionKey != null) {
                     const partitionNumberKey = this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
