@@ -11,12 +11,19 @@ export class Message {
     private stationName: string;
     private internal_station: string;
     private station: Station;
-    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, internalStationName: string) {
+    private partition_number: number;
+
+    constructor(message: broker.JsMsg, connection: Memphis, cgName: string, internalStationName: string, partition_number: number) {
         this.message = message;
         this.connection = connection;
         this.cgName = cgName;
         this.internal_station = internalStationName;
         this.station = new Station(connection, internalStationName);
+        this.partition_number = partition_number;
+    }
+
+    private _isInDls() {
+        return this.partition_number == -1;
     }
 
     /**
@@ -33,6 +40,46 @@ export class Message {
             });
 
             this.connection.brokerManager.publish('$memphis_pm_acks', buf);
+        }
+    }
+
+    /**
+     * nack - not ack for a message, meaning that the message will be redelivered again to the same consumers group without waiting to its ack wait time.
+     */
+    nack() {
+        if (this.message.nak)
+            this.message.nak();
+        else
+            throw MemphisError(new Error('cannot nack DLS message'));
+    }
+
+    /**
+     * deadLetter - Sending the message to the dead-letter station (DLS). the broker won't resend the message again to the same consumers group and will place the message inside the dead-letter station (DLS) with the given reason.
+     * The message will still be available to other consumer groups
+     * @param reason - the reason for the dead-lettering
+     * @returns void
+     */
+    deadLetter(reason: string) {
+        if (this._isInDls())
+            throw MemphisError(new Error('cannot dead-letter DLS message. message is already in DLS'));
+        try {
+            if (this.message.term)
+                this.message.term();
+            else
+                return;
+
+            const data = {
+                station_name: this.internal_station,
+                error: reason,
+                partition: this.partition_number,
+                cg_name: this.cgName,
+                seq: this.message.seq
+            }
+            const requestPayload = this.connection.JSONC.encode(data);
+            this.connection.brokerManager.publish('$memphis_nacked_dls', requestPayload);
+        }
+        catch (ex) {
+            throw MemphisError(ex);
         }
     }
 
