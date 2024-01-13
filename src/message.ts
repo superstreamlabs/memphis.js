@@ -49,8 +49,6 @@ export class Message {
     nack() {
         if (this.message.nak)
             this.message.nak();
-        else
-            throw MemphisError(new Error('cannot nack DLS message'));
     }
 
     /**
@@ -61,7 +59,7 @@ export class Message {
      */
     deadLetter(reason: string) {
         if (this._isInDls())
-            throw MemphisError(new Error('cannot dead-letter DLS message. message is already in DLS'));
+            return;
         try {
             if (this.message.term)
                 this.message.term();
@@ -180,7 +178,7 @@ export class Message {
     /**
      * Returns time when the message was sent.
      */
-    getTimeSent(){
+    getTimeSent() {
         const timestampNanos = this.message.info.timestampNanos;
         let timestampMillis = timestampNanos / 1000000;
         return new Date(timestampMillis);
