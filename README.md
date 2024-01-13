@@ -971,6 +971,23 @@ Acknowledge a message indicates the Memphis server to not re-send the same messa
 message.ack();
 ```
 
+### Nacking a Message
+
+Mark the message as not acknowledged - the broker will resend the message immediately to the same consumers group, instead of waiting to the max ack time configured.
+
+```js
+msg.nack();
+```
+
+### Sending a message to the dead-letter
+
+Sending the message to the dead-letter station (DLS) - the broker won't resend the message again to the same consumers group and will place the message inside the dead-letter station (DLS) with the given reason.
+The message will still be available to other consumer groups
+
+```js
+message.deadLetter("reason");
+```
+
 ### Delay and resend the message after a given duration
 
 Delay the message and tell the Memphis server to re-send the same message again to the same consumer group. The message will be redelivered only in case `Consumer.maxMsgDeliveries` is not reached yet.
