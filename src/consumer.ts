@@ -7,6 +7,7 @@ import { MemphisError } from './utils'
 
 const maxBatchSize = 5000
 const DlsMessagePartitionNumber = -1;
+const DefaultBatchMaxTimeToWaitMs = 1000;
 
 export class Consumer {
     private connection: Memphis;
@@ -62,7 +63,7 @@ export class Consumer {
         this.internalConsumerGroupName = this.consumerGroup.replace(/\./g, '#');
         this.pullIntervalMs = pullIntervalMs;
         this.batchSize = batchSize;
-        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 100 ? 100 : batchMaxTimeToWaitMs;
+        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < DefaultBatchMaxTimeToWaitMs ? DefaultBatchMaxTimeToWaitMs : batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
         this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events.EventEmitter();

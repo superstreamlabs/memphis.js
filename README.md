@@ -755,7 +755,7 @@ const consumer = await memphisConnection.consumer({
     consumerGroup: '<group-name>', // defaults to the consumer name.
     pullIntervalMs: 1000, // defaults to 1000
     batchSize: 10, // defaults to 10
-    batchMaxTimeToWaitMs: 100, // defaults to 100
+    batchMaxTimeToWaitMs: 1000, // defaults to 1000
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 2, // defaults to 2
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
@@ -835,7 +835,7 @@ async function consumerBatched(){
             consumerName: "newConsumer",
             pullIntervalMs: 10000,
             batchSize: 100,
-            batchMaxTimeToWaitMs: 100
+            batchMaxTimeToWaitMs: 1000
         });
     }catch(exception){
         // Handle exception
@@ -855,7 +855,7 @@ async function consumerMaxMessages(){
             consumerName: "newConsumer",
             pullIntervalMs: 10000,
             batchSize: 100,
-            batchMaxTimeToWaitMs: 100,
+            batchMaxTimeToWaitMs: 1000,
             maxMsgDeliveries: 2
         });
     }catch(exception){
@@ -903,7 +903,7 @@ const msgs = await memphis.fetchMessages({
     consumerName: '<consumer-name>',
     consumerGroup: '<group-name>', // defaults to the consumer name.
     batchSize: 10, // defaults to 10
-    batchMaxTimeToWaitMs: 100, // defaults to 100
+    batchMaxTimeToWaitMs: 1000, // defaults to 1000
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 2, // defaults to 2
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
