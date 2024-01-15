@@ -6,6 +6,7 @@ import { Message } from './message';
 import { MemphisError } from './utils'
 
 const maxBatchSize = 5000
+const DlsMessagePartitionNumber = -1;
 
 export class Consumer {
     private connection: Memphis;
@@ -61,7 +62,7 @@ export class Consumer {
         this.internalConsumerGroupName = this.consumerGroup.replace(/\./g, '#');
         this.pullIntervalMs = pullIntervalMs;
         this.batchSize = batchSize;
-        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 1000 ? 1000 : batchMaxTimeToWaitMs;
+        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 100 ? 100 : batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
         this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events.EventEmitter();
@@ -137,8 +138,10 @@ export class Consumer {
             }
             let streamName = `${this.internalStationName}`;
             let stationPartitions = this.connection.stationPartitions.get(this.internalStationName);
+            let messagePartitionNumber = 0;
             if (stationPartitions != null && stationPartitions.length === 1) {
                 let partitionNumber = stationPartitions[0]
+                messagePartitionNumber = partitionNumber;
                 streamName = `${this.internalStationName}$${partitionNumber.toString()}`
             } else if (stationPartitions != null && stationPartitions.length > 0) {
                 if (consumerPartitionNumber > 0 && consumerPartitionKey != null) {
@@ -146,12 +149,15 @@ export class Consumer {
                 }
                 if (consumerPartitionKey != null) {
                     const partitionNumberKey = this.connection._getPartitionFromKey(consumerPartitionKey, this.internalStationName);
+                    messagePartitionNumber = partitionNumberKey;
                     streamName = `${this.internalStationName}$${partitionNumberKey.toString()}`;
                 } else if (consumerPartitionNumber > 0) {
                     this.connection._validatePartitionNumber(consumerPartitionNumber, this.internalStationName)
+                    messagePartitionNumber = consumerPartitionNumber;
                     streamName = `${this.internalStationName}$${consumerPartitionNumber.toString()}`
                 } else {
                     let partitionNumber = this.partitionsGenerator.Next();
+                    messagePartitionNumber = partitionNumber;
                     streamName = `${this.internalStationName}$${partitionNumber.toString()}`;
                 }
             }
@@ -175,7 +181,8 @@ export class Consumer {
             const fetchOpts: FetchOptions = { max_messages: batchSize, expires: this.batchMaxTimeToWaitMs }
             const batch = await jsConsumer.fetch(fetchOpts);
             for await (const m of batch)
-                messages.push(new Message(m, this.connection, this.consumerGroup, this.internalStationName));
+                messages.push(new Message(m, this.connection, this.consumerGroup, this.internalStationName, messagePartitionNumber));
+
             return messages;
         } catch (ex) {
             throw MemphisError(ex)
@@ -189,7 +196,7 @@ export class Consumer {
                 if (this.dlsCurrentIndex >= 10000) {
                     indexToInsert %= 10000;
                 }
-                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup, this.internalStationName);
+                this.dlsMessages[indexToInsert] = new Message(m, this.connection, this.consumerGroup,  this.internalStationName, DlsMessagePartitionNumber);
                 this.dlsCurrentIndex++;
             }
         }
