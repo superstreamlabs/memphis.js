@@ -1008,8 +1008,8 @@ class Memphis {
       }
       this.stationPartitions.set(internal_station, partitions);
 
-      // the least possible value for batchMaxTimeToWaitMs is 1000 (1 second)
-      batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 1000 ? 1000 : batchMaxTimeToWaitMs;
+      // the least possible value for batchMaxTimeToWaitMs is 100
+      batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 100 ? 100 : batchMaxTimeToWaitMs;
       const consumer = new Consumer(
         this,
         stationName,
