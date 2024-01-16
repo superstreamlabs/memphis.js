@@ -4,7 +4,6 @@ const { memphis } = require('memphis-dev');
     let memphisConnection;
 
     try {
-        /* Javascript and typescript project */
         memphisConnection = await memphis.connect({
             host: "<memphis-host>",
             username: "memphis-username", // (root/application type user)

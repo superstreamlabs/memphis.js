@@ -4,7 +4,6 @@ import { memphis, Memphis } from 'memphis-dev';
     let memphisConnection: Memphis;
 
     try {
-        /* Javascript and typescript project */
         memphisConnection = await memphis.connect({
             host: "<memphis-host>",
             username: "memphis-username", // (root/application type user)
