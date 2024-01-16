@@ -755,7 +755,7 @@ const consumer = await memphisConnection.consumer({
     consumerGroup: '<group-name>', // defaults to the consumer name.
     pullIntervalMs: 1000, // defaults to 1000
     batchSize: 10, // defaults to 10
-    batchMaxTimeToWaitMs: 5000, // defaults to 5000
+    batchMaxTimeToWaitMs: 100, // defaults to 100
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 2, // defaults to 2
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
@@ -835,7 +835,7 @@ async function consumerBatched(){
             consumerName: "newConsumer",
             pullIntervalMs: 10000,
             batchSize: 100,
-            batchMaxTimeToWaitMs: 15000
+            batchMaxTimeToWaitMs: 100
         });
     }catch(exception){
         // Handle exception
@@ -855,7 +855,7 @@ async function consumerMaxMessages(){
             consumerName: "newConsumer",
             pullIntervalMs: 10000,
             batchSize: 100,
-            batchMaxTimeToWaitMs: 15000,
+            batchMaxTimeToWaitMs: 100,
             maxMsgDeliveries: 2
         });
     }catch(exception){
@@ -903,7 +903,7 @@ const msgs = await memphis.fetchMessages({
     consumerName: '<consumer-name>',
     consumerGroup: '<group-name>', // defaults to the consumer name.
     batchSize: 10, // defaults to 10
-    batchMaxTimeToWaitMs: 5000, // defaults to 5000
+    batchMaxTimeToWaitMs: 100, // defaults to 100
     maxAckTimeMs: 30000, // defaults to 30000
     maxMsgDeliveries: 2, // defaults to 2
     startConsumeFromSequence: 1, // start consuming from a specific sequence. defaults to 1
@@ -969,6 +969,23 @@ Acknowledge a message indicates the Memphis server to not re-send the same messa
 
 ```js
 message.ack();
+```
+
+### Nacking a Message
+
+Mark the message as not acknowledged - the broker will resend the message immediately to the same consumers group, instead of waiting to the max ack time configured.
+
+```js
+msg.nack();
+```
+
+### Sending a message to the dead-letter
+
+Sending the message to the dead-letter station (DLS) - the broker won't resend the message again to the same consumers group and will place the message inside the dead-letter station (DLS) with the given reason.
+The message will still be available to other consumer groups
+
+```js
+message.deadLetter("reason");
 ```
 
 ### Delay and resend the message after a given duration
