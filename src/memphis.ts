@@ -873,7 +873,7 @@ class Memphis {
         partitions = createRes.partitions_update.partitions_list;
       }
       this.stationPartitions.set(internal_station, partitions);
-      
+
       const producer = new Producer(this, producerName, stationName, realName, partitions);
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedProducer(producer);
@@ -1007,7 +1007,7 @@ class Memphis {
         }
       }
       this.stationPartitions.set(internal_station, partitions);
-      
+
       // the least possible value for batchMaxTimeToWaitMs is 100
       batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 100 ? 100 : batchMaxTimeToWaitMs;
       const consumer = new Consumer(
@@ -1026,7 +1026,7 @@ class Memphis {
         partitions,
         consumerPartitionKey,
         consumerPartitionNumber
-        );
+      );
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedConsumer(consumer);
 
@@ -1426,6 +1426,10 @@ export class RoundRobinProducerConsumerGenerator {
     this.Current = (this.Current + 1) % this.NumberOfPartitions;
     return partitionNumber;
   }
+}
+
+export const createMemphisInstance = () => {
+  return new Memphis();
 }
 
 @Injectable({})
