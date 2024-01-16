@@ -4,6 +4,8 @@ import { Memphis, MsgHeaders, RoundRobinProducerConsumerGenerator } from '.';
 import { MemphisError, stringToHex } from './utils';
 import { Station } from './station';
 
+import { MemphisErrors } from './errors'
+
 const schemaVFailAlertType = 'schema_validation_fail_alert';
 
 export class Producer {
@@ -42,7 +44,7 @@ export class Producer {
         } else if (Object.prototype.toString.call(headers) === '[object Object]') {
             type = 'object';
         } else {
-            throw MemphisError(new Error('headers has to be a Javascript object or an instance of MsgHeaders'));
+            throw MemphisErrors.UnsupportedHeaderFormat;
         }
 
         switch (type) {
@@ -135,7 +137,7 @@ export class Producer {
                 streamName = `${this.internalStation}$${partitionNumber.toString()}`
             } else if (stationPartitions != null && stationPartitions.length > 0) {
                 if (producerPartitionNumber > 0 && producerPartitionKey != null) {
-                    throw MemphisError(new Error('Can not use both partition number and partition key'));
+                    throw MemphisErrors.GivenBothPartitionNumAndKey;
                 }
                 if (producerPartitionKey != null) {
                     const partitionNumberKey = this.connection._getPartitionFromKey(producerPartitionKey, this.internalStation)
@@ -215,7 +217,7 @@ export class Producer {
 
     private async _hanldeProduceError(ex: any, message: any, headers?: MsgHeaders) {
         if (ex.code === '503') {
-            throw MemphisError(new Error('Produce operation has failed, please check whether Station/Producer still exist'));
+            throw MemphisErrors.FailedToProduce;
         }
         if (ex.message.includes('BAD_PAYLOAD')) ex = MemphisError(new Error('Invalid message format, expecting Uint8Array'));
         if (ex.message.includes('Schema validation has failed')) {

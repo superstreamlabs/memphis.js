@@ -1,5 +1,7 @@
 import { Memphis } from ".";
 import { MemphisError } from "./utils";
+import { MemphisErrors } from './errors'
+
 import { parse as parseGraphQl, validate as validateGraphQl } from 'graphql';
 const avro = require('avro-js')
 
@@ -24,7 +26,7 @@ export class Station {
                 try {
                     msgObj = JSON.parse(msg.toString());
                 } catch (ex) {
-                    throw MemphisError(new Error('Expecting Json format: ' + ex));
+                    throw MemphisErrors.ExpectingJSONFormat(ex);
                 }
                 msgToSend = msg;
                 const valid = validate(msgObj);
@@ -43,10 +45,10 @@ export class Station {
                 }
                 return msgToSend;
             } else {
-                throw MemphisError(new Error('Unsupported message type'));
+                throw MemphisErrors.UnsupportedMessageType;
             }
         } catch (ex) {
-            throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
+            throw MemphisErrors.FailedSchemaValidation(ex.message);
         }
     }
 
@@ -60,14 +62,14 @@ export class Station {
                 try {
                     msgObj = JSON.parse(msg.toString());
                 } catch (ex) {
-                    throw MemphisError(new Error('Expecting Avro format: ' + ex));
+                    throw MemphisErrors.ExpectingAVROFormat(ex);
                 }
                 msgToSend = msg;
                 const type = avro.parse(schema); 
                 var buf = type.toBuffer(msgObj);
                 const valid = type.isValid(msgObj);
                 if (!valid) {
-                    throw MemphisError(new Error(`Schema validation has failed: ${type}`));
+                    throw MemphisErrors.FailedSchemaValidation(type);
                 }
                 return msgToSend;
             } else if (Object.prototype.toString.call(msg) == '[object Object]') {
@@ -79,15 +81,15 @@ export class Station {
                 var buf = type.toBuffer(msgObj);
                 const valid = type.isValid(msgObj);
                 if (!valid) {
-                    throw MemphisError(new Error(`Schema validation has failed: ${type}`));
+                    throw MemphisErrors.FailedSchemaValidation(type);
                 }
 
                 return msgToSend;
             } else {
-                throw MemphisError(new Error('Unsupported message type'));
+                throw MemphisErrors.UnsupportedMessageType;
             }
         } catch (ex) {
-            throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
+            throw MemphisErrors.FailedSchemaValidation(ex.message);
         }
     }
 
@@ -103,18 +105,19 @@ export class Station {
                         ex = new Error('Schema validation has failed: Invalid message format, expecting protobuf');
                         throw MemphisError(new Error(ex.message));
                     }
-                    throw MemphisError(new Error(`Schema validation has failed: ${ex.message}`));
+                    throw MemphisErrors.FailedSchemaValidation(ex.message);
                 }
             } else if (msg instanceof Object) {
                 let errMsg = meassageDescriptor.verify(msg);
                 if (errMsg) {
-                    throw MemphisError(new Error(`Schema validation has failed: ${errMsg}`));
+                    throw MemphisErrors.FailedSchemaValidation(errMsg);
                 }
                 const protoMsg = meassageDescriptor.create(msg);
                 const messageToSend = meassageDescriptor.encode(protoMsg).finish();
                 return messageToSend;
             } else {
-                throw MemphisError(new Error('Schema validation has failed: Unsupported message type'));
+                let errMsg = "Unsupported message type"
+                throw MemphisErrors.FailedSchemaValidation(errMsg);
             }
         }
     }
@@ -135,12 +138,12 @@ export class Station {
                 const msgStr = msg.loc.source.body.toString();
                 msgToSend = new TextEncoder().encode(msgStr);
             } else {
-                throw MemphisError(new Error('Unsupported message type'));
+                throw MemphisErrors.UnsupportedMessageType;
             }
             const schema = this.connection.graphqlSchemas.get(this.internalName);
             const validateRes = validateGraphQl(schema, message);
             if (validateRes.length > 0) {
-                throw MemphisError(new Error('Schema validation has failed: ' + validateRes));
+                throw MemphisErrors.FailedSchemaValidation(validateRes);
             }
             return msgToSend;
         } catch (ex) {
@@ -148,7 +151,7 @@ export class Station {
                 ex = new Error('Schema validation has failed: Invalid message format, expecting GraphQL');
                 throw MemphisError(ex);
             }
-            throw MemphisError(new Error('Schema validation has failed: ' + ex));
+            throw MemphisErrors.FailedSchemaValidation(ex.message);
         }
     }
 
@@ -175,7 +178,7 @@ export class Station {
                 return Buffer.from(msg);
             }
             if (!Buffer.isBuffer(msg)) {
-                throw MemphisError(new Error('Unsupported message type'));
+                throw MemphisErrors.UnsupportedMessageType;
             } else {
                 return msg;
             }

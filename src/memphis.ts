@@ -33,6 +33,7 @@ import { MemphisConsumerOptions } from './nest/interfaces';
 import { Producer } from './producer';
 import { Station } from './station';
 import { generateNameSuffix, MemphisError, MemphisErrorString, sleep } from './utils';
+import { MemphisErrors } from './errors';
 const avro = require('avro-js')
 const murmurhash = require('murmurhash');
 
@@ -489,7 +490,7 @@ class Memphis {
               ajv.addMetaSchema(draft6MetaSchema);
               return validate;
             } catch (ex) {
-              throw MemphisError(new Error('invalid json schema'));
+              throw MemphisErrors.InvalidJSONSchema;
             }
           }
         }
@@ -505,7 +506,7 @@ class Memphis {
       validate = avro.parse(schema);
       return validate;
     } catch (ex) {
-      throw MemphisError(new Error('invalid avro schema'));
+      throw MemphisErrors.InvalidAVROSchema;
     }
   }
 
@@ -804,7 +805,7 @@ class Memphis {
   }): Promise<Producer> {
     try {
       if (!this.isConnectionActive)
-        throw MemphisError(new Error('Connection is dead'));
+        throw MemphisErrors.DeadConnection;
 
       const realName = producerName.toLowerCase();
       if (Array.isArray(stationName)) {
@@ -934,7 +935,7 @@ class Memphis {
     try {
       if (!this.isConnectionActive) throw new Error('Connection is dead');
       if (batchSize > maxBatchSize || batchSize < 1) {
-        throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize} or less than 1`));
+        throw MemphisErrors.IncorrectBatchSize(maxBatchSize);
       }
       const realName = consumerName.toLowerCase();
 
@@ -948,21 +949,15 @@ class Memphis {
       consumerGroup = consumerGroup || consumerName;
 
       if (startConsumeFromSequence <= 0) {
-        throw MemphisError(
-          new Error('startConsumeFromSequence has to be a positive number')
-        );
+        throw MemphisErrors.NegativeStartConsumeFromSeq;
       }
 
       if (lastMessages < -1) {
-        throw MemphisError(new Error('min value for LastMessages is -1'));
+        throw MemphisErrors.InvalidLastMessages;
       }
 
       if (startConsumeFromSequence > 1 && lastMessages > -1) {
-        throw MemphisError(
-          new Error(
-            "Consumer creation options can't contain both startConsumeFromSequence and lastMessages"
-          )
-        );
+        throw MemphisErrors.GivenBothLastMessagesAndStartConsume;
       }
 
       const createConsumerReq = {
@@ -1076,9 +1071,7 @@ class Memphis {
   }): Promise<void> {
     let producer: Producer;
     if (!this.isConnectionActive)
-      throw MemphisError(
-        new Error('Cant produce a message without being connected!')
-      );
+      throw MemphisErrors.ProducingWithoutConnection;
 
     if (typeof stationName === 'string') {
       const internalStationName = stationName.replace(/\./g, '#').toLowerCase();
@@ -1161,11 +1154,9 @@ class Memphis {
   }): Promise<Message[]> {
     let consumer: Consumer;
     if (!this.isConnectionActive)
-      throw MemphisError(
-        new Error('Cant fetch messages without being connected!')
-      );
+      throw MemphisErrors.FetchingWithoutConnection;
     if (batchSize > maxBatchSize || batchSize < 1) {
-      throw MemphisError(new Error(`Batch size can not be greater than ${maxBatchSize} or less than 1`));
+      throw MemphisErrors.IncorrectBatchSize(maxBatchSize);
     }
 
     if (genUniqueSuffix) {
@@ -1326,22 +1317,22 @@ class Memphis {
     try {
 
       if (schemaType !== "json" && schemaType !== "graphql" && schemaType !== "protobuf" && schemaType !== "avro")
-        throw MemphisError(new Error("Schema type not supported"));
+        throw MemphisErrors.UnsupportedSchemaType;
 
       var nameConvention = RegExp('^[a-z0-9_.-]*$');
       if (!nameConvention.test(schemaName))
-        throw MemphisError(new Error("Only alphanumeric and the '_', '-', '.' characters are allowed in the schema name"));
+        throw MemphisErrors.UnsupportedSchemaNameChars;
 
       var firstChar = Array.from(schemaName)[0];
       var lastChar = Array.from(schemaName)[-1];
       if (firstChar === "." || firstChar === "_" || firstChar === "-" || lastChar === "." || lastChar === "_" || lastChar === "-")
-        throw MemphisError(new Error("schema name can not start or end with non alphanumeric character"));
+        throw MemphisErrors.InvalidSchemaNameStartOrEnd;
 
       if (schemaName.length === 0)
-        throw MemphisError(new Error("schema name can not be empty"));
+        throw MemphisErrors.EmptySchemaName;
 
       if (schemaName.length > 128)
-        throw MemphisError(new Error("schema name should be under 128 characters"));
+        throw MemphisErrors.SchemaNameTooLong;
 
       var schemContent = fs.readFileSync(schemaFilePath, 'utf-8');
 

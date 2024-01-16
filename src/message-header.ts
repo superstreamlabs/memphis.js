@@ -1,6 +1,7 @@
 import { headers, MsgHdrs } from 'nats';
 
 import { MemphisError } from './utils';
+import { MemphisErrors } from './errors'
 
 export class MsgHeaders {
     headers: MsgHdrs;
@@ -18,7 +19,7 @@ export class MsgHeaders {
         if (!key.startsWith('$memphis')) {
             this.headers.append(key, value);
         } else {
-            throw MemphisError(new Error('Keys in headers should not start with $memphis'));
+            throw MemphisErrors.InvalidHeaderKeyNameStart;
         }
     }
 }
