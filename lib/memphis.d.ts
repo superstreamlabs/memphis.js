@@ -190,6 +190,7 @@ export declare class RoundRobinProducerConsumerGenerator {
     constructor(partitions: number[]);
     Next(): number;
 }
+export declare const createMemphisInstance: () => Memphis;
 export declare class MemphisService extends Memphis {
 }
 export type { Memphis };

@@ -1066,3 +1066,9 @@ await consumer.destroy();
 ```js
 memphisConnection.isConnected();
 ```
+
+### Create memphis instance 
+
+```js
+const memphisInstance = createMemphisInstance()
+```

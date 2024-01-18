@@ -1446,6 +1446,10 @@ export class RoundRobinProducerConsumerGenerator {
   }
 }
 
+export const createMemphisInstance = () => {
+  return new Memphis();
+}
+
 @Injectable({})
 export class MemphisService extends Memphis { }
 
