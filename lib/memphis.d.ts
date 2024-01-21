@@ -30,12 +30,12 @@ declare class Memphis {
     private maxReconnect;
     private reconnectIntervalMs;
     private timeoutMs;
-    brokerConnection: any;
-    brokerManager: any;
-    brokerStats: any;
+    brokerConnection: broker.JetStreamClient;
+    brokerManager: broker.NatsConnection;
+    brokerStats: broker.JetStreamManager;
     retentionTypes: IRetentionTypes;
     storageTypes: IStorageTypes;
-    JSONC: any;
+    JSONC: broker.Codec<any>;
     stationSchemaDataMap: Map<string, Object>;
     schemaUpdatesSubs: Map<string, broker.Subscription>;
     clientsPerStation: Map<string, number>;
@@ -83,6 +83,7 @@ declare class Memphis {
     private _sdkClientUpdatesListener;
     sendNotification(title: string, msg: string, failedMsg: any, type: string): void;
     private _normalizeHost;
+    _publish(fullSubjectName: string, message: NonNullable<any>, publishOptions: Partial<broker.JetStreamPublishOptions>): Promise<broker.PubAck>;
     request(subject: string, data: any, timeoutRetry: number, options?: any): Promise<any>;
     station({ name, retentionType, retentionValue, storageType, replicas, idempotencyWindowMs, schemaName, sendPoisonMsgToDls, sendSchemaFailedMsgToDls, tieredStorageEnabled, partitionsNumber, dlsStation, timeoutRetry }: {
         name: string;
@@ -171,6 +172,10 @@ declare class Memphis {
     _unSetCachedConsumer(consumer: Consumer): void;
     _unSetCachedConsumerStation(stationName: string): void;
     close(): Promise<void>;
+    _jsConsumer({ streamName, durableName }: {
+        streamName: string;
+        durableName: string;
+    }): Promise<broker.Consumer>;
     isConnected(): boolean;
     _setConsumeHandler(options: MemphisConsumerOptions, handler: (...args: any) => void, context: object): void;
     createSchema({ schemaName, schemaType, schemaFilePath, timeoutRetry }: {
