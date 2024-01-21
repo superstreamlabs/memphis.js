@@ -78,12 +78,12 @@ class Memphis {
   private maxReconnect: number;
   private reconnectIntervalMs: number;
   private timeoutMs: number;
-  public brokerConnection: any;
-  public brokerManager: any;
-  public brokerStats: any;
+  public brokerConnection: broker.JetStreamClient;
+  public brokerManager: broker.NatsConnection;
+  public brokerStats: broker.JetStreamManager;
   public retentionTypes!: IRetentionTypes;
   public storageTypes!: IStorageTypes;
-  public JSONC: any;
+  public JSONC: broker.Codec<any>;
   public stationSchemaDataMap: Map<string, Object>;
   public schemaUpdatesSubs: Map<string, broker.Subscription>;
   public clientsPerStation: Map<string, number>;
@@ -277,18 +277,18 @@ class Memphis {
                 this.isConnectionActive = true;
                 break;
               case 'reconnecting':
-                this.log(`trying to reconnect to memphis - ${MemphisErrorString(s.data)}`);
+                this.log(`trying to reconnect to memphis - ${MemphisErrorString(s.data?.toString())}`);
                 break;
               case 'disconnect':
-                this.log(`disconnected from memphis - ${MemphisErrorString(s.data)}`);
+                this.log(`disconnected from memphis - ${MemphisErrorString(s.data?.toString())}`);
                 this.isConnectionActive = false;
                 break;
               case 'error':
                 let err = s.data;
-                if (err.includes("AUTHORIZATION_VIOLATION")) {
+                if (err.toString().includes("AUTHORIZATION_VIOLATION")) {
                   this.log("to continue using Memphis, please upgrade your plan to a paid plan")
                 } else {
-                  this.log(MemphisErrorString(err));
+                  this.log(MemphisErrorString(err.toString()));
                 }
                 this.isConnectionActive = false;
                 await this.brokerManager.close();
@@ -560,7 +560,7 @@ class Memphis {
         `$memphis_sdk_clients_updates`
       );
       for await (const m of sub) {
-        let data = this.JSONC.decode(m._rdata);
+        let data = this.JSONC.decode(m.data);
         switch (data['type']) {
           case 'send_notification':
             this.clusterConfigurations.set(data['type'], data['update']);
@@ -602,6 +602,14 @@ class Memphis {
     if (host.startsWith('http://')) return host.split('http://')[1];
     else if (host.startsWith('https://')) return host.split('https://')[1];
     else return host;
+  }
+
+  /**
+   * for internal use only
+   * 
+   */
+  async _publish(fullSubjectName: string, message: NonNullable<any>, publishOptions: Partial<broker.JetStreamPublishOptions>) {
+    return await this.brokerConnection.publish(fullSubjectName, message, publishOptions)
   }
 
   async request(subject: string, data: any, timeoutRetry: number, options?: any): Promise<any> {
@@ -891,7 +899,7 @@ class Memphis {
    * @param {String} consumerGroup - consumer group name, defaults to the consumer name.
    * @param {Number} pullIntervalMs - interval in miliseconds between pulls, default is 1000.
    * @param {Number} batchSize - pull batch size.
-   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 100. The smallest possible value is 100, and if the value is smaller than 100, it will be set to 100.
+   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, defauls is 1000. The smallest possible value is 1000, and if the value is smaller than 100, it will be set to 1000.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it untill reaches the maxMsgDeliveries value
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 2
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired producer name.
@@ -906,7 +914,7 @@ class Memphis {
     consumerGroup = '',
     pullIntervalMs = 1000,
     batchSize = 10,
-    batchMaxTimeToWaitMs = 100,
+    batchMaxTimeToWaitMs = 1000,
     maxAckTimeMs = 30000,
     maxMsgDeliveries = 2,
     genUniqueSuffix = false,
@@ -1007,9 +1015,9 @@ class Memphis {
         }
       }
       this.stationPartitions.set(internal_station, partitions);
-
-      // the least possible value for batchMaxTimeToWaitMs is 100
-      batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 100 ? 100 : batchMaxTimeToWaitMs;
+      
+      // the least possible value for batchMaxTimeToWaitMs is 1000
+      batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 1000 ? 1000 : batchMaxTimeToWaitMs;
       const consumer = new Consumer(
         this,
         stationName,
@@ -1027,6 +1035,8 @@ class Memphis {
         consumerPartitionKey,
         consumerPartitionNumber
       );
+
+
       await this._scemaUpdatesListener(stationName, createRes.schema_update);
       this.setCachedConsumer(consumer);
 
@@ -1125,7 +1135,7 @@ class Memphis {
    * @param {String} genUniqueSuffix - Deprecated: will be stopped to be supported after November 1'st, 2023. Indicates memphis to add a unique suffix to the desired consumer name.
    * @param {Number} batchSize - pull batch size.
    * @param {Number} maxAckTimeMs - max time for ack a message in miliseconds, in case a message not acked in this time period the Memphis broker will resend it until reaches the maxMsgDeliveries value
-   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, default is 100. The smallest possible value is 100, and if the value is smaller than 100, it will be set to 100.
+   * @param {Number} batchMaxTimeToWaitMs - max time in miliseconds to wait between pulls, default is 1000. The smallest possible value is 1000, and if the value is smaller than 1000, it will be set to 1000.
    * @param {Number} maxMsgDeliveries - max number of message deliveries, by default is 2
    * @param {Number} startConsumeFromSequence - start consuming from a specific sequence. defaults to 1
    * @param {Number} lastMessages - consume the last N messages, defaults to -1 (all messages in the station)
@@ -1139,7 +1149,7 @@ class Memphis {
     genUniqueSuffix = false,
     batchSize = 10,
     maxAckTimeMs = 30000,
-    batchMaxTimeToWaitMs = 100,
+    batchMaxTimeToWaitMs = 1000,
     maxMsgDeliveries = 2,
     startConsumeFromSequence = 1,
     lastMessages = -1,
@@ -1289,6 +1299,14 @@ class Memphis {
     this.producersMap = new Map<string, Producer>();
     this.consumersMap.forEach((consumer) => consumer.stop());
     this.consumersMap = new Map<string, Consumer>();
+  }
+
+  /**
+   * Get existing consumer.
+   * for internal usage
+   */
+  _jsConsumer({ streamName, durableName }: { streamName: string, durableName: string }) {
+    return this.brokerConnection.consumers.get(streamName, durableName);
   }
 
   /**

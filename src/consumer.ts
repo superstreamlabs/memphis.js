@@ -1,5 +1,5 @@
 import * as events from 'events';
-import { Subscription } from 'nats';
+import { Subscription, FetchOptions } from 'nats';
 
 import { Memphis, RoundRobinProducerConsumerGenerator } from './memphis'
 import { Message } from './message';
@@ -7,6 +7,7 @@ import { MemphisError } from './utils'
 
 const maxBatchSize = 5000
 const DlsMessagePartitionNumber = -1;
+const DefaultBatchMaxTimeToWaitMs = 1000;
 
 export class Consumer {
     private connection: Memphis;
@@ -62,7 +63,7 @@ export class Consumer {
         this.internalConsumerGroupName = this.consumerGroup.replace(/\./g, '#');
         this.pullIntervalMs = pullIntervalMs;
         this.batchSize = batchSize;
-        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < 100 ? 100 : batchMaxTimeToWaitMs;
+        this.batchMaxTimeToWaitMs = batchMaxTimeToWaitMs < DefaultBatchMaxTimeToWaitMs ? DefaultBatchMaxTimeToWaitMs : batchMaxTimeToWaitMs;
         this.maxAckTimeMs = maxAckTimeMs;
         this.maxMsgDeliveries = maxMsgDeliveries;
         this.eventEmitter = new events.EventEmitter();
@@ -175,9 +176,11 @@ export class Consumer {
                 return messages;
             }
             const durableName = this.consumerGroup ? this.internalConsumerGroupName : this.internalConsumerName;
-            const batch = await this.connection.brokerConnection.fetch(streamName, durableName,
-                { batch: batchSize, expires: this.batchMaxTimeToWaitMs });
 
+            const jsConsumer = await this.connection._jsConsumer({streamName, durableName});
+
+            const fetchOpts: FetchOptions = { max_messages: batchSize, expires: this.batchMaxTimeToWaitMs }
+            const batch = await jsConsumer.fetch(fetchOpts);
             for await (const m of batch)
                 messages.push(new Message(m, this.connection, this.consumerGroup, this.internalStationName, messagePartitionNumber));
 
@@ -239,6 +242,7 @@ export class Consumer {
             this.subscription.unsubscribe();
             this.subscription = null;
         }
+
     }
 
     /**
